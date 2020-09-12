@@ -99,6 +99,8 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	@Override
 	protected void setupScene(Engine engine, SceneManager sceneManager) throws IOException {
+		// initialize input manager
+		// setupInputs();
 		// initialize the dolphin entity
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
@@ -140,9 +142,21 @@ public class MyGame extends VariableFrameRateGame {
 		
 	}
 
+	/**
+	 * Updates and redraws the viewport with running elapsed time and keyboard count
+	 * 
+	 * @param engine
+	 */
 	@Override
 	protected void update(Engine engine) {
-		// TODO Auto-generated method stub
+		renderSystem = (GL4RenderSystem) engine.getRenderSystem();
+		elapsedTime += engine.getElapsedTimeMillis();
+		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
+		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
+		counterString = Integer.toString(counter);
+		displayString = "Time = " + elapsedTimeString + " Keyboard Counter = " + counterString;
+		renderSystem.setHUD(displayString, 15, 15);
+	//	inputManager.update(elapsedTime);
 		
 	}
 	
