@@ -126,6 +126,14 @@ public class MyGame extends VariableFrameRateGame {
 		RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
 		rotationController.addNode(dolphinNode);
 		sceneManager.addController(rotationController);
+		
+		// manually assign dolphin textures
+		TextureManager textureManager = engine.getTextureManager();
+		Texture redTexture = textureManager.getAssetByPath("red.jpeg");
+		RenderSystem renderSystem = sceneManager.getRenderSystem();
+		TextureState state = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		state.setTexture(redTexture);
+		dolphinEntity.setRenderState(state);
 	}
 	
 	protected void setupInputs() {
