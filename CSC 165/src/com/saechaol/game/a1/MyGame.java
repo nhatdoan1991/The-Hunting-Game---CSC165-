@@ -100,7 +100,8 @@ public class MyGame extends VariableFrameRateGame {
 	@Override
 	protected void setupScene(Engine engine, SceneManager sceneManager) throws IOException {
 		// initialize input manager
-		// setupInputs();
+		setupInputs();
+		
 		// initialize the dolphin entity
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
@@ -138,7 +139,15 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinEntity.setRenderState(state);
 	}
 	
+	/**
+	 * Initializes controller inputs
+	 */
 	protected void setupInputs() {
+		inputManager = new GenericInputManager();
+		String keyboardName = inputManager.getKeyboardName();
+		String gamepadName = inputManager.getFirstGamepadName();
+		
+		// Build action objects for listening to user input
 		
 	}
 
@@ -156,8 +165,12 @@ public class MyGame extends VariableFrameRateGame {
 		counterString = Integer.toString(counter);
 		displayString = "Time = " + elapsedTimeString + " Keyboard Counter = " + counterString;
 		renderSystem.setHUD(displayString, 15, 15);
-	//	inputManager.update(elapsedTime);
+		inputManager.update(elapsedTime);
 		
+	}
+	
+	public void incrementCounter(int increment) {
+		counter += increment;
 	}
 	
 	public static void main(String[] args) {
