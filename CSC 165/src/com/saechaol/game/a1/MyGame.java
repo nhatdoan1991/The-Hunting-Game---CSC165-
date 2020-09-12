@@ -40,10 +40,10 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("Press 'W/A/S/D' or control the left stick to MOVE");
 		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ROTATE CAMERA");
 		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
-		System.out.println("Press 'ESC' or 'Start' to EXIT");
-		System.out.println("Press 'TAB' or 'Y' to PAUSE");
+		System.out.println("Press 'ESC' or 'Select' to EXIT");
+		System.out.println("Press 'TAB' or 'Start' to PAUSE");
 		System.out.println("Press 'C' or 'X' to INCREMENT COUNTER");
-		System.out.println("Press 'V' or 'DPAD-UP' to INCREMENT COUNTER MODIFIER");
+		System.out.println("Press 'V' or 'Y' to INCREMENT COUNTER MODIFIER");
 		System.out.println("----------------------------------------------------");
 	}
 
@@ -152,13 +152,13 @@ public class MyGame extends VariableFrameRateGame {
 		incrementCounterModifierAction = new IncrementCounterModifierAction(this);
 		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
 	
-		// Bind exit action to escape, and gamepad 7 (start)
+		// Bind exit action to escape, and gamepad 6 (select)
 		inputManager.associateAction(keyboardName, 
 				net.java.games.input.Component.Identifier.Key.ESCAPE, 
 				exitGameAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		inputManager.associateAction(gamepadName, 
-				net.java.games.input.Component.Identifier.Button._7, 
+				net.java.games.input.Component.Identifier.Button._6, 
 				exitGameAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		
