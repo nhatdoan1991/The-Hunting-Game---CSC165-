@@ -162,6 +162,14 @@ public class MyGame extends VariableFrameRateGame {
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		
 		// Bind increment counter action to C, and gamepad 3 (X)
+		inputManager.associateAction(keyboardName, 
+				net.java.games.input.Component.Identifier.Key.C, 
+				incrementCounterAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		inputManager.associateAction(gamepadName, 
+				net.java.games.input.Component.Identifier.Button._3, 
+				incrementCounterAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		
 		// Bind increment counter modifier action to V, and gamepad Dpad up (POV Hat Up/ +Y)
 	}
