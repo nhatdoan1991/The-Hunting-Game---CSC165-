@@ -9,7 +9,8 @@ package com.saechaol.game.a1;
 import java.awt.*;
 import java.io.*;
 
-//import com.saechaol.game.myGameEngine.*;
+import com.saechaol.game.myGameEngine.action.*;
+import com.saechaol.game.myGameEngine.action.a1.*;
 
 import ray.rage.*;
 import ray.rage.game.*;
@@ -46,9 +47,19 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("----------------------------------------------------");
 	}
 
+	/**
+	 * Implements VariableFrameRateEngine.setupWindow()
+	 * Initializes a window size 1920x1080 for displays larger than 1080p,
+	 * and a 1280x720 window for displays smaller
+	 */
 	@Override
 	protected void setupWindow(RenderSystem renderSystem, GraphicsEnvironment graphicsEnvironment) {
-		//TODO Auto-generated method stub
+		int displayHeight = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight();
+		int displayWidth = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth();
+		if (displayHeight > 1920 && displayWidth > 1080)
+			renderSystem.createRenderWindow(new DisplayMode(1920, 1080, 24, 60), false);
+		else
+			renderSystem.createRenderWindow(new DisplayMode(1280, 720, 24, 60), false);
 	}
 	
 	@Override
@@ -62,6 +73,10 @@ public class MyGame extends VariableFrameRateGame {
 		// TODO Auto-generated method stub
 		
 	}
+	
+	protected void setupInputs() {
+		
+	}
 
 	@Override
 	protected void update(Engine arg0) {
@@ -71,6 +86,16 @@ public class MyGame extends VariableFrameRateGame {
 	
 	public static void main(String[] args) {
 		System.out.println("MyGame.main() running!");
+		Game game = new MyGame();
+		try {
+			game.startup();
+			game.run();
+		} catch (Exception e) {
+			e.printStackTrace(System.err);
+		} finally {
+			game.shutdown();
+			game.exit();
+		}
 	}
 
 }
