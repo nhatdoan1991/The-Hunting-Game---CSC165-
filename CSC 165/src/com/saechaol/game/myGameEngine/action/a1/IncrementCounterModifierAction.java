@@ -13,7 +13,7 @@ import com.saechaol.game.a1.MyGame;
 public class IncrementCounterModifierAction extends AbstractInputAction {
 
 	private MyGame game;
-	private int incrementAmount = 0;
+	private int incrementAmount = 1;
 	
 	public IncrementCounterModifierAction(MyGame g) {
 		game = g;
