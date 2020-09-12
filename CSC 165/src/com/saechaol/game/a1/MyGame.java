@@ -149,29 +149,38 @@ public class MyGame extends VariableFrameRateGame {
 		
 		// Build action objects for listening to user input
 		exitGameAction = new ExitGameAction(this);
+		incrementCounterModifierAction = new IncrementCounterModifierAction(this);
 		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
 	
-		// Bind exit action to escape, and gamepad 8 (start)
+		// Bind exit action to escape, and gamepad 7 (start)
 		inputManager.associateAction(keyboardName, 
 				net.java.games.input.Component.Identifier.Key.ESCAPE, 
 				exitGameAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		inputManager.associateAction(gamepadName, 
-				net.java.games.input.Component.Identifier.Button._8, 
+				net.java.games.input.Component.Identifier.Button._7, 
 				exitGameAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		
-		// Bind increment counter action to C, and gamepad 3 (X)
+		// Bind increment counter action to C, and gamepad 2 (X)
 		inputManager.associateAction(keyboardName, 
 				net.java.games.input.Component.Identifier.Key.C, 
 				incrementCounterAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		inputManager.associateAction(gamepadName, 
-				net.java.games.input.Component.Identifier.Button._3, 
+				net.java.games.input.Component.Identifier.Button._2, 
 				incrementCounterAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		
-		// Bind increment counter modifier action to V, and gamepad Dpad up (POV Hat Up/ +Y)
+		// Bind increment counter modifier action to V, and gamepad 3 (Y)
+		inputManager.associateAction(keyboardName, 
+				net.java.games.input.Component.Identifier.Key.V, 
+				incrementCounterModifierAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);		
+		inputManager.associateAction(gamepadName, 
+				net.java.games.input.Component.Identifier.Button._3, 
+				incrementCounterModifierAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 	}
 
 	/**
