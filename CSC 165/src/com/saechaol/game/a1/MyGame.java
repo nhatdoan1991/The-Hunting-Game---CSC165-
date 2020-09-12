@@ -51,6 +51,9 @@ public class MyGame extends VariableFrameRateGame {
 	 * Implements VariableFrameRateEngine.setupWindow()
 	 * Initializes a window size 1920x1080 for displays larger than 1080p,
 	 * and a 1280x720 window for displays smaller
+	 * 
+	 * @param renderSystem
+	 * @param graphicsEnvironment
 	 */
 	@Override
 	protected void setupWindow(RenderSystem renderSystem, GraphicsEnvironment graphicsEnvironment) {
@@ -62,14 +65,33 @@ public class MyGame extends VariableFrameRateGame {
 			renderSystem.createRenderWindow(new DisplayMode(1280, 720, 24, 60), false);
 	}
 	
+	/**
+	 * Initializes a perspective camera and adds it to the scene graph
+	 * 
+	 * @param sceneManager
+	 * @param renderWindow
+	 */
 	@Override
-	protected void setupCameras(SceneManager arg0, RenderWindow arg1) {
-		// TODO Auto-generated method stub
+	protected void setupCameras(SceneManager sceneManager, RenderWindow renderWindow) {
+		// initialize the camera and add it to the viewport
+		SceneNode rootNode = sceneManager.getRootSceneNode();
+		Camera cameraOne = sceneManager.createCamera("cameraOne", Projection.PERSPECTIVE);
+		renderWindow.getViewport(0).setCamera(cameraOne);
+		
+		// initialize the camera frustum and set its position to the origin
+		cameraOne.setRt( (Vector3f) Vector3f.createFrom(1.0f, 0.0f, 0.0f));
+		cameraOne.setUp( (Vector3f) Vector3f.createFrom(0.0f, 1.0f, 0.0f));
+		cameraOne.setFd( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, -1.0f));
+		cameraOne.setPo( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, 0.0f));
+		
+		// initialize the cameraNode, add it to the scene graph and then attach the camera to it
+		SceneNode cameraNode = rootNode.createChildSceneNode(cameraOne.getName() + "Node");
+		cameraNode.attachObject(cameraOne);
 		
 	}
 
 	@Override
-	protected void setupScene(Engine arg0, SceneManager arg1) throws IOException {
+	protected void setupScene(Engine engine, SceneManager sceneManager) throws IOException {
 		// TODO Auto-generated method stub
 		
 	}
@@ -79,7 +101,7 @@ public class MyGame extends VariableFrameRateGame {
 	}
 
 	@Override
-	protected void update(Engine arg0) {
+	protected void update(Engine engine) {
 		// TODO Auto-generated method stub
 		
 	}
