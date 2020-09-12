@@ -21,11 +21,11 @@ public class IncrementCounterModifierAction extends AbstractInputAction {
 	
 	@Override
 	public void performAction(float time, Event e) {
-		System.out.println("Modifier action fired. Modifier = " + incrementAmount);
+		System.out.println("Modifier action fired. Modifier = " + (incrementAmount));
 		incrementAmount++;
 		if (incrementAmount > 5) {
 			System.out.println("Increment Modifier exceeds 5, setting back to 0");
-			incrementAmount = 0;
+			incrementAmount = 1;
 		}
 	}
 	
