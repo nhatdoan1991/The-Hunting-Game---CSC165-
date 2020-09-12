@@ -90,10 +90,42 @@ public class MyGame extends VariableFrameRateGame {
 		
 	}
 
+	/**
+	 * Initializes the game's scene with a single dolphin entity, an ambient and point light,
+	 * and rotates it about its Y axis
+	 * 
+	 * @param engine
+	 * @param sceneManager
+	 */
 	@Override
 	protected void setupScene(Engine engine, SceneManager sceneManager) throws IOException {
-		// TODO Auto-generated method stub
+		// initialize the dolphin entity
+		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
+		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
 		
+		// initialize the dolphin node and add it to the scene graph
+		SceneNode dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
+		dolphinNode.moveBackward(2.0f);
+		dolphinNode.attachObject(dolphinEntity);
+		
+		// initialize the ambient light
+		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
+		
+		// initialize a point light
+		Light pointLightOne = sceneManager.createLight("pointLightOne", Light.Type.POINT);
+		pointLightOne.setAmbient(new Color(0.3f, 0.3f, 0.3f));
+		pointLightOne.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
+		pointLightOne.setSpecular(new Color(1.0f, 1.0f, 1.0f));
+		pointLightOne.setRange(5.0f);
+		
+		// initialize a node for pointLightOne and add it to the scene graph
+		SceneNode pointLightNode = sceneManager.getRootSceneNode().createChildSceneNode(pointLightOne.getName() + "Node");
+		pointLightNode.attachObject(pointLightOne);
+		
+		// initialize a rotation controller
+		RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
+		rotationController.addNode(dolphinNode);
+		sceneManager.addController(rotationController);
 	}
 	
 	protected void setupInputs() {
