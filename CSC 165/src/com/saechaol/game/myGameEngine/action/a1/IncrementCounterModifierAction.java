@@ -13,7 +13,7 @@ import com.saechaol.game.a1.MyGame;
 public class IncrementCounterModifierAction extends AbstractInputAction {
 
 	private MyGame game;
-	private int incrementAmount = 1;
+	private int incrementAmount = 0;
 	
 	public IncrementCounterModifierAction(MyGame g) {
 		game = g;
@@ -24,8 +24,8 @@ public class IncrementCounterModifierAction extends AbstractInputAction {
 		System.out.println("Modifier action fired. Modifier = " + incrementAmount);
 		incrementAmount++;
 		if (incrementAmount > 5) {
-			System.out.println("Increment Modifier Action setting back to 1");
-			incrementAmount = 1;
+			System.out.println("Increment Modifier exceeds 5, setting back to 0");
+			incrementAmount = 0;
 		}
 	}
 	
