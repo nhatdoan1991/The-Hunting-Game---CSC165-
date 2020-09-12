@@ -148,7 +148,22 @@ public class MyGame extends VariableFrameRateGame {
 		String gamepadName = inputManager.getFirstGamepadName();
 		
 		// Build action objects for listening to user input
+		exitGameAction = new ExitGameAction(this);
+		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
+	
+		// Bind exit action to escape, and gamepad 8 (start)
+		inputManager.associateAction(keyboardName, 
+				net.java.games.input.Component.Identifier.Key.ESCAPE, 
+				exitGameAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		inputManager.associateAction(gamepadName, 
+				net.java.games.input.Component.Identifier.Button._8, 
+				exitGameAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		
+		// Bind increment counter action to C, and gamepad 3 (X)
+		
+		// Bind increment counter modifier action to V, and gamepad Dpad up (POV Hat Up/ +Y)
 	}
 
 	/**
