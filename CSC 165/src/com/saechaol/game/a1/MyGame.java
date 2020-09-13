@@ -31,7 +31,7 @@ public class MyGame extends VariableFrameRateGame {
 	
 	private InputManager inputManager;
 	private Controller controller;
-	private Action leftStickMoveAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
+	private Action leftStickMoveAction, moveCameraDownAction, moveCameraLeftAction, moveCameraRightAction, moveCameraUpAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString;
