@@ -128,9 +128,9 @@ public class MyGame extends VariableFrameRateGame {
 		pointLightNode.attachObject(pointLightOne);
 		
 		// initialize a rotation controller
-		RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
-		rotationController.addNode(dolphinNode);
-		sceneManager.addController(rotationController);
+		//RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
+		//rotationController.addNode(dolphinNode);
+		//sceneManager.addController(rotationController);
 		
 		// manually assign dolphin textures
 		TextureManager textureManager = engine.getTextureManager();
@@ -148,6 +148,7 @@ public class MyGame extends VariableFrameRateGame {
 		inputManager = new GenericInputManager();
 		String keyboardName = inputManager.getKeyboardName();
 		String gamepadName = inputManager.getFirstGamepadName();
+		System.out.println("Keyboard: " + keyboardName + "\nGamepad: " + gamepadName);
 		controller = inputManager.getControllerByName(gamepadName);
 		
 		// Build action objects for listening to user input
@@ -156,14 +157,11 @@ public class MyGame extends VariableFrameRateGame {
 		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
 		leftStickMoveAction = new LeftStickMoveAction(this, controller);
 		rightStickMoveAction = new RightStickMoveAction(this, controller);
+		moveCameraUpAction = new MoveCameraUpAction(this);
 		
 		// Bind exit action to escape, and gamepad 6 (select)
 		inputManager.associateAction(keyboardName, 
 				net.java.games.input.Component.Identifier.Key.ESCAPE, 
-				exitGameAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		inputManager.associateAction(gamepadName, 
-				net.java.games.input.Component.Identifier.Button._6, 
 				exitGameAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		
@@ -172,30 +170,55 @@ public class MyGame extends VariableFrameRateGame {
 				net.java.games.input.Component.Identifier.Key.C, 
 				incrementCounterAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		inputManager.associateAction(gamepadName, 
-				net.java.games.input.Component.Identifier.Button._2, 
-				incrementCounterAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+
 		
 		// Bind increment counter modifier action to V, and gamepad 3 (Y)
 		inputManager.associateAction(keyboardName, 
 				net.java.games.input.Component.Identifier.Key.V, 
 				incrementCounterModifierAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);		
-		inputManager.associateAction(gamepadName, 
-				net.java.games.input.Component.Identifier.Button._3, 
-				incrementCounterModifierAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-	
-		// Poll data from the control sticks
-		inputManager.associateAction(gamepadName, 
-				net.java.games.input.Component.Identifier.Axis.X, 
-				leftStickMoveAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		inputManager.associateAction(gamepadName, 
-				net.java.games.input.Component.Identifier.Axis.RX, 
-				rightStickMoveAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+
+		
+		// Bind move camera up action to W, and gamepad left stick Y
+		inputManager.associateAction(keyboardName, 
+				net.java.games.input.Component.Identifier.Key.W, 
+				moveCameraUpAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);	
+		
+		if (isGamepadNull(gamepadName)) {
+			System.out.println("No gamepad attached!");
+		} else {
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._6, 
+					exitGameAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._2, 
+					incrementCounterAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._3, 
+					incrementCounterModifierAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Axis.Y, 
+					moveCameraUpAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			// Poll data from the control sticks
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Axis.X, 
+					leftStickMoveAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Axis.RX, 
+					rightStickMoveAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		}
 	}
 
 	/**
@@ -216,8 +239,19 @@ public class MyGame extends VariableFrameRateGame {
 		
 	}
 	
+	public void moveCameraForward() {
+		
+	}
+	
 	public void incrementCounter(int increment) {
 		counter += increment;
+	}
+	
+	private boolean isGamepadNull(String gamepadName) {
+		if (gamepadName == null) {
+			return true;
+		} else 
+			return false;
 	}
 	
 	public static void main(String[] args) {
