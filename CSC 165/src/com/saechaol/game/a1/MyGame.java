@@ -12,6 +12,7 @@ import java.io.*;
 import com.saechaol.game.myGameEngine.action.*;
 import com.saechaol.game.myGameEngine.action.a1.*;
 
+import net.java.games.input.Controller;
 import ray.rage.*;
 import ray.rage.game.*;
 import ray.rage.rendersystem.*;
@@ -29,7 +30,8 @@ import ray.input.action.*;
 public class MyGame extends VariableFrameRateGame {
 	
 	private InputManager inputManager;
-	private Action moveCameraUpAction, moveCameraDownAction, moveCameraLeftAction, moveCameraRightAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
+	private Controller controller;
+	private Action leftStickMoveAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString;
@@ -146,12 +148,14 @@ public class MyGame extends VariableFrameRateGame {
 		inputManager = new GenericInputManager();
 		String keyboardName = inputManager.getKeyboardName();
 		String gamepadName = inputManager.getFirstGamepadName();
+		controller = inputManager.getControllerByName(gamepadName);
 		
 		// Build action objects for listening to user input
 		exitGameAction = new ExitGameAction(this);
 		incrementCounterModifierAction = new IncrementCounterModifierAction(this);
 		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
-	
+		leftStickMoveAction = new LeftStickMoveAction(this, controller);
+		
 		// Bind exit action to escape, and gamepad 6 (select)
 		inputManager.associateAction(keyboardName, 
 				net.java.games.input.Component.Identifier.Key.ESCAPE, 
@@ -181,6 +185,9 @@ public class MyGame extends VariableFrameRateGame {
 				net.java.games.input.Component.Identifier.Button._3, 
 				incrementCounterModifierAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+	
+		// Poll data from the left stick
+		inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Axis.X, leftStickMoveAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 	}
 
 	/**
