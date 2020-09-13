@@ -1,5 +1,9 @@
 package com.saechaol.game.myGameEngine.action;
 
+/**
+ * Polls the left stick for data
+ */
+
 import ray.input.action.AbstractInputAction;
 import ray.rage.game.*;
 import net.java.games.input.Component;

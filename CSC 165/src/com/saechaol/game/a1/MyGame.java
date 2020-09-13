@@ -31,7 +31,7 @@ public class MyGame extends VariableFrameRateGame {
 	
 	private InputManager inputManager;
 	private Controller controller;
-	private Action leftStickMoveAction, moveCameraDownAction, moveCameraLeftAction, moveCameraRightAction, moveCameraUpAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
+	private Action leftStickMoveAction, rightStickMoveAction, moveCameraDownAction, moveCameraLeftAction, moveCameraRightAction, moveCameraUpAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString;
@@ -155,6 +155,7 @@ public class MyGame extends VariableFrameRateGame {
 		incrementCounterModifierAction = new IncrementCounterModifierAction(this);
 		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
 		leftStickMoveAction = new LeftStickMoveAction(this, controller);
+		rightStickMoveAction = new RightStickMoveAction(this, controller);
 		
 		// Bind exit action to escape, and gamepad 6 (select)
 		inputManager.associateAction(keyboardName, 
@@ -186,8 +187,15 @@ public class MyGame extends VariableFrameRateGame {
 				incrementCounterModifierAction, 
 				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 	
-		// Poll data from the left stick
-		inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Axis.X, leftStickMoveAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		// Poll data from the control sticks
+		inputManager.associateAction(gamepadName, 
+				net.java.games.input.Component.Identifier.Axis.X, 
+				leftStickMoveAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		inputManager.associateAction(gamepadName, 
+				net.java.games.input.Component.Identifier.Axis.RX, 
+				rightStickMoveAction, 
+				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 	}
 
 	/**
