@@ -8,6 +8,7 @@ package com.saechaol.game.a1;
 
 import java.awt.*;
 import java.io.*;
+import java.util.ArrayList;
 
 import com.saechaol.game.myGameEngine.action.*;
 import com.saechaol.game.myGameEngine.action.a1.*;
@@ -128,9 +129,9 @@ public class MyGame extends VariableFrameRateGame {
 		pointLightNode.attachObject(pointLightOne);
 		
 		// initialize a rotation controller
-		//RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
-		//rotationController.addNode(dolphinNode);
-		//sceneManager.addController(rotationController);
+		RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
+		rotationController.addNode(dolphinNode);
+		sceneManager.addController(rotationController);
 		
 		// manually assign dolphin textures
 		TextureManager textureManager = engine.getTextureManager();
@@ -146,9 +147,8 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	protected void setupInputs() {
 		inputManager = new GenericInputManager();
-		String keyboardName = inputManager.getKeyboardName();
+
 		String gamepadName = inputManager.getFirstGamepadName();
-		System.out.println("Keyboard: " + keyboardName + "\nGamepad: " + gamepadName);
 		controller = inputManager.getControllerByName(gamepadName);
 		
 		// Build action objects for listening to user input
@@ -159,31 +159,36 @@ public class MyGame extends VariableFrameRateGame {
 		rightStickMoveAction = new RightStickMoveAction(this, controller);
 		moveCameraUpAction = new MoveCameraUpAction(this);
 		
-		// Bind exit action to escape, and gamepad 6 (select)
-		inputManager.associateAction(keyboardName, 
-				net.java.games.input.Component.Identifier.Key.ESCAPE, 
-				exitGameAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		
-		// Bind increment counter action to C, and gamepad 2 (X)
-		inputManager.associateAction(keyboardName, 
-				net.java.games.input.Component.Identifier.Key.C, 
-				incrementCounterAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
+		for (Controller keyboards : controllersArrayList) {
+			if (keyboards.getType() == Controller.Type.KEYBOARD) {
+				// Bind exit action to escape, and gamepad 6 (select)
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.ESCAPE, 
+						exitGameAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
+				// Bind increment counter action to C, and gamepad 2 (X)
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.C, 
+						incrementCounterAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
-		
-		// Bind increment counter modifier action to V, and gamepad 3 (Y)
-		inputManager.associateAction(keyboardName, 
-				net.java.games.input.Component.Identifier.Key.V, 
-				incrementCounterModifierAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);		
+				
+				// Bind increment counter modifier action to V, and gamepad 3 (Y)
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.V, 
+						incrementCounterModifierAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);		
 
-		
-		// Bind move camera up action to W, and gamepad left stick Y
-		inputManager.associateAction(keyboardName, 
-				net.java.games.input.Component.Identifier.Key.W, 
-				moveCameraUpAction, 
-				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);	
+				
+				// Bind move camera up action to W, and gamepad left stick Y
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.W, 
+						moveCameraUpAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);	
+			}
+		}
 		
 		if (isGamepadNull(gamepadName)) {
 			System.out.println("No gamepad attached!");
