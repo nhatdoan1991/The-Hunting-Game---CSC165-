@@ -10,12 +10,13 @@ import net.java.games.input.Controller;
 import net.java.games.input.Event;
 import com.saechaol.game.a1.MyGame;
 
-public class MoveCameraBackwardAction extends AbstractInputAction {
+import ray.rage.scene.Camera;
+
+public class MoveCameraUpAction extends AbstractInputAction {
 
 	private MyGame game;
 	private Camera camera;
-	
-	public MoveCameraBackwardAction(MyGame g, Camera c) {
+	public MoveCameraUpAction(MyGame g, Camera c) {
 		game = g;
 		camera = c;
 	}
@@ -23,19 +24,17 @@ public class MoveCameraBackwardAction extends AbstractInputAction {
 	@Override
 	public void performAction(float time, Event e) {
 		if (game.camera.getMode() == 'c') {
-			System.out.println("Camera mode backward");
-			Vector3f vel = camera.getFd();
+			System.out.println("Camera mode up");
+			Vector3f vel = camera.getUp();
 			Vector3f position = camera.getPo();
-			Vector3f pointOne = (Vector3f) Vector3f.createFrom((-0.05f * vel.x()), (-0.05f * vel.y()), (-0.05f * vel.z()));
+			Vector3f pointOne = (Vector3f) Vector3f.createFrom((0.05f * vel.x()), (0.05f * vel.y()), (0.05f * vel.z()));
 			Vector3f pointTwo = (Vector3f) position.add(pointOne);
 			camera.setPo( (Vector3f) Vector3f.createFrom(pointTwo.x(), pointTwo.y(), pointTwo.z()));
 		
 		} else {
-			System.out.println("Node mode backward");
-			game.dolphinNode.moveBackward(-0.05f);
+			System.out.println("Node mode up");
+			game.dolphinNode.moveRight(0.05f);
 		}
 	}
-	
-	
 
 }

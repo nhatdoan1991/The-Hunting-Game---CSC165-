@@ -34,7 +34,7 @@ public class MyGame extends VariableFrameRateGame {
 	public Camera camera;
 	public SceneNode cameraNode, dolphinNode;
 	private Controller controller;
-	private Action leftStickMoveAction, rightStickMoveAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
+	private Action leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString;
@@ -167,6 +167,11 @@ public class MyGame extends VariableFrameRateGame {
 		leftStickMoveAction = new LeftStickMoveAction(this, controller);
 		rightStickMoveAction = new RightStickMoveAction(this, controller);
 		moveCameraForwardAction = new MoveCameraForwardAction(this, camera);
+		moveCameraBackwardAction = new MoveCameraBackwardAction(this, camera);
+		moveCameraLeftAction = new MoveCameraLeftAction(this, camera);
+		moveCameraRightAction = new MoveCameraRightAction(this, camera);
+		moveCameraUpAction = new MoveCameraUpAction(this, camera);
+		moveCameraDownAction = new MoveCameraDownAction(this, camera);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -196,6 +201,31 @@ public class MyGame extends VariableFrameRateGame {
 						net.java.games.input.Component.Identifier.Key.W, 
 						moveCameraForwardAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);	
+				
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.S,
+						moveCameraBackwardAction,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.A,
+						moveCameraLeftAction, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.D, 
+						moveCameraRightAction, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.LSHIFT,
+						moveCameraUpAction,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.C, 
+						moveCameraDownAction,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			}
 		}
 		
