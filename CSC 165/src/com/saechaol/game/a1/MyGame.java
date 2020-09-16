@@ -34,7 +34,7 @@ public class MyGame extends VariableFrameRateGame {
 	public Camera camera;
 	public SceneNode cameraNode, dolphinNode;
 	private Controller controller;
-	private Action leftStickMoveAction, rightStickMoveAction, moveCameraDownAction, moveCameraLeftAction, moveCameraRightAction, moveCameraUpAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
+	private Action leftStickMoveAction, rightStickMoveAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString;
@@ -166,7 +166,7 @@ public class MyGame extends VariableFrameRateGame {
 		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
 		leftStickMoveAction = new LeftStickMoveAction(this, controller);
 		rightStickMoveAction = new RightStickMoveAction(this, controller);
-		moveCameraUpAction = new MoveCameraUpAction(this, camera);
+		moveCameraForwardAction = new MoveCameraForwardAction(this, camera);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -194,7 +194,7 @@ public class MyGame extends VariableFrameRateGame {
 				// Bind move camera up action to W, and gamepad left stick Y
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.W, 
-						moveCameraUpAction, 
+						moveCameraForwardAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);	
 			}
 		}

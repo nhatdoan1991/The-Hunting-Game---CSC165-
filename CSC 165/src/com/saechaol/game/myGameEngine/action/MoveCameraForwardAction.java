@@ -10,12 +10,12 @@ import net.java.games.input.Controller;
 import net.java.games.input.Event;
 import com.saechaol.game.a1.MyGame;
 
-public class MoveCameraUpAction extends AbstractInputAction {
+public class MoveCameraForwardAction extends AbstractInputAction {
 
 	private MyGame game;
 	private Camera camera;
 	
-	public MoveCameraUpAction(MyGame g, Camera c) {
+	public MoveCameraForwardAction(MyGame g, Camera c) {
 		game = g;
 		camera = c;
 	}
