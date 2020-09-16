@@ -31,6 +31,8 @@ import ray.input.action.*;
 public class MyGame extends VariableFrameRateGame {
 	
 	private InputManager inputManager;
+	public Camera camera;
+	public SceneNode cameraNode, dolphinNode;
 	private Controller controller;
 	private Action leftStickMoveAction, rightStickMoveAction, moveCameraDownAction, moveCameraLeftAction, moveCameraRightAction, moveCameraUpAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
@@ -78,18 +80,18 @@ public class MyGame extends VariableFrameRateGame {
 	protected void setupCameras(SceneManager sceneManager, RenderWindow renderWindow) {
 		// initialize the camera and add it to the viewport
 		SceneNode rootNode = sceneManager.getRootSceneNode();
-		Camera cameraOne = sceneManager.createCamera("cameraOne", Projection.PERSPECTIVE);
-		renderWindow.getViewport(0).setCamera(cameraOne);
-		
+		camera = sceneManager.createCamera("mainCamera", Projection.PERSPECTIVE);
+		renderWindow.getViewport(0).setCamera(camera);
+		camera.setMode('c');
 		// initialize the camera frustum and set its position to the origin
-		cameraOne.setRt( (Vector3f) Vector3f.createFrom(1.0f, 0.0f, 0.0f));
-		cameraOne.setUp( (Vector3f) Vector3f.createFrom(0.0f, 1.0f, 0.0f));
-		cameraOne.setFd( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, -1.0f));
-		cameraOne.setPo( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, 0.0f));
+		camera.setRt( (Vector3f) Vector3f.createFrom(1.0f, 0.0f, 0.0f));
+		camera.setUp( (Vector3f) Vector3f.createFrom(0.0f, 1.0f, 0.0f));
+		camera.setFd( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, -1.0f));
+		camera.setPo( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, 0.0f));
 		
 		// initialize the cameraNode, add it to the scene graph and then attach the camera to it
-		SceneNode cameraNode = rootNode.createChildSceneNode(cameraOne.getName() + "Node");
-		cameraNode.attachObject(cameraOne);
+		cameraNode = rootNode.createChildSceneNode(camera.getName() + "Node");
+		cameraNode.attachObject(camera);
 		
 	}
 
@@ -110,9 +112,16 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
 		
 		// initialize the dolphin node and add it to the scene graph
-		SceneNode dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
+		dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
 		dolphinNode.moveBackward(2.0f);
 		dolphinNode.attachObject(dolphinEntity);
+		dolphinNode.attachObject(camera);
+		
+		SceneNode dolphinCamera = dolphinNode.createChildSceneNode("dolphinEntity");
+		dolphinCamera.moveBackward(0.3f);
+		dolphinCamera.moveUp(0.3f);
+		dolphinCamera.moveRight(0.01f);
+		dolphinCamera.attachObject(camera);
 		
 		// initialize the ambient light
 		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
@@ -157,7 +166,7 @@ public class MyGame extends VariableFrameRateGame {
 		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
 		leftStickMoveAction = new LeftStickMoveAction(this, controller);
 		rightStickMoveAction = new RightStickMoveAction(this, controller);
-		moveCameraUpAction = new MoveCameraUpAction(this);
+		moveCameraUpAction = new MoveCameraUpAction(this, camera);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -186,7 +195,7 @@ public class MyGame extends VariableFrameRateGame {
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.W, 
 						moveCameraUpAction, 
-						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);	
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);	
 			}
 		}
 		
@@ -208,10 +217,10 @@ public class MyGame extends VariableFrameRateGame {
 					incrementCounterModifierAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
-			inputManager.associateAction(gamepadName, 
-					net.java.games.input.Component.Identifier.Axis.Y, 
-					moveCameraUpAction, 
-					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+	//		inputManager.associateAction(gamepadName, 
+	//				net.java.games.input.Component.Identifier.Axis.Y, 
+	//				moveCameraUpAction, 
+	//				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 			
 			// Poll data from the control sticks
 			inputManager.associateAction(gamepadName, 
@@ -245,7 +254,8 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	public void moveCameraForward() {
-		
+		Camera c = this.getEngine().getSceneManager().getCamera("cameraOne");
+		System.out.println(c.getPo());
 	}
 	
 	public void incrementCounter(int increment) {
