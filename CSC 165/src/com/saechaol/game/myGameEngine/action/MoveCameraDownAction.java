@@ -33,7 +33,7 @@ public class MoveCameraDownAction extends AbstractInputAction {
 		
 		} else {
 			System.out.println("Node mode down");
-			game.dolphinNode.moveBackward(-speed);
+			game.dolphinNode.moveDown(-speed);
 		}
 	}
 	

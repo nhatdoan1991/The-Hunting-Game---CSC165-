@@ -8,6 +8,8 @@ package com.saechaol.game.a1;
 
 import java.awt.*;
 import java.io.*;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import com.saechaol.game.myGameEngine.action.*;
@@ -37,8 +39,10 @@ public class MyGame extends VariableFrameRateGame {
 	private Action leftStickXAction, leftStickYAction, leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
-	String elapsedTimeString, counterString, displayString;
+	String elapsedTimeString, counterString, displayString, positionString, dolphinString;
 	int elapsedTimeSeconds, counter = 0;
+	private DecimalFormat formatFloat = new DecimalFormat("#.##");
+	public boolean toggleRide = false;
 	
 	public MyGame() {
 		super();
@@ -50,6 +54,7 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("Press 'C' or 'X' to INCREMENT COUNTER");
 		System.out.println("Press 'V' or 'Y' to INCREMENT COUNTER MODIFIER");
 		System.out.println("----------------------------------------------------");
+		formatFloat.setRoundingMode(RoundingMode.DOWN);
 	}
 
 	/**
@@ -174,6 +179,7 @@ public class MyGame extends VariableFrameRateGame {
 		moveCameraDownAction = new MoveCameraDownAction(this, camera);
 		leftStickXAction = new LeftStickXAction(this, camera);
 		leftStickYAction = new LeftStickYAction(this, camera);
+		rideDolphinToggleAction = new RideDolphinToggleAction(this);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -228,6 +234,14 @@ public class MyGame extends VariableFrameRateGame {
 						net.java.games.input.Component.Identifier.Key.C, 
 						moveCameraDownAction,
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				// Bind dolphin positional toggle to spacebar
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.SPACE,
+						rideDolphinToggleAction,
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
+				// Bind rotational movement to arrow keys
 			}
 		}
 		
@@ -289,7 +303,10 @@ public class MyGame extends VariableFrameRateGame {
 		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
 		counterString = Integer.toString(counter);
-		displayString = "Time = " + elapsedTimeString + " Keyboard Counter = " + counterString;
+		displayString = "Time = " + elapsedTimeString;
+		displayString += " | Keyboard Counter = " + counterString;
+		displayString += " | Camera position: (" + formatFloat.format(camera.getPo().x()) + ", " + formatFloat.format(camera.getPo().y()) + ", " + formatFloat.format(camera.getPo().z()) + ")";
+		displayString += " | Dolphin position: (" + formatFloat.format(dolphinNode.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().z()) + ")";
 		renderSystem.setHUD(displayString, 15, 15);
 		inputManager.update(elapsedTime);
 		
