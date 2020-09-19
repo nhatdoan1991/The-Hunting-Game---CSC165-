@@ -16,7 +16,6 @@ public class MoveCameraLeftAction extends AbstractInputAction {
 
 	private MyGame game;
 	private Camera camera;
-	private float elapsedTime;
 	
 	public MoveCameraLeftAction(MyGame g, Camera c) {
 		game = g;

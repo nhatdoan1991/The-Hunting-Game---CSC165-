@@ -34,7 +34,7 @@ public class MyGame extends VariableFrameRateGame {
 	public Camera camera;
 	public SceneNode cameraNode, dolphinNode;
 	private Controller controller;
-	private Action leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
+	private Action leftStickXAction, leftStickYAction, leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString;
@@ -172,6 +172,7 @@ public class MyGame extends VariableFrameRateGame {
 		moveCameraRightAction = new MoveCameraRightAction(this, camera);
 		moveCameraUpAction = new MoveCameraUpAction(this, camera);
 		moveCameraDownAction = new MoveCameraDownAction(this, camera);
+		leftStickXAction = new LeftStickXAction(this, camera);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -255,8 +256,8 @@ public class MyGame extends VariableFrameRateGame {
 			// Poll data from the control sticks
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Axis.X, 
-					leftStickMoveAction, 
-					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+					leftStickXAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Axis.RX, 
