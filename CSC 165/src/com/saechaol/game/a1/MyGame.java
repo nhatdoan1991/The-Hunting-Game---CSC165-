@@ -173,6 +173,7 @@ public class MyGame extends VariableFrameRateGame {
 		moveCameraUpAction = new MoveCameraUpAction(this, camera);
 		moveCameraDownAction = new MoveCameraDownAction(this, camera);
 		leftStickXAction = new LeftStickXAction(this, camera);
+		leftStickYAction = new LeftStickYAction(this, camera);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -248,12 +249,11 @@ public class MyGame extends VariableFrameRateGame {
 					incrementCounterModifierAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
-	//		inputManager.associateAction(gamepadName, 
-	//				net.java.games.input.Component.Identifier.Axis.Y, 
-	//				moveCameraUpAction, 
-	//				InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Axis.Y, 
+					leftStickYAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			
-			// Poll data from the control sticks
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Axis.X, 
 					leftStickXAction, 
