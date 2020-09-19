@@ -40,7 +40,7 @@ public class MyGame extends VariableFrameRateGame {
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString, positionString, dolphinString;
-	int elapsedTimeSeconds, counter = 0;
+	int elapsedTimeSeconds, counter, score = 0;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	public boolean toggleRide = false;
 	
@@ -304,6 +304,7 @@ public class MyGame extends VariableFrameRateGame {
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
 		counterString = Integer.toString(counter);
 		displayString = "Time = " + elapsedTimeString;
+		displayString += " | Score = " + score;
 		displayString += " | Keyboard Counter = " + counterString;
 		displayString += " | Camera position: (" + formatFloat.format(camera.getPo().x()) + ", " + formatFloat.format(camera.getPo().y()) + ", " + formatFloat.format(camera.getPo().z()) + ")";
 		displayString += " | Dolphin position: (" + formatFloat.format(dolphinNode.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().z()) + ")";
