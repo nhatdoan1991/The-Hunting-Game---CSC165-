@@ -87,7 +87,7 @@ public class MyGame extends VariableFrameRateGame {
 		SceneNode rootNode = sceneManager.getRootSceneNode();
 		camera = sceneManager.createCamera("mainCamera", Projection.PERSPECTIVE);
 		renderWindow.getViewport(0).setCamera(camera);
-		camera.setMode('c');
+		camera.setMode('n');
 		// initialize the camera frustum and set its position to the origin
 		camera.setRt( (Vector3f) Vector3f.createFrom(1.0f, 0.0f, 0.0f));
 		camera.setUp( (Vector3f) Vector3f.createFrom(0.0f, 1.0f, 0.0f));
@@ -143,9 +143,9 @@ public class MyGame extends VariableFrameRateGame {
 		pointLightNode.attachObject(pointLightOne);
 		
 		// initialize a rotation controller
-		RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
-		rotationController.addNode(dolphinNode);
-		sceneManager.addController(rotationController);
+	//	RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
+	//	rotationController.addNode(dolphinNode);
+	//	sceneManager.addController(rotationController);
 		
 		// manually assign dolphin textures
 		TextureManager textureManager = engine.getTextureManager();

@@ -35,7 +35,7 @@ public class MoveCameraLeftAction extends AbstractInputAction {
 		
 		} else {
 			System.out.println("Node mode left");
-			game.dolphinNode.moveLeft(-speed);
+			game.dolphinNode.moveLeft(speed);
 		}
 	}
 
