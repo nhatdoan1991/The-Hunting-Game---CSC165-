@@ -249,6 +249,17 @@ public class MyGame extends VariableFrameRateGame {
 					incrementCounterModifierAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
+			// Left and Right shoulder buttons
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._4, 
+					moveCameraUpAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._5, 
+					moveCameraDownAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Axis.Y, 
 					leftStickYAction, 
