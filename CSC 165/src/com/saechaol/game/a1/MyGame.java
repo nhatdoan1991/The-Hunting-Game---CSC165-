@@ -283,11 +283,6 @@ public class MyGame extends VariableFrameRateGame {
 		
 	}
 	
-	public void moveCameraForward() {
-		Camera c = this.getEngine().getSceneManager().getCamera("cameraOne");
-		System.out.println(c.getPo());
-	}
-	
 	public void incrementCounter(int increment) {
 		counter += increment;
 	}
