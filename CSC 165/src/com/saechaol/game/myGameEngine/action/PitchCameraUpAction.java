@@ -19,9 +19,9 @@ public class PitchCameraUpAction extends AbstractInputAction {
 	@Override
 	public void performAction(float time, Event e) {
 		System.out.println("Pitch camera up");
-		Angle rotationAmount = Degreef.createFrom(1.0f);
+		Angle rotationSpeed = Degreef.createFrom(game.getEngine().getElapsedTimeMillis() / 10.0f);
 		if (game.camera.getMode() == 'n') {
-			game.dolphinNode.pitch(rotationAmount);
+			game.dolphinNode.pitch(rotationSpeed);
 		} else {
 			// UVN Vector is left handed
 			Vector3f uVector = game.camera.getRt();
@@ -29,8 +29,8 @@ public class PitchCameraUpAction extends AbstractInputAction {
 			Vector3f nVector = game.camera.getFd();
 			
 			// transform vectors
-			Vector3 vTransform = vVector.rotate(rotationAmount, uVector).normalize();
-			Vector3 nTransform = nVector.rotate(rotationAmount, uVector).normalize();
+			Vector3 vTransform = vVector.rotate(rotationSpeed, uVector).normalize();
+			Vector3 nTransform = nVector.rotate(rotationSpeed, uVector).normalize();
 			
 			game.camera.setFd( (Vector3f) nTransform);
 			game.camera.setUp( (Vector3f) vTransform);

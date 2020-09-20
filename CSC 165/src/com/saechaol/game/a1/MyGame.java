@@ -36,13 +36,14 @@ public class MyGame extends VariableFrameRateGame {
 	public Camera camera;
 	public SceneNode cameraNode, dolphinNode;
 	private Controller controller;
-	private Action leftStickXAction, leftStickYAction, leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
+	private Action invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString, positionString, dolphinString;
 	int elapsedTimeSeconds, counter, score = 0;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	public boolean toggleRide = false;
+	public boolean invertYaw = true;
 	
 	public MyGame() {
 		super();
@@ -184,6 +185,8 @@ public class MyGame extends VariableFrameRateGame {
 		yawCameraRightAction = new YawCameraRightAction(this);
 		pitchCameraUpAction = new PitchCameraUpAction(this);
 		pitchCameraDownAction = new PitchCameraDownAction(this);
+		rightStickXAction = new RightStickXAction(this, camera);
+		invertYawAction = new InvertYawAction(this);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -283,7 +286,7 @@ public class MyGame extends VariableFrameRateGame {
 			
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._3, 
-					incrementCounterModifierAction, 
+					invertYawAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
 			// Left and Right shoulder buttons
@@ -297,6 +300,11 @@ public class MyGame extends VariableFrameRateGame {
 					moveCameraDownAction, 
 					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			
+			inputManager.associateAction(gamepadName,
+					net.java.games.input.Component.Identifier.Button._0,
+					rideDolphinToggleAction,
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Axis.Y, 
 					leftStickYAction, 
@@ -309,8 +317,14 @@ public class MyGame extends VariableFrameRateGame {
 			
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Axis.RX, 
-					rightStickMoveAction, 
-					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+					rightStickXAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Axis.RY, 
+					rightStickYAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
 		}
 	}
 
@@ -334,6 +348,13 @@ public class MyGame extends VariableFrameRateGame {
 		renderSystem.setHUD(displayString, 15, 15);
 		inputManager.update(elapsedTime);
 		
+	}
+	
+	public void invertYaw() {
+		if (invertYaw)
+			invertYaw = false;
+		else
+			invertYaw = true;
 	}
 	
 	public void incrementCounter(int increment) {
