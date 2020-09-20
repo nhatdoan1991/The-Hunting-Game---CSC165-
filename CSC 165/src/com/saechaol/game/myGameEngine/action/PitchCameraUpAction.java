@@ -21,7 +21,7 @@ public class PitchCameraUpAction extends AbstractInputAction {
 		System.out.println("Pitch camera up");
 		Angle rotationAmount = Degreef.createFrom(1.0f);
 		if (game.camera.getMode() == 'n') {
-			game.dolphinNode.yaw(rotationAmount);
+			game.dolphinNode.pitch(rotationAmount);
 		} else {
 			// UVN Vector is left handed
 			Vector3f uVector = game.camera.getRt();

@@ -182,6 +182,8 @@ public class MyGame extends VariableFrameRateGame {
 		rideDolphinToggleAction = new RideDolphinToggleAction(this);
 		yawCameraLeftAction = new YawCameraLeftAction(this);
 		yawCameraRightAction = new YawCameraRightAction(this);
+		pitchCameraUpAction = new PitchCameraUpAction(this);
+		pitchCameraDownAction = new PitchCameraDownAction(this);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
