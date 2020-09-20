@@ -89,9 +89,9 @@ public class MyGame extends VariableFrameRateGame {
 		renderWindow.getViewport(0).setCamera(camera);
 		camera.setMode('n');
 		// initialize the camera frustum and set its position to the origin
-		camera.setRt( (Vector3f) Vector3f.createFrom(1.0f, 0.0f, 0.0f));
+		camera.setRt( (Vector3f) Vector3f.createFrom(-1.0f, 0.0f, 0.0f));
 		camera.setUp( (Vector3f) Vector3f.createFrom(0.0f, 1.0f, 0.0f));
-		camera.setFd( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, -1.0f));
+		camera.setFd( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, 1.0f));
 		camera.setPo( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, 0.0f));
 		
 		// initialize the cameraNode, add it to the scene graph and then attach the camera to it
@@ -180,6 +180,8 @@ public class MyGame extends VariableFrameRateGame {
 		leftStickXAction = new LeftStickXAction(this, camera);
 		leftStickYAction = new LeftStickYAction(this, camera);
 		rideDolphinToggleAction = new RideDolphinToggleAction(this);
+		yawCameraLeftAction = new YawCameraLeftAction(this);
+		yawCameraRightAction = new YawCameraRightAction(this);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -242,6 +244,25 @@ public class MyGame extends VariableFrameRateGame {
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 				
 				// Bind rotational movement to arrow keys
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.LEFT,
+						yawCameraLeftAction,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.RIGHT,
+						yawCameraRightAction,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.UP,
+						pitchCameraUpAction,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.DOWN,
+						pitchCameraDownAction,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			}
 		}
 		
