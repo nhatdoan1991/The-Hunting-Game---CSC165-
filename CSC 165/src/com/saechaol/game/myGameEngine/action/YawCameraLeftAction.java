@@ -18,11 +18,11 @@ public class YawCameraLeftAction extends AbstractInputAction {
 	
 	@Override
 	public void performAction(float time, Event e) {
+		System.out.println("Yawing camera left");
 		Angle rotationAmount = Degreef.createFrom(1.0f);
 		if (game.camera.getMode() == 'n') {
 			game.dolphinNode.yaw(rotationAmount);
 		} else {
-			System.out.println("Yawing camera left");
 			// UVN Vector is left handed
 			Vector3f uVector = game.camera.getRt();
 			Vector3f vVector = game.camera.getUp();
