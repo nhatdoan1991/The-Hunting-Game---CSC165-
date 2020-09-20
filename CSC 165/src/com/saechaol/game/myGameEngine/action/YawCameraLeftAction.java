@@ -29,8 +29,8 @@ public class YawCameraLeftAction extends AbstractInputAction {
 			Vector3f nVector = game.camera.getFd();
 			
 			// transform vectors
-			Vector3 uTransform = (uVector.rotate(rotationAmount, vVector)).normalize();
-			Vector3 nTransform = (nVector.rotate(rotationAmount, vVector)).normalize();
+			Vector3 uTransform = uVector.rotate(rotationAmount, vVector).normalize();
+			Vector3 nTransform = nVector.rotate(rotationAmount, vVector).normalize();
 			
 			game.camera.setFd( (Vector3f) nTransform);
 			game.camera.setRt( (Vector3f) uTransform);

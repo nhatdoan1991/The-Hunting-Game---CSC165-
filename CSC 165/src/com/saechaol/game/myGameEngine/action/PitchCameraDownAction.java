@@ -29,8 +29,8 @@ public class PitchCameraDownAction extends AbstractInputAction {
 			Vector3f nVector = game.camera.getFd();
 			
 			// transform vectors
-			Vector3 vTransform = (vVector.rotate(rotationAmount, uVector)).normalize();
-			Vector3 nTransform = (nVector.rotate(rotationAmount, uVector)).normalize();
+			Vector3 vTransform = vVector.rotate(rotationAmount, uVector).normalize();
+			Vector3 nTransform = nVector.rotate(rotationAmount, uVector).normalize();
 			
 			game.camera.setFd( (Vector3f) nTransform);
 			game.camera.setUp( (Vector3f) vTransform);
