@@ -186,6 +186,7 @@ public class MyGame extends VariableFrameRateGame {
 		pitchCameraUpAction = new PitchCameraUpAction(this);
 		pitchCameraDownAction = new PitchCameraDownAction(this);
 		rightStickXAction = new RightStickXAction(this, camera);
+		rightStickYAction = new RightStickYAction(this, camera);
 		invertYawAction = new InvertYawAction(this);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
