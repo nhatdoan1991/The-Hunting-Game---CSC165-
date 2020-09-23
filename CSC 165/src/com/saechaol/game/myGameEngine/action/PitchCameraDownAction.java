@@ -21,6 +21,7 @@ public class PitchCameraDownAction extends AbstractInputAction {
 		System.out.println("Pitch camera Down");
 		Angle rotationSpeed = Degreef.createFrom(-game.getEngine().getElapsedTimeMillis() / 10.0f);
 		if (game.camera.getMode() == 'n') {
+			rotationSpeed = rotationSpeed.mult(-1.0f);
 			game.dolphinNode.pitch(rotationSpeed);
 		} else {
 			// UVN Vector is left handed
