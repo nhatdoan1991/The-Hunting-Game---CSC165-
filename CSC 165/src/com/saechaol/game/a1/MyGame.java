@@ -439,12 +439,19 @@ public class MyGame extends VariableFrameRateGame {
 		
 	}
 	
+	/**
+	 * Ensures that the player's position is the same as the dolphin's when riding the dolphin
+	 */
 	private void synchronizePlayerDolphinPosition() {
 		if (!toggleRide) {
 			camera.setPo((Vector3f) Vector3f.createFrom(dolphinNode.getLocalPosition().x(), dolphinNode.getLocalPosition().y(), dolphinNode.getLocalPosition().z()));
 		}
 	}
 	
+	/**
+	 * Places the player back on the dolphin if they stray 20 units too far in any direction
+	 * The boundary is spherical rather than a bounded X box
+	 */
 	private void checkPlayerDistanceToDolphin() {
 		Vector3f playerPosition = (Vector3f) camera.getPo();
 		Vector3f dolphinPosition = (Vector3f) dolphinNode.getLocalPosition();
