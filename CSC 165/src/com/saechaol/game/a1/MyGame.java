@@ -434,7 +434,24 @@ public class MyGame extends VariableFrameRateGame {
 		displayString += " | Dolphin position: (" + formatFloat.format(dolphinNode.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().z()) + ")";
 		renderSystem.setHUD(displayString, 15, 15);
 		inputManager.update(elapsedTime);
+		synchronizePlayerDolphinPosition();
+		checkPlayerDistanceToDolphin();
 		
+	}
+	
+	private void synchronizePlayerDolphinPosition() {
+		if (!toggleRide) {
+			camera.setPo((Vector3f) Vector3f.createFrom(dolphinNode.getLocalPosition().x(), dolphinNode.getLocalPosition().y(), dolphinNode.getLocalPosition().z()));
+		}
+	}
+	
+	private void checkPlayerDistanceToDolphin() {
+		Vector3f playerPosition = (Vector3f) camera.getPo();
+		Vector3f dolphinPosition = (Vector3f) dolphinNode.getLocalPosition();
+		if (Math.abs(playerPosition.x() - dolphinPosition.x()) > 20.0f || Math.abs(playerPosition.y() - dolphinPosition.y()) > 20.0f || Math.abs(playerPosition.z() - dolphinPosition.z()) > 20.0f) {
+			System.out.println("You're too far!");
+			((RideDolphinToggleAction) rideDolphinToggleAction).manualAction();
+		}
 	}
 	
 	/**

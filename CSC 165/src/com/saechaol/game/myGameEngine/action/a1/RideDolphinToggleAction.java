@@ -17,6 +17,19 @@ public class RideDolphinToggleAction extends AbstractInputAction {
 		game = g;
 	}
 	
+	public void manualAction() {
+		if (game.toggleRide) {
+			System.out.println("Dolphin Camera On");
+			game.toggleRide = false;
+			game.camera.setMode('n');
+		} else {
+			System.out.println("Dolphin Camera Off");
+			game.toggleRide = true;
+			game.camera.setMode('c');
+			dismountDolphin();
+		}
+	}
+	
 	@Override
 	public void performAction(float time, Event e) {
 		if (game.toggleRide) {
