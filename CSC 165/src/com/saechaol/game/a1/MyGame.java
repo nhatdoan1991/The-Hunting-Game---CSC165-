@@ -435,7 +435,7 @@ public class MyGame extends VariableFrameRateGame {
 		renderSystem.setHUD(displayString, 15, 15);
 		inputManager.update(elapsedTime);
 		synchronizePlayerDolphinPosition();
-		checkPlayerDistanceToDolphin();
+		checkPlayerDistanceToDolphin(10.0f);
 		
 	}
 	
@@ -449,14 +449,15 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	/**
-	 * Places the player back on the dolphin if they stray 20 units too far in any direction
+	 * Places the player back on the dolphin if they stray 10 units too far in any direction
 	 * The boundary is spherical rather than a bounded X box
 	 */
-	private void checkPlayerDistanceToDolphin() {
+	private void checkPlayerDistanceToDolphin(float radius) {
 		Vector3f playerPosition = (Vector3f) camera.getPo();
 		Vector3f dolphinPosition = (Vector3f) dolphinNode.getLocalPosition();
-		if (Math.abs(playerPosition.x() - dolphinPosition.x()) > 20.0f || Math.abs(playerPosition.y() - dolphinPosition.y()) > 20.0f || Math.abs(playerPosition.z() - dolphinPosition.z()) > 20.0f) {
-			System.out.println("You're too far!");
+		
+		if ((Math.pow((playerPosition.x() - dolphinPosition.x()), 2) + Math.pow((playerPosition.y() - dolphinPosition.y()), 2) + Math.pow((playerPosition.z() - dolphinPosition.z()), 2)) > Math.pow(radius, 2.0f)) {
+			System.out.println("You're too far! Position: (" + playerPosition.x() + ", " + playerPosition.y() + ", " + playerPosition.z() + ")");
 			((RideDolphinToggleAction) rideDolphinToggleAction).manualAction();
 		}
 	}
