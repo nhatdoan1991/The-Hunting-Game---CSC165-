@@ -128,7 +128,11 @@ public class MyGame extends VariableFrameRateGame {
 		ManualObject manualPyramid = ManualPyramidObject.makePyramid(engine, sceneManager);
 		manualPyramidNode = sceneManager.getRootSceneNode().createChildSceneNode("PyramidNode");
 		manualPyramidNode.scale(0.75f, 0.75f, 0.75f);
+		manualPyramidNode.setLocalPosition(10.0f, 10.0f, -10.0f);
 		manualPyramidNode.attachObject(manualPyramid);
+		
+		// initialize world axes
+		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
 		
 		// initialize planets
 		Entity[] planetEntities = new Entity[3];
