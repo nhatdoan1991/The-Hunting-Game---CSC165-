@@ -459,8 +459,13 @@ public class MyGame extends VariableFrameRateGame {
 		if ((Math.pow((playerPosition.x() - dolphinPosition.x()), 2) + Math.pow((playerPosition.y() - dolphinPosition.y()), 2) + Math.pow((playerPosition.z() - dolphinPosition.z()), 2)) > Math.pow(radius, 2.0f)) {
 			System.out.println("You're too far! Position: (" + playerPosition.x() + ", " + playerPosition.y() + ", " + playerPosition.z() + ")");
 			((RideDolphinToggleAction) rideDolphinToggleAction).manualAction();
+			incrementScore();
 		}
 	}
+	
+	/**
+	 * 
+	 */
 	
 	/**
 	 * Inverts Yaw rotation for those who like inverted controls
@@ -474,6 +479,14 @@ public class MyGame extends VariableFrameRateGame {
 	
 	public void incrementCounter(int increment) {
 		counter += increment;
+	}
+	
+	/**
+	 * Increments score
+	 */
+	private void incrementScore() {
+		System.out.println("Score incremented!");
+		score++;
 	}
 	
 	/**
