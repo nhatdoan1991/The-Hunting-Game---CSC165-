@@ -42,6 +42,7 @@ public class RightStickYAction extends AbstractInputAction {
 			} else {
 				System.out.println("Node mode");
 				System.out.println("Right stick Y moved: " + e.getValue());
+				rotationSpeed = rotationSpeed.mult(-1.0f);
 				game.dolphinNode.pitch(rotationSpeed);
 			}
 		}
