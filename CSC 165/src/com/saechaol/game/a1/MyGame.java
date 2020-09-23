@@ -17,6 +17,7 @@ import java.util.Random;
 
 import com.saechaol.game.myGameEngine.action.*;
 import com.saechaol.game.myGameEngine.action.a1.*;
+import com.saechaol.game.myGameEngine.object.manual.*;
 
 import net.java.games.input.Controller;
 import ray.rage.*;
@@ -124,7 +125,7 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
 		
 		// initialize manual pyramid object
-		ManualObject manualPyramid = makePyramid(engine, sceneManager);
+		ManualObject manualPyramid = ManualPyramidObject.makePyramid(engine, sceneManager);
 		manualPyramidNode = sceneManager.getRootSceneNode().createChildSceneNode("PyramidNode");
 		manualPyramidNode.scale(0.75f, 0.75f, 0.75f);
 		manualPyramidNode.attachObject(manualPyramid);
@@ -440,119 +441,6 @@ public class MyGame extends VariableFrameRateGame {
 			invertYaw = false;
 		else
 			invertYaw = true;
-	}
-
-	protected ManualObject makePyramid(Engine engine, SceneManager sceneManager) throws IOException {
-		ManualObject pyramid = sceneManager.createManualObject("Pyramid");
-		
-		ManualObjectSection pyramidSection = pyramid.createManualSection("PyramidSection");
-		pyramid.setGpuShaderProgram(sceneManager.getRenderSystem().getGpuShaderProgram(GpuShaderProgram.Type.RENDERING));
-		
-		float[] vertices = {
-			-1.0f, -1.0f, 1.0f, 
-			1.0f, -1.0f, 1.0f,
-			0.0f, 1.0f, 0.0f,	// front
-			
-			1.0f, -1.0f, 1.0f,
-			1.0f, -1.0f, -1.0f,
-			0.0f, 1.0f, 0.0f,	// right
-			
-			1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, -1.0f,
-			0.0f, 1.0f, 0.0f,	// back
-			
-			-1.0f, -1.0f, -1.0f,
-			-1.0f, -1.0f, 1.0f,
-			0.0f, 1.0f, 0.0f,	// left
-			
-			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, 1.0f,
-			-1.0f, -1.0f, 1.0f,// LF
-			
-			1.0f, -1.0f, 1.0f,
-			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f	// RR
-		};
-		
-		float[] textureCoordinates = {
-			0.0f, 0.0f, 
-			1.0f, 0.0f, 
-			0.5f, 1.0f,	// front	
-			
-			0.0f, 0.0f, 
-			1.0f, 0.0f, 
-			0.5f, 1.0f,	// right
-			
-			0.0f, 0.0f, 
-			1.0f, 0.0f, 
-			0.5f, 1.0f,	// back
-			
-			0.0f, 0.0f, 
-			1.0f, 0.0f, 
-			0.5f, 1.0f,	// left
-			
-			0.0f, 0.0f, 
-			1.0f, 1.0f, 
-			0.0f, 1.0f, // LF
-			
-			1.0f, 1.0f, 
-			0.0f, 0.0f, 
-			1.0f, 0.0f	// RR
-		};
-		
-		float[] normals = {
-			0.0f, 1.0f, 1.0f, 
-			0.0f, 1.0f, 1.0f, 
-			0.0f, 1.0f, 1.0f,	// front
-			
-			1.0f, 1.0f, 0.0f,
-			1.0f, 1.0f, 0.0f,
-			1.0f, 1.0f, 0.0f,	// right
-			
-			0.0f, 1.0f, -1.0f, 
-			0.0f, 1.0f, -1.0f,
-			0.0f, 1.0f, -1,0f,	// back
-			
-			-1.0f, 1.0f, 0.0f,
-			-1.0f, 1.0f, 0.0f,
-			-1.0f, 1.0f, 0.0f,	// left
-			
-			0.0f, -1.0f, 0.0f, 
-			0.0f, -1.0f, 0.0f,
-			0.0f, -1.0f, 0.0f,	// LF
-			
-			0.0f, -1.0f, 0.0f,
-			0.0f, -1.0f, 0.0f,
-			0.0f, -1.0f, 0.0f	// RR
-		};
-		
-		int[] indices = {
-				0, 1, 2, 3, 4, 5,
-				6, 7, 8, 9, 10, 11,
-				12, 13, 14, 15, 16, 17
-		};
-		
-		FloatBuffer vertexBuffer = BufferUtil.directFloatBuffer(vertices);
-		FloatBuffer textureBuffer = BufferUtil.directFloatBuffer(textureCoordinates);
-		FloatBuffer normalBuffer = BufferUtil.directFloatBuffer(normals);
-		IntBuffer indexBuffer = BufferUtil.directIntBuffer(indices);
-		
-		pyramidSection.setVertexBuffer(vertexBuffer);
-		pyramidSection.setTextureCoordsBuffer(textureBuffer);
-		pyramidSection.setNormalsBuffer(normalBuffer);
-		pyramidSection.setIndexBuffer(indexBuffer);
-		
-		Texture pyramidTexture = engine.getTextureManager().getAssetByPath("chain-fence.jpeg");
-		TextureState pyramidTextureState = (TextureState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
-		pyramidTextureState.setTexture(pyramidTexture);
-		
-		FrontFaceState pyramidFrontFaceState = (FrontFaceState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.FRONT_FACE);
-		
-		pyramid.setDataSource(DataSource.INDEX_BUFFER);
-		pyramid.setRenderState(pyramidTextureState);
-		pyramid.setRenderState(pyramidFrontFaceState);
-		
-		return pyramid;
 	}
 	
 	public void incrementCounter(int increment) {
