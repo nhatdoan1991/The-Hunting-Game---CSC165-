@@ -33,7 +33,7 @@ public class MoveCameraForwardAction extends AbstractInputAction {
 		
 		} else {
 			System.out.println("Node mode forward");
-			game.dolphinNode.moveForward(speed);
+			game.dolphinNode.moveForward(speed * 1.5f);
 		}
 	}
 	
