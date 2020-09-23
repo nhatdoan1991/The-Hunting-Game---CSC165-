@@ -9,6 +9,8 @@ package com.saechaol.game.a1;
 import java.awt.*;
 import java.io.*;
 import java.math.RoundingMode;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Random;
@@ -24,8 +26,10 @@ import ray.rage.rendersystem.Renderable.*;
 import ray.rage.scene.*;
 import ray.rage.scene.Camera.Frustum.*;
 import ray.rage.scene.controllers.*;
+import ray.rage.util.BufferUtil;
 import ray.rml.*;
 import ray.rage.rendersystem.gl4.GL4RenderSystem;
+import ray.rage.rendersystem.shader.GpuShaderProgram;
 import ray.rage.rendersystem.states.*;
 import ray.rage.asset.texture.*;
 import ray.input.*;
@@ -36,7 +40,7 @@ public class MyGame extends VariableFrameRateGame {
 	private InputManager inputManager;
 	private static final Random RAND = new Random();
 	public Camera camera;
-	public SceneNode cameraNode, dolphinNode, planetZeroNode, planetOneNode, planetTwoNode;
+	public SceneNode cameraNode, dolphinNode, manualPyramidNode, planetZeroNode, planetOneNode, planetTwoNode;
 	private Controller controller;
 	private Action invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
@@ -118,6 +122,12 @@ public class MyGame extends VariableFrameRateGame {
 		// initialize the dolphin entity
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
+		
+		// initialize manual pyramid object
+		ManualObject manualPyramid = makePyramid(engine, sceneManager);
+		manualPyramidNode = sceneManager.getRootSceneNode().createChildSceneNode("PyramidNode");
+		manualPyramidNode.scale(0.75f, 0.75f, 0.75f);
+		manualPyramidNode.attachObject(manualPyramid);
 		
 		// initialize planets
 		Entity[] planetEntities = new Entity[3];
@@ -422,17 +432,138 @@ public class MyGame extends VariableFrameRateGame {
 		
 	}
 	
+	/**
+	 * Inverts Yaw rotation for those who like inverted controls
+	 */
 	public void invertYaw() {
 		if (invertYaw)
 			invertYaw = false;
 		else
 			invertYaw = true;
 	}
+
+	protected ManualObject makePyramid(Engine engine, SceneManager sceneManager) throws IOException {
+		ManualObject pyramid = sceneManager.createManualObject("Pyramid");
+		
+		ManualObjectSection pyramidSection = pyramid.createManualSection("PyramidSection");
+		pyramid.setGpuShaderProgram(sceneManager.getRenderSystem().getGpuShaderProgram(GpuShaderProgram.Type.RENDERING));
+		
+		float[] vertices = {
+			-1.0f, -1.0f, 1.0f, 
+			1.0f, -1.0f, 1.0f,
+			0.0f, 1.0f, 0.0f,	// front
+			
+			1.0f, -1.0f, 1.0f,
+			1.0f, -1.0f, -1.0f,
+			0.0f, 1.0f, 0.0f,	// right
+			
+			1.0f, -1.0f, -1.0f,
+			-1.0f, -1.0f, -1.0f,
+			0.0f, 1.0f, 0.0f,	// back
+			
+			-1.0f, -1.0f, -1.0f,
+			-1.0f, -1.0f, 1.0f,
+			0.0f, 1.0f, 0.0f,	// left
+			
+			-1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, 1.0f,
+			-1.0f, -1.0f, 1.0f,// LF
+			
+			1.0f, -1.0f, 1.0f,
+			-1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, -1.0f	// RR
+		};
+		
+		float[] textureCoordinates = {
+			0.0f, 0.0f, 
+			1.0f, 0.0f, 
+			0.5f, 1.0f,	// front	
+			
+			0.0f, 0.0f, 
+			1.0f, 0.0f, 
+			0.5f, 1.0f,	// right
+			
+			0.0f, 0.0f, 
+			1.0f, 0.0f, 
+			0.5f, 1.0f,	// back
+			
+			0.0f, 0.0f, 
+			1.0f, 0.0f, 
+			0.5f, 1.0f,	// left
+			
+			0.0f, 0.0f, 
+			1.0f, 1.0f, 
+			0.0f, 1.0f, // LF
+			
+			1.0f, 1.0f, 
+			0.0f, 0.0f, 
+			1.0f, 0.0f	// RR
+		};
+		
+		float[] normals = {
+			0.0f, 1.0f, 1.0f, 
+			0.0f, 1.0f, 1.0f, 
+			0.0f, 1.0f, 1.0f,	// front
+			
+			1.0f, 1.0f, 0.0f,
+			1.0f, 1.0f, 0.0f,
+			1.0f, 1.0f, 0.0f,	// right
+			
+			0.0f, 1.0f, -1.0f, 
+			0.0f, 1.0f, -1.0f,
+			0.0f, 1.0f, -1,0f,	// back
+			
+			-1.0f, 1.0f, 0.0f,
+			-1.0f, 1.0f, 0.0f,
+			-1.0f, 1.0f, 0.0f,	// left
+			
+			0.0f, -1.0f, 0.0f, 
+			0.0f, -1.0f, 0.0f,
+			0.0f, -1.0f, 0.0f,	// LF
+			
+			0.0f, -1.0f, 0.0f,
+			0.0f, -1.0f, 0.0f,
+			0.0f, -1.0f, 0.0f	// RR
+		};
+		
+		int[] indices = {
+				0, 1, 2, 3, 4, 5,
+				6, 7, 8, 9, 10, 11,
+				12, 13, 14, 15, 16, 17
+		};
+		
+		FloatBuffer vertexBuffer = BufferUtil.directFloatBuffer(vertices);
+		FloatBuffer textureBuffer = BufferUtil.directFloatBuffer(textureCoordinates);
+		FloatBuffer normalBuffer = BufferUtil.directFloatBuffer(normals);
+		IntBuffer indexBuffer = BufferUtil.directIntBuffer(indices);
+		
+		pyramidSection.setVertexBuffer(vertexBuffer);
+		pyramidSection.setTextureCoordsBuffer(textureBuffer);
+		pyramidSection.setNormalsBuffer(normalBuffer);
+		pyramidSection.setIndexBuffer(indexBuffer);
+		
+		Texture pyramidTexture = engine.getTextureManager().getAssetByPath("chain-fence.jpeg");
+		TextureState pyramidTextureState = (TextureState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
+		pyramidTextureState.setTexture(pyramidTexture);
+		
+		FrontFaceState pyramidFrontFaceState = (FrontFaceState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.FRONT_FACE);
+		
+		pyramid.setDataSource(DataSource.INDEX_BUFFER);
+		pyramid.setRenderState(pyramidTextureState);
+		pyramid.setRenderState(pyramidFrontFaceState);
+		
+		return pyramid;
+	}
 	
 	public void incrementCounter(int increment) {
 		counter += increment;
 	}
 	
+	/**
+	 * Checks if there is a functioning gamepad attached to the system
+	 * @param gamepadName
+	 * @return
+	 */
 	private boolean isGamepadNull(String gamepadName) {
 		if (gamepadName == null) {
 			return true;
