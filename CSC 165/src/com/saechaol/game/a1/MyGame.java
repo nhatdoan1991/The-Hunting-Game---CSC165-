@@ -13,6 +13,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 import com.saechaol.game.myGameEngine.action.*;
@@ -51,6 +52,7 @@ public class MyGame extends VariableFrameRateGame {
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	public boolean toggleRide = false;
 	public boolean invertYaw = true;
+	public HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
 	
 	public MyGame() {
 		super();
@@ -168,14 +170,17 @@ public class MyGame extends VariableFrameRateGame {
 		planetZeroNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[0].getName() + "Node");
 		planetZeroNode.setLocalPosition(randomPlanetCoordinates[0][0], randomPlanetCoordinates[0][1], randomPlanetCoordinates[0][2]);
 		planetZeroNode.attachObject(planetEntities[0]);
+		activePlanets.put(planetZeroNode, true);
 		
 		planetOneNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[1].getName() + "Node");
 		planetOneNode.setLocalPosition(randomPlanetCoordinates[1][0], randomPlanetCoordinates[1][1], randomPlanetCoordinates[1][2]);
 		planetOneNode.attachObject(planetEntities[1]);
+		activePlanets.put(planetOneNode, true);
 		
 		planetTwoNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[2].getName() + "Node");
 		planetTwoNode.setLocalPosition(randomPlanetCoordinates[2][0], randomPlanetCoordinates[2][1], randomPlanetCoordinates[2][2]);
 		planetTwoNode.attachObject(planetEntities[2]);
+		activePlanets.put(planetTwoNode, true);
 		
 		// initialize the dolphin node and add it to the scene graph
 		dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
@@ -436,7 +441,7 @@ public class MyGame extends VariableFrameRateGame {
 		inputManager.update(elapsedTime);
 		synchronizePlayerDolphinPosition();
 		checkPlayerDistanceToDolphin(10.0f);
-		
+		planetCollisionDetection();
 	}
 	
 	/**
@@ -459,13 +464,25 @@ public class MyGame extends VariableFrameRateGame {
 		if ((Math.pow((playerPosition.x() - dolphinPosition.x()), 2) + Math.pow((playerPosition.y() - dolphinPosition.y()), 2) + Math.pow((playerPosition.z() - dolphinPosition.z()), 2)) > Math.pow(radius, 2.0f)) {
 			System.out.println("You're too far! Position: (" + playerPosition.x() + ", " + playerPosition.y() + ", " + playerPosition.z() + ")");
 			((RideDolphinToggleAction) rideDolphinToggleAction).manualAction();
-			incrementScore();
 		}
 	}
 	
 	/**
-	 * 
+	 * Detects planet collision detection
 	 */
+	private void planetCollisionDetection() {
+		activePlanets.forEach((k, v) -> {
+			if (v) {
+				Vector3f playerPosition = (Vector3f) camera.getPo();
+				Vector3f planetPosition = (Vector3f) k.getLocalPosition();
+				if (toggleRide && (Math.pow((playerPosition.x() - planetPosition.x()), 2) + Math.pow((playerPosition.y() - planetPosition.y()), 2) + Math.pow((playerPosition.z() - planetPosition.z()), 2)) < Math.pow((2.15f), 2.0f)) {
+					System.out.println("Score!");
+					incrementScore();
+					activePlanets.put(k, false);
+				}
+			}
+		});
+	}
 	
 	/**
 	 * Inverts Yaw rotation for those who like inverted controls
