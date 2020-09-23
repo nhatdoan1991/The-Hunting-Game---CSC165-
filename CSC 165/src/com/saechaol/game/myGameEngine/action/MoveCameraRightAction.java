@@ -34,7 +34,7 @@ public class MoveCameraRightAction extends AbstractInputAction {
 		
 		} else {
 			System.out.println("Node mode right");
-			game.dolphinNode.moveRight(speed * 1.5f);
+			game.dolphinNode.moveRight(speed * -1.5f);
 		}
 	}
 
