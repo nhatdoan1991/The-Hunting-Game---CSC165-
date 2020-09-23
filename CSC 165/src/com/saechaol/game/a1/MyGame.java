@@ -11,6 +11,7 @@ import java.io.*;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Random;
 
 import com.saechaol.game.myGameEngine.action.*;
 import com.saechaol.game.myGameEngine.action.a1.*;
@@ -33,8 +34,9 @@ import ray.input.action.*;
 public class MyGame extends VariableFrameRateGame {
 	
 	private InputManager inputManager;
+	private static final Random RAND = new Random();
 	public Camera camera;
-	public SceneNode cameraNode, dolphinNode;
+	public SceneNode cameraNode, dolphinNode, planetZeroNode, planetOneNode, planetTwoNode;
 	private Controller controller;
 	private Action invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
@@ -117,6 +119,49 @@ public class MyGame extends VariableFrameRateGame {
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
 		
+		// initialize planets
+		Entity[] planetEntities = new Entity[3];
+		for (int i = 0; i < planetEntities.length; i++) { 
+			planetEntities[i] = sceneManager.createEntity("planet" + i, "earth.obj");
+			planetEntities[i].setPrimitive(Primitive.TRIANGLES);
+		}
+		
+		// randomized coordinates from <-20, -20, -20> to <20, 20, 20>
+		float[][] randomPlanetCoordinates = {
+			{ (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f) },
+			{ (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f) },
+			{ (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f) }
+		};
+		
+		for (int i = 0; i < randomPlanetCoordinates.length; i++) {
+			for (int j = 0; j < randomPlanetCoordinates[i].length; j++) {
+				float dec = RAND.nextFloat();
+				// negate this value
+				if (RAND.nextBoolean()) {
+					randomPlanetCoordinates[i][j] *= -1.0f;
+				}
+				
+				// add or subtract the decimal value
+				if (RAND.nextBoolean()) {
+					randomPlanetCoordinates[i][j] += dec;
+				} else {
+					randomPlanetCoordinates[i][j] -= dec;
+				}
+			}
+		}
+		
+		planetZeroNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[0].getName() + "Node");
+		planetZeroNode.setLocalPosition(randomPlanetCoordinates[0][0], randomPlanetCoordinates[0][1], randomPlanetCoordinates[0][2]);
+		planetZeroNode.attachObject(planetEntities[0]);
+		
+		planetOneNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[1].getName() + "Node");
+		planetOneNode.setLocalPosition(randomPlanetCoordinates[1][0], randomPlanetCoordinates[1][1], randomPlanetCoordinates[1][2]);
+		planetOneNode.attachObject(planetEntities[1]);
+		
+		planetTwoNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[2].getName() + "Node");
+		planetTwoNode.setLocalPosition(randomPlanetCoordinates[2][0], randomPlanetCoordinates[2][1], randomPlanetCoordinates[2][2]);
+		planetTwoNode.attachObject(planetEntities[2]);
+		
 		// initialize the dolphin node and add it to the scene graph
 		dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
 		dolphinNode.moveBackward(2.0f);
@@ -144,17 +189,43 @@ public class MyGame extends VariableFrameRateGame {
 		pointLightNode.attachObject(pointLightOne);
 		
 		// initialize a rotation controller
-	//	RotationController rotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
-	//	rotationController.addNode(dolphinNode);
-	//	sceneManager.addController(rotationController);
+		RotationController earthRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
+		RotationController nightEarthRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.05f);
+		RotationController blueWorldRotationController = new RotationController(Vector3f.createUnitVectorZ(), 0.32f);
 		
-		// manually assign dolphin textures
+		earthRotationController.addNode(planetZeroNode);
+		nightEarthRotationController.addNode(planetOneNode);
+		blueWorldRotationController.addNode(planetTwoNode);
+		
+		sceneManager.addController(earthRotationController);
+		sceneManager.addController(nightEarthRotationController);
+		sceneManager.addController(blueWorldRotationController);
+		
+		// manually assign textures textures
 		TextureManager textureManager = engine.getTextureManager();
 		Texture redTexture = textureManager.getAssetByPath("red.jpeg");
+		Texture earthTexture = textureManager.getAssetByPath("earth-day.jpeg");
+		Texture nightEarthTexture = textureManager.getAssetByPath("earth-night.jpeg");
+		Texture blueWorld = textureManager.getAssetByPath("blue.jpeg");
 		RenderSystem renderSystem = sceneManager.getRenderSystem();
-		TextureState state = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		state.setTexture(redTexture);
-		dolphinEntity.setRenderState(state);
+		
+		// initialize texture states
+		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		TextureState earthTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		TextureState nightEarthTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		TextureState blueWorldTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		
+		dolphinTextureState.setTexture(redTexture);
+		dolphinEntity.setRenderState(dolphinTextureState);
+		
+		earthTextureState.setTexture(earthTexture);
+		planetEntities[0].setRenderState(earthTextureState);
+
+		nightEarthTextureState.setTexture(nightEarthTexture);
+		planetEntities[1].setRenderState(nightEarthTextureState);
+		
+		blueWorldTextureState.setTexture(blueWorld);
+		planetEntities[2].setRenderState(blueWorldTextureState);
 	}
 	
 	/**
