@@ -33,10 +33,10 @@ public class LeftStickYAction extends AbstractInputAction {
 				System.out.println("Node mode");
 				if (speed > 0) {
 					System.out.println("Left stick Y moved: " + e.getValue());
-					game.dolphinNode.moveRight(speed);
+					game.dolphinNode.moveForward(speed * 1.5f);
 				} else if (speed < 0) {
 					System.out.println("Left stick Y moved: " + e.getValue());
-					game.dolphinNode.moveLeft(speed);
+					game.dolphinNode.moveBackward(-speed * 1.5f);
 				}
 			}
 		}
