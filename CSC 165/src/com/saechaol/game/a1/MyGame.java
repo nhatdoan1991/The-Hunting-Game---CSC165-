@@ -12,6 +12,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Random;
 
 import com.saechaol.game.myGameEngine.action.*;
@@ -43,12 +44,12 @@ public class MyGame extends VariableFrameRateGame {
 	private Action invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
-	String elapsedTimeString, counterString, displayString, positionString, dolphinString;
-	int elapsedTimeSeconds, counter, score = 0;
+	String elapsedTimeString, livesString, displayString, positionString, dolphinString;
+	int elapsedTimeSeconds, lives = 3, score = 0;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
-	public boolean toggleRide = false;
-	public boolean invertYaw = true;
+	public boolean toggleRide = false, invertYaw = true, alive = true;
 	public HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
+	public ArrayList<SceneNode> activeMoons = new ArrayList<SceneNode>();
 	
 	public MyGame() {
 		super();
@@ -128,17 +129,22 @@ public class MyGame extends VariableFrameRateGame {
 		
 		// initialize planets
 		Entity[] planetEntities = new Entity[4];
+		Entity[] moonEntities = new Entity[planetEntities.length];
+		SceneNode[] moonNodes = new SceneNode[planetEntities.length];
 		for (int i = 0; i < planetEntities.length; i++) { 
 			planetEntities[i] = sceneManager.createEntity("planet" + i, "earth.obj");
+			moonEntities[i] = sceneManager.createEntity("moon" + i, "sphere.obj");
 			planetEntities[i].setPrimitive(Primitive.TRIANGLES);
+			moonEntities[i].setPrimitive(Primitive.TRIANGLES);
+			moonNodes[i] = sceneManager.getRootSceneNode().createChildSceneNode(moonEntities[i].getName() + "Node");
 		}
 		
 		// randomized coordinates from <-20, -20, -20> to <20, 20, 20>
 		float[][] randomPlanetCoordinates = {
-			randomFloatArray(19.0f),
-			randomFloatArray(19.0f),
-			randomFloatArray(19.0f),
-			randomFloatArray(19.0f)
+			randomFloatArray(39.0f),
+			randomFloatArray(39.0f),
+			randomFloatArray(39.0f),
+			randomFloatArray(39.0f)
 		};
 		
 		for (int i = 0; i < randomPlanetCoordinates.length; i++) {
@@ -160,26 +166,51 @@ public class MyGame extends VariableFrameRateGame {
 		
 		planetZeroNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[0].getName() + "Node");
 		planetZeroNode.setLocalPosition(randomPlanetCoordinates[0][0], randomPlanetCoordinates[0][1], randomPlanetCoordinates[0][2]);
+		moonNodes[0].setLocalPosition(randomPlanetCoordinates[0][0], randomPlanetCoordinates[0][1], randomPlanetCoordinates[0][2]);
+		moonNodes[0].attachObject(moonEntities[0]);
 		planetZeroNode.attachObject(planetEntities[0]);
+		OrbitController planetZeroOrbit = new OrbitController(planetZeroNode, 5.0f, 9.0f, 0.0f);
+		planetZeroOrbit.addNode(moonNodes[0]);
 		activePlanets.put(planetZeroNode, true);
+		activeMoons.add(moonNodes[0]);
 		
 		planetOneNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[1].getName() + "Node");
 		planetOneNode.setLocalPosition(randomPlanetCoordinates[1][0], randomPlanetCoordinates[1][1], randomPlanetCoordinates[1][2]);
+		moonNodes[1].setLocalPosition(randomPlanetCoordinates[1][0], randomPlanetCoordinates[1][1], randomPlanetCoordinates[1][2]);
+		moonNodes[1].attachObject(moonEntities[1]);
 		planetOneNode.attachObject(planetEntities[1]);
+		OrbitController planetOneOrbit = new OrbitController(planetOneNode, 5.0f, 15.0f, 0.0f);
+		planetOneOrbit.addNode(moonNodes[1]);
 		activePlanets.put(planetOneNode, true);
+		activeMoons.add(moonNodes[1]);
 		
 		planetTwoNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[2].getName() + "Node");
 		planetTwoNode.setLocalPosition(randomPlanetCoordinates[2][0], randomPlanetCoordinates[2][1], randomPlanetCoordinates[2][2]);
+		moonNodes[2].setLocalPosition(randomPlanetCoordinates[2][0], randomPlanetCoordinates[2][1], randomPlanetCoordinates[2][2]);
+		moonNodes[2].attachObject(moonEntities[2]);
 		planetTwoNode.attachObject(planetEntities[2]);
+		OrbitController planetTwoOrbit = new OrbitController(planetTwoNode, 5.0f, 13.2f, 0.0f);
+		planetTwoOrbit.addNode(moonNodes[2]);
 		activePlanets.put(planetTwoNode, true);
+		activeMoons.add(moonNodes[3]);
 		
 		// Initialize cube node
 		ManualObject manualCubePlanetEntity = ManualCubeObject.makeCubeObject(engine, sceneManager);
 		manualCubePlanetNode = sceneManager.getRootSceneNode().createChildSceneNode("ManualCubePlanetNode");
 		manualCubePlanetNode.scale(1.0f, 1.0f, 1.0f);
 		manualCubePlanetNode.setLocalPosition(randomPlanetCoordinates[3][0], randomPlanetCoordinates[3][1], randomPlanetCoordinates[3][2]);
+		moonNodes[3].setLocalPosition(randomPlanetCoordinates[3][0], randomPlanetCoordinates[3][1], randomPlanetCoordinates[3][2]);
+		moonNodes[3].attachObject(moonEntities[3]);
 		manualCubePlanetNode.attachObject(manualCubePlanetEntity);
+		OrbitController manualCubePlanetOrbit = new OrbitController(manualCubePlanetNode, 7.0f, 8.0f, 0.0f, true);
+		manualCubePlanetOrbit.addNode(moonNodes[3]);
 		activePlanets.put(manualCubePlanetNode, true);
+		activeMoons.add(moonNodes[3]);
+		
+		sceneManager.addController(planetZeroOrbit);
+		sceneManager.addController(planetOneOrbit);
+		sceneManager.addController(planetTwoOrbit);
+		sceneManager.addController(manualCubePlanetOrbit);
 		
 		// initialize the dolphin node and add it to the scene graph
 		dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
@@ -240,6 +271,7 @@ public class MyGame extends VariableFrameRateGame {
 		Texture earthTexture = textureManager.getAssetByPath("earth-day.jpeg");
 		Texture moonTexture = textureManager.getAssetByPath("moon.jpeg");
 		Texture blueWorld = textureManager.getAssetByPath("blue.jpeg");
+		Texture hexWorld = textureManager.getAssetByPath("hexagons.jpeg");
 		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		
 		// initialize texture states
@@ -247,6 +279,7 @@ public class MyGame extends VariableFrameRateGame {
 		TextureState earthTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState moonTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState blueWorldTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		TextureState hexWorldTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		
 		dolphinTextureState.setTexture(dolphinTexture);
 		dolphinEntity.setRenderState(dolphinTextureState);
@@ -254,11 +287,16 @@ public class MyGame extends VariableFrameRateGame {
 		earthTextureState.setTexture(earthTexture);
 		planetEntities[0].setRenderState(earthTextureState);
 
-		moonTextureState.setTexture(moonTexture);
-		planetEntities[1].setRenderState(moonTextureState);
-		
 		blueWorldTextureState.setTexture(blueWorld);
-		planetEntities[2].setRenderState(blueWorldTextureState);
+		planetEntities[1].setRenderState(blueWorldTextureState);
+		
+		hexWorldTextureState.setTexture(hexWorld);
+		planetEntities[2].setRenderState(hexWorldTextureState);
+		
+		moonTextureState.setTexture(moonTexture);
+		for(int i = 0; i < moonEntities.length; i++) {
+			moonEntities[i].setRenderState(moonTextureState);
+		}
 	}
 	
 	/**
@@ -426,10 +464,10 @@ public class MyGame extends VariableFrameRateGame {
 		elapsedTime += engine.getElapsedTimeMillis();
 		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
-		counterString = Integer.toString(counter);
+		livesString = Integer.toString(lives);
 		displayString = "Time = " + elapsedTimeString;
+		displayString += " | Lives = " + livesString;
 		displayString += " | Score = " + score;
-		displayString += " | Keyboard Counter = " + counterString;
 		displayString += " | Camera position: (" + formatFloat.format(camera.getPo().x()) + ", " + formatFloat.format(camera.getPo().y()) + ", " + formatFloat.format(camera.getPo().z()) + ")";
 		displayString += " | Dolphin position: (" + formatFloat.format(dolphinNode.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().z()) + ")";
 		renderSystem.setHUD(displayString, 15, 15);
@@ -437,6 +475,7 @@ public class MyGame extends VariableFrameRateGame {
 		synchronizePlayerDolphinPosition();
 		checkPlayerDistanceToDolphin(10.0f);
 		planetCollisionDetection();
+		moonCollisionDetection();
 	}
 	
 	/**
@@ -460,6 +499,7 @@ public class MyGame extends VariableFrameRateGame {
 		if ((Math.pow((playerPosition.x() - dolphinPosition.x()), 2) + Math.pow((playerPosition.y() - dolphinPosition.y()), 2) + Math.pow((playerPosition.z() - dolphinPosition.z()), 2)) > Math.pow(radius, 2.0f)) {
 			System.out.println("You're too far! Position: (" + playerPosition.x() + ", " + playerPosition.y() + ", " + playerPosition.z() + ")");
 			((RideDolphinToggleAction) rideDolphinToggleAction).manualAction();
+			decrementLives();
 		}
 	}
 	
@@ -481,6 +521,28 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	/**
+	 * 
+	 */
+	private void moonCollisionDetection() {
+		Iterator<SceneNode> activeMoonsIterator = activeMoons.iterator();
+		activeMoonsIterator.forEachRemaining(node -> {
+			if (toggleRide) {
+				Vector3f playerPosition = (Vector3f) camera.getPo();
+				if ((Math.pow((playerPosition.x() - node.getLocalPosition().x()), 2) + Math.pow((playerPosition.y() - node.getLocalPosition().y()), 2) + Math.pow((playerPosition.z() - node.getLocalPosition().z()), 2)) < Math.pow((2.15f), 2.0f)) {
+					((RideDolphinToggleAction) rideDolphinToggleAction).manualAction();
+					decrementLives();
+				}
+			} else {
+				Vector3f dolphinPosition = (Vector3f) dolphinNode.getLocalPosition();
+				if ((Math.pow((dolphinPosition.x() - node.getLocalPosition().x()), 2) + Math.pow((dolphinPosition.y() - node.getLocalPosition().y()), 2) + Math.pow((dolphinPosition.z() - node.getLocalPosition().z()), 2)) < Math.pow((2.15f), 2.0f)) {
+					dolphinNode.setLocalPosition(0.0f, 0.0f, 0.0f);
+					decrementLives();
+				}
+			}
+		});
+	}
+	
+	/**
 	 * Inverts Yaw rotation for those who like inverted controls
 	 */
 	public void invertYaw() {
@@ -496,6 +558,15 @@ public class MyGame extends VariableFrameRateGame {
 	private void incrementScore() {
 		System.out.println("Score incremented!");
 		score++;
+	}
+	
+	private void decrementLives() {
+		if (lives > 0) {
+			System.out.println("Damage taken! ");
+			lives--;
+		} else if (lives == 0) {
+			System.out.println("Game over :(");
+		}
 	}
 	
 	/**
