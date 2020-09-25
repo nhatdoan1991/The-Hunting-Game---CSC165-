@@ -7,6 +7,7 @@ package com.saechaol.game.a1;
  */
 
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 import java.io.*;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -27,6 +28,7 @@ import ray.rage.rendersystem.Renderable.*;
 import ray.rage.scene.*;
 import ray.rage.scene.Camera.Frustum.*;
 import ray.rage.scene.controllers.*;
+import ray.rage.util.Configuration;
 import ray.rml.*;
 import ray.rage.rendersystem.gl4.GL4RenderSystem;
 import ray.rage.rendersystem.states.*;
@@ -38,6 +40,7 @@ public class MyGame extends VariableFrameRateGame {
 	
 	private InputManager inputManager;
 	private static final Random RAND = new Random();
+	private static final String SPACE_SKYBOX = "SpaceSkyBox";
 	public Camera camera;
 	public SceneNode cameraNode, dolphinNode, manualCubePlanetNode, planetZeroNode, planetOneNode, planetTwoNode;
 	private Controller controller;
@@ -164,6 +167,7 @@ public class MyGame extends VariableFrameRateGame {
 			}
 		}
 		
+		// set planet nodes and initialize orbit controllers
 		planetZeroNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[0].getName() + "Node");
 		planetZeroNode.setLocalPosition(randomPlanetCoordinates[0][0], randomPlanetCoordinates[0][1], randomPlanetCoordinates[0][2]);
 		moonNodes[0].setLocalPosition(randomPlanetCoordinates[0][0], randomPlanetCoordinates[0][1], randomPlanetCoordinates[0][2]);
@@ -207,6 +211,7 @@ public class MyGame extends VariableFrameRateGame {
 		activePlanets.put(manualCubePlanetNode, true);
 		activeMoons.add(moonNodes[3]);
 		
+		// add orbit controllers to scene
 		sceneManager.addController(planetZeroOrbit);
 		sceneManager.addController(planetOneOrbit);
 		sceneManager.addController(planetTwoOrbit);
@@ -265,16 +270,54 @@ public class MyGame extends VariableFrameRateGame {
 		sceneManager.addController(blueWorldRotationController);
 		sceneManager.addController(cubeWorldRotationController);
 		
-		// manually assign textures textures
+		Configuration configuration = engine.getConfiguration();
+		
+		// manually assign textures
 		TextureManager textureManager = engine.getTextureManager();
 		Texture dolphinTexture = textureManager.getAssetByPath("Dolphin_HighPolyUV.png");
 		Texture earthTexture = textureManager.getAssetByPath("earth-day.jpeg");
 		Texture moonTexture = textureManager.getAssetByPath("moon.jpeg");
 		Texture blueWorld = textureManager.getAssetByPath("blue.jpeg");
 		Texture hexWorld = textureManager.getAssetByPath("hexagons.jpeg");
-		RenderSystem renderSystem = sceneManager.getRenderSystem();
+		
+		// initialize skybox
+		SkyBox worldSkybox = sceneManager.createSkyBox(SPACE_SKYBOX);
+		
+		// initialize skybox textures
+		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.a1"));
+		Texture skyboxFrontTexture = textureManager.getAssetByPath("spaceSkyboxFront.png");
+		Texture skyboxBackTexture = textureManager.getAssetByPath("spaceSkyboxBack.png");
+		Texture skyboxLeftTexture = textureManager.getAssetByPath("spaceSkyboxLeft.png");
+		Texture skyboxRightTexture = textureManager.getAssetByPath("spaceSkyboxRight.png");
+		Texture skyboxTopTexture = textureManager.getAssetByPath("spaceSkyboxTop.png");
+		Texture skyboxBottomTexture = textureManager.getAssetByPath("spaceSkyboxBottom.png");
+		
+		// transform skybox textures
+		AffineTransform skyboxAffineTransform = new AffineTransform();
+		skyboxAffineTransform.translate(0.0, skyboxFrontTexture.getImage().getHeight());
+		skyboxAffineTransform.scale(1.0, 1.0);
+		skyboxFrontTexture.transform(skyboxAffineTransform);
+		skyboxBackTexture.transform(skyboxAffineTransform);
+		skyboxLeftTexture.transform(skyboxAffineTransform);
+		skyboxRightTexture.transform(skyboxAffineTransform);
+		skyboxTopTexture.transform(skyboxAffineTransform);
+		skyboxBottomTexture.transform(skyboxAffineTransform);
+		
+		// set skybox textures
+		worldSkybox.setTexture(skyboxFrontTexture, SkyBox.Face.FRONT);
+		worldSkybox.setTexture(skyboxBackTexture, SkyBox.Face.BACK);
+		worldSkybox.setTexture(skyboxLeftTexture, SkyBox.Face.LEFT);
+		worldSkybox.setTexture(skyboxRightTexture, SkyBox.Face.RIGHT);
+		worldSkybox.setTexture(skyboxTopTexture, SkyBox.Face.TOP);
+		worldSkybox.setTexture(skyboxBottomTexture, SkyBox.Face.BOTTOM);
+		
+		// assign skybox to sceneManager
+		sceneManager.setActiveSkyBox(worldSkybox);
+		
+
 		
 		// initialize texture states
+		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState earthTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState moonTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
