@@ -9,8 +9,6 @@ package com.saechaol.game.a1;
 import java.awt.*;
 import java.io.*;
 import java.math.RoundingMode;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,10 +26,8 @@ import ray.rage.rendersystem.Renderable.*;
 import ray.rage.scene.*;
 import ray.rage.scene.Camera.Frustum.*;
 import ray.rage.scene.controllers.*;
-import ray.rage.util.BufferUtil;
 import ray.rml.*;
 import ray.rage.rendersystem.gl4.GL4RenderSystem;
-import ray.rage.rendersystem.shader.GpuShaderProgram;
 import ray.rage.rendersystem.states.*;
 import ray.rage.asset.texture.*;
 import ray.input.*;
@@ -44,7 +40,7 @@ public class MyGame extends VariableFrameRateGame {
 	public Camera camera;
 	public SceneNode cameraNode, dolphinNode, manualCubePlanetNode, planetZeroNode, planetOneNode, planetTwoNode;
 	private Controller controller;
-	private Action invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
+	private Action invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, counterString, displayString, positionString, dolphinString;
@@ -58,11 +54,12 @@ public class MyGame extends VariableFrameRateGame {
 		super();
 		System.out.println("Press 'W/A/S/D' or control the left stick to MOVE");
 		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ROTATE CAMERA");
+		System.out.println("Press 'V' or 'Y' to INVERT YAW");
+		System.out.println("Press 'LSHIFT' or the left bumper to ASCEND");
+		System.out.println("Press 'C' or the right bumper to DESCEND");
 		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
 		System.out.println("Press 'ESC' or 'Select' to EXIT");
 		System.out.println("Press 'TAB' or 'Start' to PAUSE");
-		System.out.println("Press 'C' or 'X' to INCREMENT COUNTER");
-		System.out.println("Press 'V' or 'Y' to INCREMENT COUNTER MODIFIER");
 		System.out.println("----------------------------------------------------");
 		formatFloat.setRoundingMode(RoundingMode.DOWN);
 	}
@@ -275,10 +272,6 @@ public class MyGame extends VariableFrameRateGame {
 		
 		// Build action objects for listening to user input
 		exitGameAction = new ExitGameAction(this);
-		incrementCounterModifierAction = new IncrementCounterModifierAction(this);
-		incrementCounterAction = new IncrementCounterAction(this, (IncrementCounterModifierAction) incrementCounterModifierAction);
-		leftStickMoveAction = new LeftStickMoveAction(this, controller);
-		rightStickMoveAction = new RightStickMoveAction(this, controller);
 		moveCameraForwardAction = new MoveCameraForwardAction(this, camera);
 		moveCameraBackwardAction = new MoveCameraBackwardAction(this, camera);
 		moveCameraLeftAction = new MoveCameraLeftAction(this, camera);
@@ -304,37 +297,23 @@ public class MyGame extends VariableFrameRateGame {
 						net.java.games.input.Component.Identifier.Key.ESCAPE, 
 						exitGameAction, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-				
-				// Bind increment counter action to C, and gamepad 2 (X)
-				inputManager.associateAction(keyboards, 
-						net.java.games.input.Component.Identifier.Key.C, 
-						incrementCounterAction, 
-						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
-				
-				// Bind increment counter modifier action to V, and gamepad 3 (Y)
-				inputManager.associateAction(keyboards, 
-						net.java.games.input.Component.Identifier.Key.V, 
-						incrementCounterModifierAction, 
-						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);		
-
-				
-				// Bind move camera up action to W, and gamepad left stick Y
+				// Bind movement actions
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.W, 
 						moveCameraForwardAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);	
-				
+
 				inputManager.associateAction(keyboards,
 						net.java.games.input.Component.Identifier.Key.S,
 						moveCameraBackwardAction,
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-				
+
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.A,
 						moveCameraLeftAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-				
+
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.D, 
 						moveCameraRightAction, 
@@ -350,7 +329,12 @@ public class MyGame extends VariableFrameRateGame {
 						moveCameraDownAction,
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 				
-				// Bind dolphin positional toggle to spacebar
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.V, 
+						invertYawAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
+				// Bind dolphin toggle
 				inputManager.associateAction(keyboards,
 						net.java.games.input.Component.Identifier.Key.SPACE,
 						rideDolphinToggleAction,
@@ -385,11 +369,6 @@ public class MyGame extends VariableFrameRateGame {
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._6, 
 					exitGameAction, 
-					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-			
-			inputManager.associateAction(gamepadName, 
-					net.java.games.input.Component.Identifier.Button._2, 
-					incrementCounterAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 			
 			inputManager.associateAction(gamepadName, 
@@ -509,10 +488,6 @@ public class MyGame extends VariableFrameRateGame {
 			invertYaw = false;
 		else
 			invertYaw = true;
-	}
-	
-	public void incrementCounter(int increment) {
-		counter += increment;
 	}
 	
 	/**

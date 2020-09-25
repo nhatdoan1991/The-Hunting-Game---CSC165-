@@ -19,7 +19,12 @@ public class YawCameraLeftAction extends AbstractInputAction {
 	@Override
 	public void performAction(float time, Event e) {
 		System.out.println("Yawing camera left");
-		Angle rotationSpeed = Degreef.createFrom(game.getEngine().getElapsedTimeMillis() / 10.0f);
+		Angle rotationSpeed;
+		if (game.invertYaw) {
+			rotationSpeed = Degreef.createFrom(game.getEngine().getElapsedTimeMillis() / 10.0f);
+		} else {
+			rotationSpeed = Degreef.createFrom(-game.getEngine().getElapsedTimeMillis() / 10.0f);
+		}
 		if (game.camera.getMode() == 'n') {
 			game.dolphinNode.yaw(rotationSpeed);
 		} else {
