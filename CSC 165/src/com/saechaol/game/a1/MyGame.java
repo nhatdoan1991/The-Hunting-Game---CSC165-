@@ -42,7 +42,7 @@ public class MyGame extends VariableFrameRateGame {
 	private InputManager inputManager;
 	private static final Random RAND = new Random();
 	public Camera camera;
-	public SceneNode cameraNode, dolphinNode, manualPyramidNode, planetZeroNode, planetOneNode, planetTwoNode;
+	public SceneNode cameraNode, dolphinNode, manualCubePlanetNode, planetZeroNode, planetOneNode, planetTwoNode;
 	private Controller controller;
 	private Action invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, leftStickMoveAction, rightStickMoveAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction, incrementCounterAction, incrementCounterModifierAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
@@ -126,18 +126,11 @@ public class MyGame extends VariableFrameRateGame {
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
 		
-		// initialize manual pyramid object
-		ManualObject manualPyramid = ManualPyramidObject.makePyramid(engine, sceneManager);
-		manualPyramidNode = sceneManager.getRootSceneNode().createChildSceneNode("PyramidNode");
-		manualPyramidNode.scale(0.75f, 0.75f, 0.75f);
-		manualPyramidNode.setLocalPosition(10.0f, 10.0f, -10.0f);
-		manualPyramidNode.attachObject(manualPyramid);
-		
 		// initialize world axes
 		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
 		
 		// initialize planets
-		Entity[] planetEntities = new Entity[3];
+		Entity[] planetEntities = new Entity[4];
 		for (int i = 0; i < planetEntities.length; i++) { 
 			planetEntities[i] = sceneManager.createEntity("planet" + i, "earth.obj");
 			planetEntities[i].setPrimitive(Primitive.TRIANGLES);
@@ -145,9 +138,10 @@ public class MyGame extends VariableFrameRateGame {
 		
 		// randomized coordinates from <-20, -20, -20> to <20, 20, 20>
 		float[][] randomPlanetCoordinates = {
-			{ (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f) },
-			{ (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f) },
-			{ (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f), (RAND.nextFloat() * 19.0f) }
+			randomFloatArray(19.0f),
+			randomFloatArray(19.0f),
+			randomFloatArray(19.0f),
+			randomFloatArray(19.0f)
 		};
 		
 		for (int i = 0; i < randomPlanetCoordinates.length; i++) {
@@ -182,6 +176,14 @@ public class MyGame extends VariableFrameRateGame {
 		planetTwoNode.attachObject(planetEntities[2]);
 		activePlanets.put(planetTwoNode, true);
 		
+		// Initialize cube node
+		ManualObject manualCubePlanetEntity = ManualCubeObject.makeCubeObject(engine, sceneManager);
+		manualCubePlanetNode = sceneManager.getRootSceneNode().createChildSceneNode("ManualCubePlanetNode");
+		manualCubePlanetNode.scale(1.0f, 1.0f, 1.0f);
+		manualCubePlanetNode.setLocalPosition(randomPlanetCoordinates[3][0], randomPlanetCoordinates[3][1], randomPlanetCoordinates[3][2]);
+		manualCubePlanetNode.attachObject(manualCubePlanetEntity);
+		activePlanets.put(manualCubePlanetNode, true);
+		
 		// initialize the dolphin node and add it to the scene graph
 		dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
 		dolphinNode.moveBackward(2.0f);
@@ -195,11 +197,11 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinCamera.attachObject(camera);
 		
 		// initialize the ambient light
-		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
+		sceneManager.getAmbientLight().setIntensity(new Color(0.01f, 0.01f, 0.01f));
 		
 		// initialize a point light
 		Light pointLightOne = sceneManager.createLight("pointLightOne", Light.Type.POINT);
-		pointLightOne.setAmbient(new Color(0.3f, 0.3f, 0.3f));
+		pointLightOne.setAmbient(new Color(0.05f, 0.05f, 0.05f));
 		pointLightOne.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
 		pointLightOne.setSpecular(new Color(1.0f, 1.0f, 1.0f));
 		pointLightOne.setRange(5.0f);
@@ -207,42 +209,56 @@ public class MyGame extends VariableFrameRateGame {
 		// initialize a node for pointLightOne and add it to the scene graph
 		SceneNode pointLightNode = sceneManager.getRootSceneNode().createChildSceneNode(pointLightOne.getName() + "Node");
 		pointLightNode.attachObject(pointLightOne);
+		pointLightNode.setLocalPosition(Vector3f.createFrom(0.0f, 0.0f, 0.0f));
+		
+		// initialize a flashlight
+		Light pointLightFlash = sceneManager.createLight("pointLightFlash", Light.Type.POINT);
+		pointLightFlash.setAmbient(new Color(0.5f, 0.5f, 0.5f));
+		pointLightFlash.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
+		pointLightFlash.setSpecular(new Color(1.0f, 1.0f, 1.0f));
+		pointLightFlash.setRange(10.0f);
+		
+		// attach the flashlight to the dolphin
+		cameraNode.attachObject(pointLightFlash);
 		
 		// initialize a rotation controller
 		RotationController earthRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
-		RotationController nightEarthRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.05f);
+		RotationController moonRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.05f);
 		RotationController blueWorldRotationController = new RotationController(Vector3f.createUnitVectorZ(), 0.32f);
+		RotationController cubeWorldRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.4f);
 		
 		earthRotationController.addNode(planetZeroNode);
-		nightEarthRotationController.addNode(planetOneNode);
+		moonRotationController.addNode(planetOneNode);
 		blueWorldRotationController.addNode(planetTwoNode);
+		cubeWorldRotationController.addNode(manualCubePlanetNode);
 		
 		sceneManager.addController(earthRotationController);
-		sceneManager.addController(nightEarthRotationController);
+		sceneManager.addController(moonRotationController);
 		sceneManager.addController(blueWorldRotationController);
+		sceneManager.addController(cubeWorldRotationController);
 		
 		// manually assign textures textures
 		TextureManager textureManager = engine.getTextureManager();
-		Texture redTexture = textureManager.getAssetByPath("red.jpeg");
+		Texture dolphinTexture = textureManager.getAssetByPath("Dolphin_HighPolyUV.png");
 		Texture earthTexture = textureManager.getAssetByPath("earth-day.jpeg");
-		Texture nightEarthTexture = textureManager.getAssetByPath("earth-night.jpeg");
+		Texture moonTexture = textureManager.getAssetByPath("moon.jpeg");
 		Texture blueWorld = textureManager.getAssetByPath("blue.jpeg");
 		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		
 		// initialize texture states
 		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState earthTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		TextureState nightEarthTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		TextureState moonTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState blueWorldTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		
-		dolphinTextureState.setTexture(redTexture);
+		dolphinTextureState.setTexture(dolphinTexture);
 		dolphinEntity.setRenderState(dolphinTextureState);
 		
 		earthTextureState.setTexture(earthTexture);
 		planetEntities[0].setRenderState(earthTextureState);
 
-		nightEarthTextureState.setTexture(nightEarthTexture);
-		planetEntities[1].setRenderState(nightEarthTextureState);
+		moonTextureState.setTexture(moonTexture);
+		planetEntities[1].setRenderState(moonTextureState);
 		
 		blueWorldTextureState.setTexture(blueWorld);
 		planetEntities[2].setRenderState(blueWorldTextureState);
@@ -451,6 +467,7 @@ public class MyGame extends VariableFrameRateGame {
 		if (!toggleRide) {
 			camera.setPo((Vector3f) Vector3f.createFrom(dolphinNode.getLocalPosition().x(), dolphinNode.getLocalPosition().y(), dolphinNode.getLocalPosition().z()));
 		}
+		cameraNode.setLocalPosition(camera.getPo());
 	}
 	
 	/**
@@ -516,6 +533,17 @@ public class MyGame extends VariableFrameRateGame {
 			return true;
 		} else 
 			return false;
+	}
+	
+	/**
+	 * Returns a random float array
+	 * @param args
+	 */
+	private float[] randomFloatArray(float upperBound) {
+		float[] randomFloat = {
+				(RAND.nextFloat() * upperBound), (RAND.nextFloat() * upperBound), (RAND.nextFloat() * upperBound)
+		};
+		return randomFloat;
 	}
 	
 	public static void main(String[] args) {
