@@ -46,13 +46,13 @@ public class ManualAxisLineObject {
 		float[] lineVertices = new float[6];
 		
 		float[] lineTextureCoordinates = {
-			0.0f, 0.0f, 
-			1.0f, 1.0f
+			0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f
 		};
 		
 		float[] lineNormals = {
-				-1.0f, -1.0f, -1.0f,
-				0.0f, 0.0f, 0.0f
+				0.0f, 0.0f, 1.0f,
+				0.0f, 0.0f, 1.0f
 		};
 		
 		int[] indices = { 0, 1 };

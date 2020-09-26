@@ -29,9 +29,9 @@ public class ManualCubeObject {
 	 * @return
 	 * @throws IOException
 	 */
-	public static ManualObject makeCubeObject(Engine engine, SceneManager sceneManager) throws IOException {
-		ManualObject cubeObject = sceneManager.createManualObject("CubeObject");
-		ManualObjectSection cubeSection = cubeObject.createManualSection("CubeSection");
+	public static ManualObject makeCubeObject(Engine engine, SceneManager sceneManager, String objectNum) throws IOException {
+		ManualObject cubeObject = sceneManager.createManualObject("CubeObject" + objectNum);
+		ManualObjectSection cubeSection = cubeObject.createManualSection("CubeSection" + objectNum);
 		cubeObject.setGpuShaderProgram(sceneManager.getRenderSystem().getGpuShaderProgram(GpuShaderProgram.Type.RENDERING));
 		
 		float[] cubeVertices = {
@@ -63,19 +63,20 @@ public class ManualCubeObject {
 			-1.0f, -1.0f, -1.0f,
 			-1.0f, -1.0f, 1.0f,		// left
 
-			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, 1.0f,
+
 			-1.0f, -1.0f, 1.0f,
-			1.0f, -1.0f, 1.0f,
 			-1.0f, -1.0f, -1.0f,
-			1.0f, -1.0f, -1.0f,		// bottom
+			1.0f, -1.0f, -1.0f,
+			-1.0f, -1.0f, 1.0f,
+			1.0f, -1.0f, -1.0f,
+			1.0f, -1.0f, 1.0f, 		// bottom
 			
-			1.0f, 1.0f, -1.0f,
-			-1.0f, 1.0f, -1.0f,
-			1.0f, 1.0f, 1.0f,
 			-1.0f, 1.0f, 1.0f,
 			1.0f, 1.0f, 1.0f,
-			-1.0f, 1.0f, -1.0f		// top
+			1.0f, 1.0f, -1.0f,
+			-1.0f, 1.0f, 1.0f,
+			1.0f, 1.0f, -1.0f,
+			-1.0f, 1.0f, -1.0f, 		// bottom
 		};
 		
 		float[] cubeTextureCoordinates = {
@@ -107,7 +108,20 @@ public class ManualCubeObject {
 			0.0f, 0.0f,
 			1.0f, 0.0f,		// left
 
-			// the bottom and top faces are not textured
+			1.0f, 1.0f,
+			0.0f, 1.0f, 
+			0.0f, 0.0f,
+			1.0f, 1.0f,
+			0.0f, 0.0f,
+			1.0f, 0.0f,		// top
+			
+			1.0f, 1.0f,
+			0.0f, 1.0f, 
+			0.0f, 0.0f,
+			1.0f, 1.0f,
+			0.0f, 0.0f,
+			1.0f, 0.0f,		// bottom
+			
 			
 		};
 		

@@ -42,7 +42,7 @@ public class MyGame extends VariableFrameRateGame {
 	private static final Random RAND = new Random();
 	private static final String SPACE_SKYBOX = "SpaceSkyBox";
 	public Camera camera;
-	public SceneNode cameraNode, dolphinNode, manualCubePlanetNode, planetZeroNode, planetOneNode, planetTwoNode;
+	public SceneNode cameraNode, dolphinNode, originNode;
 	private Controller controller;
 	private Action rollCameraLeftAction, rollCameraRightAction, invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
@@ -52,7 +52,10 @@ public class MyGame extends VariableFrameRateGame {
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	public boolean toggleRide = false, invertYaw = true, alive = true;
 	public HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
-	public ArrayList<SceneNode> activeMoons = new ArrayList<SceneNode>();
+	ArrayList<SceneNode> planetNodes = new ArrayList<SceneNode>();
+	ArrayList<SceneNode> cubeMoonNodes = new ArrayList<SceneNode>();
+	ArrayList<OrbitController> galaxyOrbitController = new ArrayList<OrbitController>();
+	ArrayList<OrbitController> planetOrbitController = new ArrayList<OrbitController>();
 	
 	public MyGame() {
 		super();
@@ -109,7 +112,6 @@ public class MyGame extends VariableFrameRateGame {
 		// initialize the cameraNode, add it to the scene graph and then attach the camera to it
 		cameraNode = rootNode.createChildSceneNode(camera.getName() + "Node");
 		cameraNode.attachObject(camera);
-		
 	}
 
 	/**
@@ -132,24 +134,28 @@ public class MyGame extends VariableFrameRateGame {
 		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
 		
 		// initialize planets
-		Entity[] planetEntities = new Entity[4];
-		Entity[] moonEntities = new Entity[planetEntities.length];
-		SceneNode[] moonNodes = new SceneNode[planetEntities.length];
+		Entity[] planetEntities = new Entity[6];
+		ManualObject[] cubeMoonEntities = new ManualObject[planetEntities.length];
+		ZBufferState zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
+		zState.setEnabled(true);
 		for (int i = 0; i < planetEntities.length; i++) { 
-			planetEntities[i] = sceneManager.createEntity("planet" + i, "earth.obj");
-			moonEntities[i] = sceneManager.createEntity("moon" + i, "sphere.obj");
+			planetEntities[i] = sceneManager.createEntity("planetEntity" + i, "earth.obj");
+			cubeMoonEntities[i] = ManualCubeObject.makeCubeObject(engine, sceneManager, Integer.toString(i));
 			planetEntities[i].setPrimitive(Primitive.TRIANGLES);
-			moonEntities[i].setPrimitive(Primitive.TRIANGLES);
-			moonNodes[i] = sceneManager.getRootSceneNode().createChildSceneNode(moonEntities[i].getName() + "Node");
+			cubeMoonEntities[i].setPrimitive(Primitive.TRIANGLES);
+			planetEntities[i].setRenderState(zState);
+			cubeMoonEntities[i].setRenderState(zState);
+			SceneNode planetNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[i].getName() + "Node");
+			SceneNode cubeMoonNode = sceneManager.getRootSceneNode().createChildSceneNode(cubeMoonEntities[i].getName() + "Node");
+			planetNodes.add(planetNode);
+			cubeMoonNodes.add(cubeMoonNode);
 		}
 		
-		// randomized coordinates from <-20, -20, -20> to <20, 20, 20>
-		float[][] randomPlanetCoordinates = {
-			randomFloatArray(39.0f),
-			randomFloatArray(39.0f),
-			randomFloatArray(39.0f),
-			randomFloatArray(39.0f)
-		};
+		// randomized coordinates from <-40, -40, -40> to <40, 40, 40>
+		float[][] randomPlanetCoordinates = new float[planetEntities.length][3];
+		for(float[] coordinates : randomPlanetCoordinates) {
+			coordinates = randomFloatArray(79.9f);
+		}
 		
 		for (int i = 0; i < randomPlanetCoordinates.length; i++) {
 			for (int j = 0; j < randomPlanetCoordinates[i].length; j++) {
@@ -169,57 +175,54 @@ public class MyGame extends VariableFrameRateGame {
 		}
 		
 		// set planet nodes and initialize orbit controllers
-		planetZeroNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[0].getName() + "Node");
-		planetZeroNode.setLocalPosition(randomPlanetCoordinates[0][0], randomPlanetCoordinates[0][1], randomPlanetCoordinates[0][2]);
-		moonNodes[0].setLocalPosition(randomPlanetCoordinates[0][0], randomPlanetCoordinates[0][1], randomPlanetCoordinates[0][2]);
-		moonNodes[0].attachObject(moonEntities[0]);
-		planetZeroNode.attachObject(planetEntities[0]);
-		OrbitController planetZeroOrbit = new OrbitController(planetZeroNode, 5.0f, 9.0f, 0.0f);
-		planetZeroOrbit.addNode(moonNodes[0]);
-		activePlanets.put(planetZeroNode, true);
-		activeMoons.add(moonNodes[0]);
+		originNode = sceneManager.getRootSceneNode().createChildSceneNode("originNode");
+		originNode.setLocalPosition(0.0f, 0.0f, 0.0f);
 		
-		planetOneNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[1].getName() + "Node");
-		planetOneNode.setLocalPosition(randomPlanetCoordinates[1][0], randomPlanetCoordinates[1][1], randomPlanetCoordinates[1][2]);
-		moonNodes[1].setLocalPosition(randomPlanetCoordinates[1][0], randomPlanetCoordinates[1][1], randomPlanetCoordinates[1][2]);
-		moonNodes[1].attachObject(moonEntities[1]);
-		planetOneNode.attachObject(planetEntities[1]);
-		OrbitController planetOneOrbit = new OrbitController(planetOneNode, 5.0f, 15.0f, 0.0f);
-		planetOneOrbit.addNode(moonNodes[1]);
-		activePlanets.put(planetOneNode, true);
-		activeMoons.add(moonNodes[1]);
+		for (int i = 0; i < planetEntities.length; i++) {
+			float[] orbitParameters = { 
+				RAND.nextFloat() * 0.1f, 
+				(RAND.nextFloat() * 50.0f) + 15.0f,
+				(RAND.nextFloat() * 50.0f) + 15.0f,
+			};
+			if (RAND.nextBoolean()) {
+				orbitParameters[2] *= -1.0f;
+			}
+			galaxyOrbitController.add(new OrbitController(originNode, orbitParameters[0], orbitParameters[1], orbitParameters[2], RAND.nextBoolean()));
+		}
 		
-		planetTwoNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[2].getName() + "Node");
-		planetTwoNode.setLocalPosition(randomPlanetCoordinates[2][0], randomPlanetCoordinates[2][1], randomPlanetCoordinates[2][2]);
-		moonNodes[2].setLocalPosition(randomPlanetCoordinates[2][0], randomPlanetCoordinates[2][1], randomPlanetCoordinates[2][2]);
-		moonNodes[2].attachObject(moonEntities[2]);
-		planetTwoNode.attachObject(planetEntities[2]);
-		OrbitController planetTwoOrbit = new OrbitController(planetTwoNode, 5.0f, 13.2f, 0.0f);
-		planetTwoOrbit.addNode(moonNodes[2]);
-		activePlanets.put(planetTwoNode, true);
-		activeMoons.add(moonNodes[3]);
-		
-		// Initialize cube node
-		ManualObject manualCubePlanetEntity = ManualCubeObject.makeCubeObject(engine, sceneManager);
-		manualCubePlanetNode = sceneManager.getRootSceneNode().createChildSceneNode("ManualCubePlanetNode");
-		manualCubePlanetNode.scale(1.0f, 1.0f, 1.0f);
-		ZBufferState zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
-		zState.setEnabled(true);
-		manualCubePlanetEntity.setRenderState(zState);
-		manualCubePlanetNode.setLocalPosition(randomPlanetCoordinates[3][0], randomPlanetCoordinates[3][1], randomPlanetCoordinates[3][2]);
-		moonNodes[3].setLocalPosition(randomPlanetCoordinates[3][0], randomPlanetCoordinates[3][1], randomPlanetCoordinates[3][2]);
-		moonNodes[3].attachObject(moonEntities[3]);
-		manualCubePlanetNode.attachObject(manualCubePlanetEntity);
-		OrbitController manualCubePlanetOrbit = new OrbitController(manualCubePlanetNode, 7.0f, 8.0f, 0.0f, true);
-		manualCubePlanetOrbit.addNode(moonNodes[3]);
-		activePlanets.put(manualCubePlanetNode, true);
-		activeMoons.add(moonNodes[3]);
+		for (int i = 0; i < planetNodes.size(); i++) {
+			planetNodes.get(i).setLocalPosition(randomPlanetCoordinates[i][0], randomPlanetCoordinates[i][1], randomPlanetCoordinates[i][2]);
+			cubeMoonNodes.get(i).setLocalPosition(randomPlanetCoordinates[i][0], randomPlanetCoordinates[i][1], randomPlanetCoordinates[i][2]);
+			planetNodes.get(i).attachObject(planetEntities[i]);
+			cubeMoonNodes.get(i).attachObject(cubeMoonEntities[i]);
+			float[] orbitParameters = { 
+					RAND.nextFloat() * 5.0f, 
+					(RAND.nextFloat() * 20.0f) + 5.0f,
+				};
+			planetOrbitController.add(new OrbitController(planetNodes.get(i), orbitParameters[0], orbitParameters[1], 0.0f, RAND.nextBoolean()));
+			galaxyOrbitController.get(i).addNode(planetNodes.get(i));
+			planetOrbitController.get(i).addNode(cubeMoonNodes.get(i));
+			activePlanets.put(planetNodes.get(i), true);
+		}
 		
 		// add orbit controllers to scene
-		sceneManager.addController(planetZeroOrbit);
-		sceneManager.addController(planetOneOrbit);
-		sceneManager.addController(planetTwoOrbit);
-		sceneManager.addController(manualCubePlanetOrbit);
+		for (int i = 0; i < planetNodes.size(); i++) {
+			sceneManager.addController(galaxyOrbitController.get(i));
+			sceneManager.addController(planetOrbitController.get(i));
+		}
+		
+		// initialize a rotation controller for the orbits, moons and planets
+		for (SceneNode planet : planetNodes) {
+			RotationController planetRotation = randomRotation();
+			planetRotation.addNode(planet);
+			sceneManager.addController(planetRotation);
+		}
+		
+		for (SceneNode cubeMoon : cubeMoonNodes) {
+			RotationController moonRotation = randomRotation();
+			moonRotation.addNode(cubeMoon);
+			sceneManager.addController(moonRotation);
+		}
 		
 		// initialize the dolphin node and add it to the scene graph
 		dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
@@ -250,39 +253,30 @@ public class MyGame extends VariableFrameRateGame {
 		
 		// initialize a flashlight
 		Light pointLightFlash = sceneManager.createLight("pointLightFlash", Light.Type.POINT);
-		pointLightFlash.setAmbient(new Color(0.5f, 0.5f, 0.5f));
+		pointLightFlash.setAmbient(new Color(1.0f, 1.0f, 1.0f));
 		pointLightFlash.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
 		pointLightFlash.setSpecular(new Color(1.0f, 1.0f, 1.0f));
-		pointLightFlash.setRange(10.0f);
+		pointLightFlash.setRange(20.0f);
 		
 		// attach the flashlight to the dolphin
 		cameraNode.attachObject(pointLightFlash);
-		
-		// initialize a rotation controller
-		RotationController earthRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.02f);
-		RotationController moonRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.05f);
-		RotationController blueWorldRotationController = new RotationController(Vector3f.createUnitVectorZ(), 0.32f);
-		RotationController cubeWorldRotationController = new RotationController(Vector3f.createUnitVectorY(), 0.4f);
-		
-		earthRotationController.addNode(planetZeroNode);
-		moonRotationController.addNode(planetOneNode);
-		blueWorldRotationController.addNode(planetTwoNode);
-		cubeWorldRotationController.addNode(manualCubePlanetNode);
-		
-		sceneManager.addController(earthRotationController);
-		sceneManager.addController(moonRotationController);
-		sceneManager.addController(blueWorldRotationController);
-		sceneManager.addController(cubeWorldRotationController);
 		
 		Configuration configuration = engine.getConfiguration();
 		
 		// manually assign textures
 		TextureManager textureManager = engine.getTextureManager();
 		Texture dolphinTexture = textureManager.getAssetByPath("Dolphin_HighPolyUV.png");
-		Texture earthTexture = textureManager.getAssetByPath("earth-day.jpeg");
 		Texture moonTexture = textureManager.getAssetByPath("moon.jpeg");
-		Texture blueWorld = textureManager.getAssetByPath("blue.jpeg");
-		Texture hexWorld = textureManager.getAssetByPath("hexagons.jpeg");
+		
+		Texture[] planetTextures = {
+			textureManager.getAssetByPath("earth-day.jpeg"),
+			textureManager.getAssetByPath("blue.jpeg"),
+			textureManager.getAssetByPath("hexagons.jpeg"),
+			textureManager.getAssetByPath("earth-night.jpeg"),
+			textureManager.getAssetByPath("red.jpeg"),
+			textureManager.getAssetByPath("chain-fence.jpeg")
+			
+		};
 		
 		// initialize skybox
 		SkyBox worldSkybox = sceneManager.createSkyBox(SPACE_SKYBOX);
@@ -320,27 +314,26 @@ public class MyGame extends VariableFrameRateGame {
 		
 		// initialize texture states
 		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		TextureState earthTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState moonTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		TextureState blueWorldTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		TextureState hexWorldTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		
+		TextureState[] planetTextureStates = new TextureState[planetTextures.length];
+
 		dolphinTextureState.setTexture(dolphinTexture);
 		dolphinEntity.setRenderState(dolphinTextureState);
 		
-		earthTextureState.setTexture(earthTexture);
-		planetEntities[0].setRenderState(earthTextureState);
-
-		blueWorldTextureState.setTexture(blueWorld);
-		planetEntities[1].setRenderState(blueWorldTextureState);
-		
-		hexWorldTextureState.setTexture(hexWorld);
-		planetEntities[2].setRenderState(hexWorldTextureState);
-		
 		moonTextureState.setTexture(moonTexture);
-		for(int i = 0; i < moonEntities.length; i++) {
-			moonEntities[i].setRenderState(moonTextureState);
+		for (ManualObject cubeMoonEntity : cubeMoonEntities) {
+			cubeMoonEntity.setRenderState(moonTextureState);
 		}
+		
+		for (int i = 0; i < planetTextures.length; i++) {
+			planetTextureStates[i] = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+			planetTextureStates[i].setTexture(planetTextures[i]);
+		}
+		
+		for (int i = 0; i < planetEntities.length; i++) {
+			planetEntities[i].setRenderState(planetTextureStates[i]);
+		}
+		
 	}
 	
 	/**
@@ -541,8 +534,30 @@ public class MyGame extends VariableFrameRateGame {
 		inputManager.update(elapsedTime);
 		synchronizePlayerDolphinPosition();
 		checkPlayerDistanceToDolphin(10.0f);
-		planetCollisionDetection();
-		moonCollisionDetection();
+		if (elapsedTime > 500.0) {
+			moonCollisionDetection();
+			planetCollisionDetection();
+		}
+	}
+	
+	/**
+	 * Returns a random rotation controller object
+	 * @return
+	 */
+	private RotationController randomRotation() {
+		int axisSwitch = RAND.nextInt(3);
+		RotationController rotationController;
+		switch (axisSwitch) {
+			case 1:
+				rotationController = new RotationController(Vector3f.createUnitVectorX(), RAND.nextFloat());
+				break;
+			case 2:
+				rotationController = new RotationController(Vector3f.createUnitVectorY(), RAND.nextFloat());
+				break;
+			default:
+				rotationController = new RotationController(Vector3f.createUnitVectorZ(), RAND.nextFloat());
+		}
+		return rotationController;
 	}
 	
 	/**
@@ -591,7 +606,7 @@ public class MyGame extends VariableFrameRateGame {
 	 * 
 	 */
 	private void moonCollisionDetection() {
-		Iterator<SceneNode> activeMoonsIterator = activeMoons.iterator();
+		Iterator<SceneNode> activeMoonsIterator = cubeMoonNodes.iterator();
 		activeMoonsIterator.forEachRemaining(node -> {
 			if (toggleRide) {
 				Vector3f playerPosition = (Vector3f) camera.getPo();
@@ -632,7 +647,8 @@ public class MyGame extends VariableFrameRateGame {
 			System.out.println("Damage taken! ");
 			lives--;
 		} else if (lives == 0) {
-			System.out.println("Game over :(");
+			System.out.print("You are dead. Game over :(");
+			this.setState(Game.State.STOPPING);
 		}
 	}
 	
