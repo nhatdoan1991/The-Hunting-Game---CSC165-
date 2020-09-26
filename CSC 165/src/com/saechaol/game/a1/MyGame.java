@@ -314,8 +314,6 @@ public class MyGame extends VariableFrameRateGame {
 		// assign skybox to sceneManager
 		sceneManager.setActiveSkyBox(worldSkybox);
 		
-
-		
 		// initialize texture states
 		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
