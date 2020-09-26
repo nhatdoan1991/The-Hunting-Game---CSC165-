@@ -14,6 +14,7 @@ import ray.rage.rendersystem.shader.GpuShaderProgram;
 import ray.rage.rendersystem.states.FrontFaceState;
 import ray.rage.rendersystem.states.RenderState;
 import ray.rage.rendersystem.states.TextureState;
+import ray.rage.rendersystem.states.ZBufferState;
 import ray.rage.scene.ManualObject;
 import ray.rage.scene.ManualObjectSection;
 import ray.rage.scene.SceneManager;
@@ -110,10 +111,16 @@ public class ManualAxisLineObject {
 	 */
 	public static void renderWorldAxes(Engine engine, SceneManager sceneManager) throws IOException {	
 		SceneNode xAxisNode, yAxisNode, zAxisNode;
+		ZBufferState zState = (ZBufferState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.ZBUFFER);
+		zState.setEnabled(true);
 		
 		ManualObject xAxis = makeAxisLine(engine, sceneManager, "X");
 		ManualObject yAxis = makeAxisLine(engine, sceneManager, "Y");
 		ManualObject zAxis = makeAxisLine(engine, sceneManager, "Z");
+		
+		xAxis.setRenderState(zState);
+		yAxis.setRenderState(zState);
+		zAxis.setRenderState(zState);
 		
 		xAxis.setPrimitive(Primitive.LINES);
 		yAxis.setPrimitive(Primitive.LINES);
