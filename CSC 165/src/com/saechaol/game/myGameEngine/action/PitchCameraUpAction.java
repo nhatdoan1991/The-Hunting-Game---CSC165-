@@ -5,6 +5,8 @@ import com.saechaol.game.a1.MyGame;
 import net.java.games.input.Event;
 import ray.rml.Angle;
 import ray.rml.Degreef;
+import ray.rml.Quaternion;
+import ray.rml.Quaternionf;
 import ray.rml.Vector3;
 import ray.rml.Vector3f;
 
@@ -23,18 +25,10 @@ public class PitchCameraUpAction extends AbstractInputAction {
 		if (game.camera.getMode() == 'n') {
 			rotationSpeed = rotationSpeed.mult(-1.0f);
 			game.dolphinNode.pitch(rotationSpeed);
-		} else {
-			// UVN Vector is left handed
-			Vector3f uVector = game.camera.getRt();
-			Vector3f vVector = game.camera.getUp();
-			Vector3f nVector = game.camera.getFd();
-			
-			// transform vectors
-			Vector3 vTransform = vVector.rotate(rotationSpeed, uVector).normalize();
-			Vector3 nTransform = nVector.rotate(rotationSpeed, uVector).normalize();
-			
-			game.camera.setFd( (Vector3f) nTransform);
-			game.camera.setUp( (Vector3f) vTransform);
+		} else { // U -> Rt; V -> Up; N -> Fd
+			Quaternion quaternionRotation = Quaternionf.createFrom(rotationSpeed, game.camera.getRt());
+			game.camera.setFd( (Vector3f) quaternionRotation.rotate(game.camera.getFd()));
+			game.camera.setUp( (Vector3f) quaternionRotation.rotate(game.camera.getUp()));
 		}
 	}
 

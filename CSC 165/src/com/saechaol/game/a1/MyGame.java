@@ -44,7 +44,7 @@ public class MyGame extends VariableFrameRateGame {
 	public Camera camera;
 	public SceneNode cameraNode, dolphinNode, manualCubePlanetNode, planetZeroNode, planetOneNode, planetTwoNode;
 	private Controller controller;
-	private Action invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
+	private Action rollCameraLeftAction, rollCameraRightAction, invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, livesString, displayString, positionString, dolphinString;
@@ -58,9 +58,10 @@ public class MyGame extends VariableFrameRateGame {
 		super();
 		System.out.println("Press 'W/A/S/D' or control the left stick to MOVE");
 		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ROTATE CAMERA");
+		System.out.println("Press 'Q/E' or the left and right bumpers to ROLL CAMERA");
 		System.out.println("Press 'V' or 'Y' to INVERT YAW");
-		System.out.println("Press 'LSHIFT' or the left bumper to ASCEND");
-		System.out.println("Press 'C' or the right bumper to DESCEND");
+		System.out.println("Press 'LSHIFT' or the left stick to ASCEND");
+		System.out.println("Press 'C' or the right stick to DESCEND");
 		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
 		System.out.println("Press 'ESC' or 'Select' to EXIT");
 		System.out.println("Press 'TAB' or 'Start' to PAUSE");
@@ -122,7 +123,7 @@ public class MyGame extends VariableFrameRateGame {
 	protected void setupScene(Engine engine, SceneManager sceneManager) throws IOException {
 		// initialize input manager
 		setupInputs();
-		
+		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		// initialize the dolphin entity
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
@@ -202,6 +203,9 @@ public class MyGame extends VariableFrameRateGame {
 		ManualObject manualCubePlanetEntity = ManualCubeObject.makeCubeObject(engine, sceneManager);
 		manualCubePlanetNode = sceneManager.getRootSceneNode().createChildSceneNode("ManualCubePlanetNode");
 		manualCubePlanetNode.scale(1.0f, 1.0f, 1.0f);
+		ZBufferState zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
+		zState.setEnabled(true);
+		manualCubePlanetEntity.setRenderState(zState);
 		manualCubePlanetNode.setLocalPosition(randomPlanetCoordinates[3][0], randomPlanetCoordinates[3][1], randomPlanetCoordinates[3][2]);
 		moonNodes[3].setLocalPosition(randomPlanetCoordinates[3][0], randomPlanetCoordinates[3][1], randomPlanetCoordinates[3][2]);
 		moonNodes[3].attachObject(moonEntities[3]);
@@ -285,12 +289,12 @@ public class MyGame extends VariableFrameRateGame {
 		
 		// initialize skybox textures
 		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.a1"));
-		Texture skyboxFrontTexture = textureManager.getAssetByPath("spaceSkyboxFront.png");
-		Texture skyboxBackTexture = textureManager.getAssetByPath("spaceSkyboxBack.png");
-		Texture skyboxLeftTexture = textureManager.getAssetByPath("spaceSkyboxLeft.png");
-		Texture skyboxRightTexture = textureManager.getAssetByPath("spaceSkyboxRight.png");
-		Texture skyboxTopTexture = textureManager.getAssetByPath("spaceSkyboxTop.png");
-		Texture skyboxBottomTexture = textureManager.getAssetByPath("spaceSkyboxBottom.png");
+		Texture skyboxFrontTexture = textureManager.getAssetByPath("spaceSkyboxFront.jpg");
+		Texture skyboxBackTexture = textureManager.getAssetByPath("spaceSkyboxBack.jpg");
+		Texture skyboxLeftTexture = textureManager.getAssetByPath("spaceSkyboxLeft.jpg");
+		Texture skyboxRightTexture = textureManager.getAssetByPath("spaceSkyboxRight.jpg");
+		Texture skyboxTopTexture = textureManager.getAssetByPath("spaceSkyboxTop.jpg");
+		Texture skyboxBottomTexture = textureManager.getAssetByPath("spaceSkyboxBottom.jpg");
 		
 		// transform skybox textures
 		AffineTransform skyboxAffineTransform = new AffineTransform();
@@ -315,7 +319,6 @@ public class MyGame extends VariableFrameRateGame {
 		sceneManager.setActiveSkyBox(worldSkybox);
 		
 		// initialize texture states
-		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState earthTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		TextureState moonTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
@@ -364,6 +367,8 @@ public class MyGame extends VariableFrameRateGame {
 		yawCameraRightAction = new YawCameraRightAction(this);
 		pitchCameraUpAction = new PitchCameraUpAction(this);
 		pitchCameraDownAction = new PitchCameraDownAction(this);
+		rollCameraLeftAction = new RollCameraLeftAction(this);
+		rollCameraRightAction = new RollCameraRightAction(this);
 		rightStickXAction = new RightStickXAction(this, camera);
 		rightStickYAction = new RightStickYAction(this, camera);
 		invertYawAction = new InvertYawAction(this);
@@ -396,6 +401,16 @@ public class MyGame extends VariableFrameRateGame {
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.D, 
 						moveCameraRightAction, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.Q, 
+						rollCameraLeftAction, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.E, 
+						rollCameraRightAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 				
 				inputManager.associateAction(keyboards,
@@ -458,11 +473,22 @@ public class MyGame extends VariableFrameRateGame {
 			// Left and Right shoulder buttons
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._4, 
-					moveCameraUpAction, 
+					rollCameraLeftAction, 
 					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._5, 
+					rollCameraRightAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			// Left and Right stick button
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._8, 
+					moveCameraUpAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._9, 
 					moveCameraDownAction, 
 					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			

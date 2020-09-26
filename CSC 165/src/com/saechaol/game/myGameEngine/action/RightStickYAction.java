@@ -4,6 +4,8 @@ import ray.input.action.AbstractInputAction;
 import ray.rage.scene.Camera;
 import ray.rml.Angle;
 import ray.rml.Degreef;
+import ray.rml.Quaternion;
+import ray.rml.Quaternionf;
 import ray.rml.Vector3;
 import ray.rml.Vector3f;
 import net.java.games.input.Event;
@@ -27,18 +29,9 @@ public class RightStickYAction extends AbstractInputAction {
 			if (game.camera.getMode() == 'c') {
 				System.out.println("Camera mode");
 				System.out.println("Right stick Y moved: " + e.getValue());
-				
-				// UVN Vector is left handed
-				Vector3f uVector = game.camera.getRt();
-				Vector3f vVector = game.camera.getUp();
-				Vector3f nVector = game.camera.getFd();
-				
-				// transform vectors
-				Vector3 vTransform = vVector.rotate(rotationSpeed, uVector).normalize();
-				Vector3 nTransform = nVector.rotate(rotationSpeed, uVector).normalize();
-				
-				game.camera.setFd( (Vector3f) nTransform);
-				game.camera.setUp( (Vector3f) vTransform);
+				Quaternion quaternionRotation = Quaternionf.createFrom(rotationSpeed, game.camera.getRt());
+				game.camera.setFd( (Vector3f) quaternionRotation.rotate(game.camera.getFd()));
+				game.camera.setUp( (Vector3f) quaternionRotation.rotate(game.camera.getUp()));
 			} else {
 				System.out.println("Node mode");
 				System.out.println("Right stick Y moved: " + e.getValue());

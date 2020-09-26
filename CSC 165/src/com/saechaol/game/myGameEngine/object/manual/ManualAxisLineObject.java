@@ -46,14 +46,13 @@ public class ManualAxisLineObject {
 		float[] lineVertices = new float[6];
 		
 		float[] lineTextureCoordinates = {
-			0.0f, 0.0f, 0.0f,
-			0.0f, 100.0f, 0.0f
+			0.0f, 0.0f, 
+			1.0f, 1.0f
 		};
 		
 		float[] lineNormals = {
-				0.0f, 0.0f, 0.1f,
-				0.0f, 0.0f, 1.0f,
-				0.0f, 0.0f, 1.0f
+				-1.0f, -1.0f, -1.0f,
+				0.0f, 0.0f, 0.0f
 		};
 		
 		int[] indices = { 0, 1 };
@@ -61,18 +60,21 @@ public class ManualAxisLineObject {
 		switch (axisUpper) {
 		
 		case 'X': // X axis
+			lineVertices[0] = -100.0f;
 			lineVertices[3] = 100.0f;
 			lineMaterial.setEmissive(Color.RED);
 			lineTexture = engine.getTextureManager().getAssetByPath("x_axis.png");
 			break;
 			
 		case 'Y': // Y axis
+			lineVertices[1] = -100.0f;
 			lineVertices[4] = 100.0f;
 			lineMaterial.setEmissive(Color.GREEN);
 			lineTexture = engine.getTextureManager().getAssetByPath("y_axis.png");
 			break;
 		
 		default: // Z axis
+			lineVertices[2] = -100.0f;
 			lineVertices[5] = 100.0f;
 			lineMaterial.setEmissive(Color.BLUE);
 			lineTexture = engine.getTextureManager().getAssetByPath("z_axis.png");
