@@ -18,6 +18,7 @@ import java.util.Random;
 
 import com.saechaol.game.myGameEngine.action.*;
 import com.saechaol.game.myGameEngine.action.a1.*;
+import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.object.manual.*;
 
 import net.java.games.input.Controller;
@@ -42,15 +43,16 @@ public class MyGame extends VariableFrameRateGame {
 	private static final Random RAND = new Random();
 	private static final String SPACE_SKYBOX = "SpaceSkyBox";
 	public Camera camera;
-	public SceneNode cameraNode, dolphinNode, originNode;
+	public Camera3PController orbitCameraController;
+	public SceneNode cameraNode, dolphinNode, dolphinCamera, originNode;
 	private Controller controller;
-	private Action rollCameraLeftAction, rollCameraRightAction, invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
+	private Action toggleCameraAction, rollCameraLeftAction, rollCameraRightAction, invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, livesString, displayString, positionString, dolphinString;
 	int elapsedTimeSeconds, lives = 3, score = 0;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
-	public boolean toggleRide = false, invertYaw = true, alive = true;
+	public boolean toggleRide = false, invertYaw = true, alive = true, thirdPerson = false;
 	public HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
 	ArrayList<SceneNode> planetNodes = new ArrayList<SceneNode>();
 	ArrayList<SceneNode> cubeMoonNodes = new ArrayList<SceneNode>();
@@ -67,7 +69,7 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("Press 'C' or the right stick to DESCEND");
 		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
 		System.out.println("Press 'ESC' or 'Select' to EXIT");
-		System.out.println("Press 'TAB' or 'Start' to PAUSE");
+		System.out.println("Press 'TAB' or 'Start' to TOGGLE 3P CAMERA");
 		System.out.println("----------------------------------------------------");
 		formatFloat.setRoundingMode(RoundingMode.DOWN);
 	}
@@ -228,9 +230,8 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
 		dolphinNode.moveBackward(2.0f);
 		dolphinNode.attachObject(dolphinEntity);
-		dolphinNode.attachObject(camera);
 		
-		SceneNode dolphinCamera = dolphinNode.createChildSceneNode("dolphinEntity");
+		dolphinCamera = dolphinNode.createChildSceneNode("dolphinCamera");
 		dolphinCamera.moveBackward(0.3f);
 		dolphinCamera.moveUp(0.3f);
 		dolphinCamera.moveRight(0.01f);
@@ -336,11 +337,17 @@ public class MyGame extends VariableFrameRateGame {
 		
 	}
 	
+	protected void setupOrbitCamera(Engine engine, SceneManager sceneManager) {
+		String kb = inputManager.getFirstGamepadName();
+		orbitCameraController = new Camera3PController(camera, cameraNode, dolphinNode, kb, inputManager);
+	}
+	
 	/**
 	 * Initializes controller inputs
 	 */
 	protected void setupInputs() {
-		inputManager = new GenericInputManager();
+		if (inputManager == null)
+			inputManager = new GenericInputManager();
 
 		String gamepadName = inputManager.getFirstGamepadName();
 		controller = inputManager.getControllerByName(gamepadName);
@@ -365,6 +372,7 @@ public class MyGame extends VariableFrameRateGame {
 		rightStickXAction = new RightStickXAction(this, camera);
 		rightStickYAction = new RightStickYAction(this, camera);
 		invertYawAction = new InvertYawAction(this);
+		toggleCameraAction = new ToggleCameraAction(this, camera, inputManager);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -375,6 +383,11 @@ public class MyGame extends VariableFrameRateGame {
 						exitGameAction, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.TAB, 
+						toggleCameraAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
 				// Bind movement actions
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.W, 
@@ -459,6 +472,11 @@ public class MyGame extends VariableFrameRateGame {
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 			
 			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._7, 
+					toggleCameraAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._3, 
 					invertYawAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
@@ -532,11 +550,15 @@ public class MyGame extends VariableFrameRateGame {
 		displayString += " | Dolphin position: (" + formatFloat.format(dolphinNode.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().z()) + ")";
 		renderSystem.setHUD(displayString, 15, 15);
 		inputManager.update(elapsedTime);
-		synchronizePlayerDolphinPosition();
 		checkPlayerDistanceToDolphin(10.0f);
 		if (elapsedTime > 500.0) {
 			moonCollisionDetection();
 			planetCollisionDetection();
+		}
+		if (thirdPerson) {
+			synchronize3PDolphinCameraPosition(orbitCameraController.updateCameraPosition());
+		} else {
+			synchronizePlayerDolphinPosition();
 		}
 	}
 	
@@ -560,12 +582,19 @@ public class MyGame extends VariableFrameRateGame {
 		return rotationController;
 	}
 	
+	private void synchronize3PDolphinCameraPosition(Vector3 position) {
+		camera.setPo((Vector3f) position);
+	}
+	
 	/**
 	 * Ensures that the player's position is the same as the dolphin's when riding the dolphin
 	 */
 	private void synchronizePlayerDolphinPosition() {
 		if (!toggleRide) {
 			camera.setPo((Vector3f) Vector3f.createFrom(dolphinNode.getLocalPosition().x(), dolphinNode.getLocalPosition().y(), dolphinNode.getLocalPosition().z()));
+			camera.setRt((Vector3f) dolphinNode.getLocalRightAxis().mult(-1.0f));
+			camera.setUp((Vector3f) dolphinNode.getLocalUpAxis());
+			camera.setFd((Vector3f) dolphinNode.getLocalForwardAxis());
 		}
 		cameraNode.setLocalPosition(camera.getPo());
 	}
@@ -634,6 +663,13 @@ public class MyGame extends VariableFrameRateGame {
 			invertYaw = true;
 	}
 	
+	public void toggleCamera() {
+		if (thirdPerson)
+			thirdPerson = false;
+		else
+			thirdPerson = true;
+	}
+	
 	/**
 	 * Increments score
 	 */
@@ -657,11 +693,18 @@ public class MyGame extends VariableFrameRateGame {
 	 * @param gamepadName
 	 * @return
 	 */
-	private boolean isGamepadNull(String gamepadName) {
+	public boolean isGamepadNull(String gamepadName) {
 		if (gamepadName == null) {
 			return true;
 		} else 
 			return false;
+	}
+	
+	public void reinitializeInputs() {
+		setupInputs();
+		dolphinNode.attachChild(dolphinCamera);
+		dolphinCamera.attachObject(camera);
+		toggleCamera();
 	}
 	
 	/**

@@ -24,6 +24,9 @@ public class RideDolphinToggleAction extends AbstractInputAction {
 			game.camera.setMode('n');
 		} else {
 			System.out.println("Dolphin Camera Off");
+			if (game.thirdPerson) {
+				game.reinitializeInputs();
+			}
 			game.toggleRide = true;
 			game.camera.setMode('c');
 			dismountDolphin();
@@ -38,6 +41,9 @@ public class RideDolphinToggleAction extends AbstractInputAction {
 			game.camera.setMode('n');
 		} else {
 			System.out.println("Dolphin Camera Off");
+			if (game.thirdPerson) {
+				game.reinitializeInputs();
+			}
 			game.toggleRide = true;
 			game.camera.setMode('c');
 			dismountDolphin();
