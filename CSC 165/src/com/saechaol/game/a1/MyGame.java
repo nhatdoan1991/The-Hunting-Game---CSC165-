@@ -51,13 +51,19 @@ public class MyGame extends VariableFrameRateGame {
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, livesString, displayString, positionString, dolphinString;
 	int elapsedTimeSeconds, lives = 3, score = 0;
+	private int totalPlanetCount = 0;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
+	private TextureManager textureManager;
+	private Texture[] planetTextures;
+	private ZBufferState zState;
 	public boolean toggleRide = false, invertYaw = true, alive = true, thirdPerson = false;
 	public HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
 	ArrayList<SceneNode> planetNodes = new ArrayList<SceneNode>();
 	ArrayList<SceneNode> cubeMoonNodes = new ArrayList<SceneNode>();
 	ArrayList<OrbitController> galaxyOrbitController = new ArrayList<OrbitController>();
 	ArrayList<OrbitController> planetOrbitController = new ArrayList<OrbitController>();
+	ArrayList<RotationController> planetRotationControllers = new ArrayList<RotationController>();
+	ArrayList<RotationController> cubeMoonRotationControllers = new ArrayList<RotationController>();
 	
 	public MyGame() {
 		super();
@@ -127,6 +133,17 @@ public class MyGame extends VariableFrameRateGame {
 	protected void setupScene(Engine engine, SceneManager sceneManager) throws IOException {
 		// initialize input manager
 		setupInputs();
+		if (textureManager == null) {
+			textureManager = this.getEngine().getTextureManager();
+		}
+		planetTextures = new Texture[6];
+		planetTextures[0] = textureManager.getAssetByPath("earth-day.jpeg");
+		planetTextures[1] = textureManager.getAssetByPath("blue.jpeg");
+		planetTextures[2] = textureManager.getAssetByPath("hexagons.jpeg");
+		planetTextures[3] = textureManager.getAssetByPath("earth-night.jpeg");
+		planetTextures[4] = textureManager.getAssetByPath("red.jpeg");
+		planetTextures[5] = textureManager.getAssetByPath("chain-fence.jpeg");
+		
 		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		// initialize the dolphin entity
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
@@ -136,94 +153,18 @@ public class MyGame extends VariableFrameRateGame {
 		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
 		
 		// initialize planets
-		Entity[] planetEntities = new Entity[6];
-		ManualObject[] cubeMoonEntities = new ManualObject[planetEntities.length];
-		ZBufferState zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
-		zState.setEnabled(true);
-		for (int i = 0; i < planetEntities.length; i++) { 
-			planetEntities[i] = sceneManager.createEntity("planetEntity" + i, "earth.obj");
-			cubeMoonEntities[i] = ManualCubeObject.makeCubeObject(engine, sceneManager, Integer.toString(i));
-			planetEntities[i].setPrimitive(Primitive.TRIANGLES);
-			cubeMoonEntities[i].setPrimitive(Primitive.TRIANGLES);
-			planetEntities[i].setRenderState(zState);
-			cubeMoonEntities[i].setRenderState(zState);
-			SceneNode planetNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntities[i].getName() + "Node");
-			SceneNode cubeMoonNode = sceneManager.getRootSceneNode().createChildSceneNode(cubeMoonEntities[i].getName() + "Node");
-			planetNodes.add(planetNode);
-			cubeMoonNodes.add(cubeMoonNode);
-		}
+		//Entity[] planetEntities = new Entity[6];
+		//ManualObject[] cubeMoonEntities = new ManualObject[planetEntities.length];
 		
-		// randomized coordinates from <-40, -40, -40> to <40, 40, 40>
-		float[][] randomPlanetCoordinates = new float[planetEntities.length][3];
-		for(float[] coordinates : randomPlanetCoordinates) {
-			coordinates = randomFloatArray(79.9f);
-		}
-		
-		for (int i = 0; i < randomPlanetCoordinates.length; i++) {
-			for (int j = 0; j < randomPlanetCoordinates[i].length; j++) {
-				float dec = RAND.nextFloat();
-				// negate this value
-				if (RAND.nextBoolean()) {
-					randomPlanetCoordinates[i][j] *= -1.0f;
-				}
-				
-				// add or subtract the decimal value
-				if (RAND.nextBoolean()) {
-					randomPlanetCoordinates[i][j] += dec;
-				} else {
-					randomPlanetCoordinates[i][j] -= dec;
-				}
-			}
-		}
-		
-		// set planet nodes and initialize orbit controllers
+		// origin node for orbit controller
 		originNode = sceneManager.getRootSceneNode().createChildSceneNode("originNode");
 		originNode.setLocalPosition(0.0f, 0.0f, 0.0f);
 		
-		for (int i = 0; i < planetEntities.length; i++) {
-			float[] orbitParameters = { 
-				RAND.nextFloat() * 0.1f, 
-				(RAND.nextFloat() * 50.0f) + 15.0f,
-				(RAND.nextFloat() * 50.0f) + 15.0f,
-			};
-			if (RAND.nextBoolean()) {
-				orbitParameters[2] *= -1.0f;
-			}
-			galaxyOrbitController.add(new OrbitController(originNode, orbitParameters[0], orbitParameters[1], orbitParameters[2], RAND.nextBoolean()));
-		}
+		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
+		zState.setEnabled(true);
 		
-		for (int i = 0; i < planetNodes.size(); i++) {
-			planetNodes.get(i).setLocalPosition(randomPlanetCoordinates[i][0], randomPlanetCoordinates[i][1], randomPlanetCoordinates[i][2]);
-			cubeMoonNodes.get(i).setLocalPosition(randomPlanetCoordinates[i][0], randomPlanetCoordinates[i][1], randomPlanetCoordinates[i][2]);
-			planetNodes.get(i).attachObject(planetEntities[i]);
-			cubeMoonNodes.get(i).attachObject(cubeMoonEntities[i]);
-			float[] orbitParameters = { 
-					RAND.nextFloat() * 5.0f, 
-					(RAND.nextFloat() * 20.0f) + 5.0f,
-				};
-			planetOrbitController.add(new OrbitController(planetNodes.get(i), orbitParameters[0], orbitParameters[1], 0.0f, RAND.nextBoolean()));
-			galaxyOrbitController.get(i).addNode(planetNodes.get(i));
-			planetOrbitController.get(i).addNode(cubeMoonNodes.get(i));
-			activePlanets.put(planetNodes.get(i), true);
-		}
-		
-		// add orbit controllers to scene
-		for (int i = 0; i < planetNodes.size(); i++) {
-			sceneManager.addController(galaxyOrbitController.get(i));
-			sceneManager.addController(planetOrbitController.get(i));
-		}
-		
-		// initialize a rotation controller for the orbits, moons and planets
-		for (SceneNode planet : planetNodes) {
-			RotationController planetRotation = randomRotation();
-			planetRotation.addNode(planet);
-			sceneManager.addController(planetRotation);
-		}
-		
-		for (SceneNode cubeMoon : cubeMoonNodes) {
-			RotationController moonRotation = randomRotation();
-			moonRotation.addNode(cubeMoon);
-			sceneManager.addController(moonRotation);
+		for (int i = 0; i < 6; i++) { 
+			activePlanets.put(instantiateNewPlanet(engine, sceneManager), true);
 		}
 		
 		// initialize the dolphin node and add it to the scene graph
@@ -262,84 +203,13 @@ public class MyGame extends VariableFrameRateGame {
 		// attach the flashlight to the dolphin
 		cameraNode.attachObject(pointLightFlash);
 		
-		Configuration configuration = engine.getConfiguration();
+		initializeSkybox(engine, sceneManager);
 		
 		// manually assign textures
-		TextureManager textureManager = engine.getTextureManager();
 		Texture dolphinTexture = textureManager.getAssetByPath("Dolphin_HighPolyUV.png");
-		Texture moonTexture = textureManager.getAssetByPath("moon.jpeg");
-		
-		Texture[] planetTextures = {
-			textureManager.getAssetByPath("earth-day.jpeg"),
-			textureManager.getAssetByPath("blue.jpeg"),
-			textureManager.getAssetByPath("hexagons.jpeg"),
-			textureManager.getAssetByPath("earth-night.jpeg"),
-			textureManager.getAssetByPath("red.jpeg"),
-			textureManager.getAssetByPath("chain-fence.jpeg")
-			
-		};
-		
-		// initialize skybox
-		SkyBox worldSkybox = sceneManager.createSkyBox(SPACE_SKYBOX);
-		
-		// initialize skybox textures
-		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.a1"));
-		Texture skyboxFrontTexture = textureManager.getAssetByPath("spaceSkyboxFront.jpg");
-		Texture skyboxBackTexture = textureManager.getAssetByPath("spaceSkyboxBack.jpg");
-		Texture skyboxLeftTexture = textureManager.getAssetByPath("spaceSkyboxLeft.jpg");
-		Texture skyboxRightTexture = textureManager.getAssetByPath("spaceSkyboxRight.jpg");
-		Texture skyboxTopTexture = textureManager.getAssetByPath("spaceSkyboxTop.jpg");
-		Texture skyboxBottomTexture = textureManager.getAssetByPath("spaceSkyboxBottom.jpg");
-		
-		// transform skybox textures
-		AffineTransform skyboxAffineTransform = new AffineTransform();
-		skyboxAffineTransform.translate(0.0, skyboxFrontTexture.getImage().getHeight());
-		skyboxAffineTransform.scale(1.0, 1.0);
-		skyboxFrontTexture.transform(skyboxAffineTransform);
-		skyboxBackTexture.transform(skyboxAffineTransform);
-		skyboxLeftTexture.transform(skyboxAffineTransform);
-		skyboxRightTexture.transform(skyboxAffineTransform);
-		skyboxTopTexture.transform(skyboxAffineTransform);
-		skyboxBottomTexture.transform(skyboxAffineTransform);
-		
-		// set skybox textures
-		worldSkybox.setTexture(skyboxFrontTexture, SkyBox.Face.FRONT);
-		worldSkybox.setTexture(skyboxBackTexture, SkyBox.Face.BACK);
-		worldSkybox.setTexture(skyboxLeftTexture, SkyBox.Face.LEFT);
-		worldSkybox.setTexture(skyboxRightTexture, SkyBox.Face.RIGHT);
-		worldSkybox.setTexture(skyboxTopTexture, SkyBox.Face.TOP);
-		worldSkybox.setTexture(skyboxBottomTexture, SkyBox.Face.BOTTOM);
-		
-		// assign skybox to sceneManager
-		sceneManager.setActiveSkyBox(worldSkybox);
-		
-		// initialize texture states
 		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		TextureState moonTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		TextureState[] planetTextureStates = new TextureState[planetTextures.length];
-
 		dolphinTextureState.setTexture(dolphinTexture);
-		dolphinEntity.setRenderState(dolphinTextureState);
-		
-		moonTextureState.setTexture(moonTexture);
-		for (ManualObject cubeMoonEntity : cubeMoonEntities) {
-			cubeMoonEntity.setRenderState(moonTextureState);
-		}
-		
-		for (int i = 0; i < planetTextures.length; i++) {
-			planetTextureStates[i] = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-			planetTextureStates[i].setTexture(planetTextures[i]);
-		}
-		
-		for (int i = 0; i < planetEntities.length; i++) {
-			planetEntities[i].setRenderState(planetTextureStates[i]);
-		}
-		
-	}
-	
-	protected void setupOrbitCamera(Engine engine, SceneManager sceneManager) {
-		String kb = inputManager.getFirstGamepadName();
-		orbitCameraController = new Camera3PController(camera, cameraNode, dolphinNode, kb, inputManager);
+		dolphinEntity.setRenderState(dolphinTextureState);		
 	}
 	
 	/**
@@ -554,12 +424,51 @@ public class MyGame extends VariableFrameRateGame {
 		if (elapsedTime > 500.0) {
 			moonCollisionDetection();
 			planetCollisionDetection();
+			replacePlanet();
 		}
 		if (thirdPerson) {
 			synchronize3PDolphinCameraPosition(orbitCameraController.updateCameraPosition());
 		} else {
 			synchronizePlayerDolphinPosition();
 		}
+	}
+	
+	private void initializeSkybox(Engine engine, SceneManager sceneManager) throws IOException {
+		// initialize skybox
+		SkyBox worldSkybox = sceneManager.createSkyBox(SPACE_SKYBOX);
+		Configuration configuration = engine.getConfiguration();
+		
+		// initialize skybox textures
+		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.a1"));
+		Texture skyboxFrontTexture = textureManager.getAssetByPath("spaceSkyboxFront.jpg");
+		Texture skyboxBackTexture = textureManager.getAssetByPath("spaceSkyboxBack.jpg");
+		Texture skyboxLeftTexture = textureManager.getAssetByPath("spaceSkyboxLeft.jpg");
+		Texture skyboxRightTexture = textureManager.getAssetByPath("spaceSkyboxRight.jpg");
+		Texture skyboxTopTexture = textureManager.getAssetByPath("spaceSkyboxTop.jpg");
+		Texture skyboxBottomTexture = textureManager.getAssetByPath("spaceSkyboxBottom.jpg");
+		
+		// transform skybox textures
+		AffineTransform skyboxAffineTransform = new AffineTransform();
+		skyboxAffineTransform.translate(0.0, skyboxFrontTexture.getImage().getHeight());
+		skyboxAffineTransform.scale(1.0, 1.0);
+		skyboxFrontTexture.transform(skyboxAffineTransform);
+		skyboxBackTexture.transform(skyboxAffineTransform);
+		skyboxLeftTexture.transform(skyboxAffineTransform);
+		skyboxRightTexture.transform(skyboxAffineTransform);
+		skyboxTopTexture.transform(skyboxAffineTransform);
+		skyboxBottomTexture.transform(skyboxAffineTransform);
+		
+		// set skybox textures
+		worldSkybox.setTexture(skyboxFrontTexture, SkyBox.Face.FRONT);
+		worldSkybox.setTexture(skyboxBackTexture, SkyBox.Face.BACK);
+		worldSkybox.setTexture(skyboxLeftTexture, SkyBox.Face.LEFT);
+		worldSkybox.setTexture(skyboxRightTexture, SkyBox.Face.RIGHT);
+		worldSkybox.setTexture(skyboxTopTexture, SkyBox.Face.TOP);
+		worldSkybox.setTexture(skyboxBottomTexture, SkyBox.Face.BOTTOM);
+		
+		// assign skybox to sceneManager
+		sceneManager.setActiveSkyBox(worldSkybox);
+		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.textures.path"));
 	}
 	
 	/**
@@ -629,6 +538,139 @@ public class MyGame extends VariableFrameRateGame {
 				}
 			}
 		});
+	}
+	
+	private void replacePlanet() {
+		HashMap<SceneNode, Boolean> currentlyActive = new HashMap<SceneNode, Boolean>();
+		activePlanets.forEach((k, v) -> {
+			if (!v) {
+				int planetIndex = planetNodes.indexOf(k);
+				System.out.println(k);
+				System.out.println(cubeMoonNodes.get(planetIndex));
+				// remove planet and moon from collection
+				planetNodes.remove(k);
+				SceneNode kMoon = cubeMoonNodes.remove(planetIndex); 
+				
+				// remove node controllers
+				galaxyOrbitController.remove(planetIndex);
+				planetOrbitController.remove(planetIndex);
+				planetRotationControllers.remove(planetIndex);
+				cubeMoonRotationControllers.remove(planetIndex);
+				this.getEngine().getSceneManager().destroySceneNode(k);
+				this.getEngine().getSceneManager().destroySceneNode(kMoon);
+				try {
+					currentlyActive.put(instantiateNewPlanet(this.getEngine(), this.getEngine().getSceneManager()), true);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			} else {
+				currentlyActive.put(k, v);
+			}
+			
+		});
+		activePlanets = currentlyActive;
+	}
+	
+	private SceneNode instantiateNewPlanet(Engine engine, SceneManager sceneManager) throws IOException {
+		Entity planetEntity = sceneManager.createEntity("planetEntity" + totalPlanetCount, "earth.obj");
+		ManualObject cubeEntity = ManualCubeObject.makeCubeObject(engine, sceneManager, Integer.toString(totalPlanetCount));
+		Texture planetTexture;
+		RenderSystem renderSystem = sceneManager.getRenderSystem();
+		
+		// initial planet instantiation
+		switch(totalPlanetCount) {
+			case 0:
+			case 1:
+			case 2: 
+			case 3:
+			case 4:
+			case 5:
+				planetTexture = planetTextures[totalPlanetCount];
+				break;
+			default:
+				planetTexture = planetTextures[RAND.nextInt(6)];
+		}
+		
+		Texture cubeTexture = textureManager.getAssetByPath("moon.jpeg");
+		
+		float[] coordinates = randomFloatArray(79.0f);
+		
+		// initialize randomized parameters for the galaxy orbit controller
+		float[] galaxyOrbitParameters = { 
+				RAND.nextFloat() * 0.1f, 
+				(RAND.nextFloat() * 50.0f) + 15.0f,
+				(RAND.nextFloat() * 50.0f) + 15.0f,
+		};
+		
+		// initialize randomized parameters for the planet-moon orbit controller
+		float[] planetOrbitParameters = { 
+				RAND.nextFloat() * 5.0f, 
+				(RAND.nextFloat() * 20.0f) + 5.0f,
+		};
+		
+		if (RAND.nextBoolean()) {
+			galaxyOrbitParameters[2] *= -1.0f;
+		}
+		
+		planetEntity.setPrimitive(Primitive.TRIANGLES);
+		cubeEntity.setPrimitive(Primitive.TRIANGLES);
+		
+		planetEntity.setRenderState(zState);
+		cubeEntity.setRenderState(zState);
+		
+		SceneNode planetNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntity.getName() + "Node");
+		SceneNode cubeNode = sceneManager.getRootSceneNode().createChildSceneNode(cubeEntity.getName() + "Node");
+		
+		TextureState planetTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		planetTextureState.setTexture(planetTexture);
+		planetEntity.setRenderState(planetTextureState);
+		
+		TextureState cubeTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		cubeTextureState.setTexture(cubeTexture);
+		cubeEntity.setRenderState(cubeTextureState);
+		
+		// initialize planet and moon positions
+		planetNode.setLocalPosition(coordinates[0], coordinates[1], coordinates[2]);
+		cubeNode.setLocalPosition(planetNode.getLocalPosition());
+		
+		// attach entities to nodes
+		planetNode.attachObject(planetEntity);
+		cubeNode.attachObject(cubeEntity);
+		
+		galaxyOrbitController.add(new OrbitController(originNode, galaxyOrbitParameters[0], galaxyOrbitParameters[1], galaxyOrbitParameters[2], RAND.nextBoolean()));
+		planetOrbitController.add(new OrbitController(planetNode, planetOrbitParameters[0], planetOrbitParameters[1], 0.0f, RAND.nextBoolean()));
+	
+		// add rotation controllers if node is NOT always facing target
+		if (!galaxyOrbitController.get(galaxyOrbitController.size() - 1).isAlwaysFacingTarget()) {
+			RotationController planetRotation = randomRotation();
+			planetRotationControllers.add(planetRotation);
+			planetRotation.addNode(planetNode);
+			sceneManager.addController(planetRotation);
+		} else {
+			planetRotationControllers.add(null); // maintain size integrity
+		}
+		
+		if (!planetOrbitController.get(planetOrbitController.size() - 1).isAlwaysFacingTarget()) {
+			RotationController moonRotation = randomRotation();
+			cubeMoonRotationControllers.add(moonRotation);
+			moonRotation.addNode(cubeNode);
+			sceneManager.addController(moonRotation);
+		} else {
+			cubeMoonRotationControllers.add(null); // maintain size integrity
+		}
+		
+		planetNodes.add(planetNode);
+		cubeMoonNodes.add(cubeNode);
+		
+		galaxyOrbitController.get(galaxyOrbitController.size() - 1).addNode(planetNode);
+		planetOrbitController.get(planetOrbitController.size() - 1).addNode(cubeNode);
+		
+		sceneManager.addController(galaxyOrbitController.get(galaxyOrbitController.size() - 1));
+		sceneManager.addController(planetOrbitController.get(planetOrbitController.size() - 1));
+		
+		totalPlanetCount++;
+		
+		return planetNode;
 	}
 	
 	/**
@@ -715,6 +757,13 @@ public class MyGame extends VariableFrameRateGame {
 		float[] randomFloat = {
 				(RAND.nextFloat() * upperBound), (RAND.nextFloat() * upperBound), (RAND.nextFloat() * upperBound)
 		};
+		for (int i = 0; i < randomFloat.length; i++) {
+			if (RAND.nextBoolean()) {
+				randomFloat[i] += RAND.nextFloat();
+			} else {
+				randomFloat[i] -= RAND.nextFloat();
+			}
+		}
 		return randomFloat;
 	}
 	
