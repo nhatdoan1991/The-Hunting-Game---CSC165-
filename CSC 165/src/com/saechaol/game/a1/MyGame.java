@@ -133,9 +133,15 @@ public class MyGame extends VariableFrameRateGame {
 	protected void setupScene(Engine engine, SceneManager sceneManager) throws IOException {
 		// initialize input manager
 		setupInputs();
+		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		if (textureManager == null) {
 			textureManager = this.getEngine().getTextureManager();
 		}
+		
+		// initialize zState
+		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
+		zState.setEnabled(true);
+		
 		planetTextures = new Texture[6];
 		planetTextures[0] = textureManager.getAssetByPath("earth-day.jpeg");
 		planetTextures[1] = textureManager.getAssetByPath("blue.jpeg");
@@ -144,7 +150,6 @@ public class MyGame extends VariableFrameRateGame {
 		planetTextures[4] = textureManager.getAssetByPath("red.jpeg");
 		planetTextures[5] = textureManager.getAssetByPath("chain-fence.jpeg");
 		
-		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		// initialize the dolphin entity
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
 		dolphinEntity.setPrimitive(Primitive.TRIANGLES);
@@ -152,17 +157,11 @@ public class MyGame extends VariableFrameRateGame {
 		// initialize world axes
 		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
 		
-		// initialize planets
-		//Entity[] planetEntities = new Entity[6];
-		//ManualObject[] cubeMoonEntities = new ManualObject[planetEntities.length];
-		
 		// origin node for orbit controller
 		originNode = sceneManager.getRootSceneNode().createChildSceneNode("originNode");
 		originNode.setLocalPosition(0.0f, 0.0f, 0.0f);
 		
-		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
-		zState.setEnabled(true);
-		
+		// initialize planets
 		for (int i = 0; i < 6; i++) { 
 			activePlanets.put(instantiateNewPlanet(engine, sceneManager), true);
 		}
