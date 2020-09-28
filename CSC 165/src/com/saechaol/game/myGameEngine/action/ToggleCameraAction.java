@@ -4,12 +4,15 @@ import com.saechaol.game.a1.MyGame;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 
 import net.java.games.input.Event;
-import ray.input.GenericInputManager;
 import ray.input.InputManager;
 import ray.input.action.Action;
-import ray.rage.Engine;
 import ray.rage.scene.Camera;
-import ray.rage.scene.SceneManager;
+
+/**
+ * An action handler that switches camera control from 1P to 3P POV.
+ * @author Lucas
+ *
+ */
 
 public class ToggleCameraAction implements Action {
 
@@ -23,6 +26,12 @@ public class ToggleCameraAction implements Action {
 		inputManager = im;
 	}
 	
+	/**
+	 * Checks what mode the camera is in and either switches to or reverts from 3P camera mode
+	 * 
+	 * @param time
+	 * @param e
+	 */
 	@Override
 	public void performAction(float time, Event e) {
 
@@ -42,6 +51,9 @@ public class ToggleCameraAction implements Action {
 		}
 	}
 	
+	/**
+	 * Initializes the orbiting 3P camera and its controls
+	 */
 	private void setupOrbitCamera() {
 		game.orbitCameraController = new Camera3PController(camera, game.cameraNode, game.dolphinNode, inputManager.getFirstGamepadName(), inputManager);
 		game.dolphinNode.detachChild(game.dolphinCamera);
@@ -49,6 +61,9 @@ public class ToggleCameraAction implements Action {
 		game.cameraNode.attachObject(camera);
 	}
 	
+	/**
+	 * Prints controls to the console
+	 */
 	private void printControls() {
 		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ORBIT CAMERA");
 		System.out.println("Press 'R/F' or the left and right triggers to ZOOM CAMERA");

@@ -1,14 +1,20 @@
 package com.saechaol.game.myGameEngine.action;
 
-import ray.input.action.AbstractInputAction;
 import com.saechaol.game.a1.MyGame;
+
 import net.java.games.input.Event;
+import ray.input.action.AbstractInputAction;
 import ray.rml.Angle;
 import ray.rml.Degreef;
 import ray.rml.Quaternion;
 import ray.rml.Quaternionf;
-import ray.rml.Vector3;
 import ray.rml.Vector3f;
+
+/**
+ * An action handler that rolls the camera left. Rotation is calculated using Quaternions.
+ * @author Lucas
+ *
+ */
 
 public class RollCameraLeftAction extends AbstractInputAction {
 
@@ -20,7 +26,7 @@ public class RollCameraLeftAction extends AbstractInputAction {
 	
 	@Override
 	public void performAction(float time, Event e) {
-		System.out.println("Rolling camera left");
+	//	System.out.println("Rolling camera left");
 		Angle rotationSpeed;
 		if (game.invertYaw) {
 			rotationSpeed = Degreef.createFrom(-game.getEngine().getElapsedTimeMillis() / 10.0f);

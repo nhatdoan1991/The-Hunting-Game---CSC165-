@@ -1,15 +1,12 @@
 package com.saechaol.game.myGameEngine.object.manual;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 
 import ray.rage.Engine;
-import ray.rage.asset.material.Material;
 import ray.rage.asset.texture.Texture;
 import ray.rage.rendersystem.Renderable.DataSource;
-import ray.rage.rendersystem.Renderable.Primitive;
 import ray.rage.rendersystem.shader.GpuShaderProgram;
 import ray.rage.rendersystem.states.FrontFaceState;
 import ray.rage.rendersystem.states.RenderState;
@@ -17,8 +14,13 @@ import ray.rage.rendersystem.states.TextureState;
 import ray.rage.scene.ManualObject;
 import ray.rage.scene.ManualObjectSection;
 import ray.rage.scene.SceneManager;
-import ray.rage.scene.SceneNode;
 import ray.rage.util.BufferUtil;
+
+/**
+ * This class returns a manual cube object, whose vertices, texture map, and norm are defined in makeCubeObject()
+ * @author Lucas
+ *
+ */
 
 public class ManualCubeObject {
 	

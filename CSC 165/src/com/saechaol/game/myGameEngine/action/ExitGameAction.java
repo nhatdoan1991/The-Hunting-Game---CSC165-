@@ -1,14 +1,15 @@
 package com.saechaol.game.myGameEngine.action;
 
-/**
- * A general event listener that will execute game shutdown
- * 
- * @author Lucas
- */
 import ray.input.action.AbstractInputAction;
 import ray.rage.game.*;
 import net.java.games.input.Event;
 import com.saechaol.game.a1.MyGame;
+
+/**
+ * An action handler that requests game shutdown
+ * @author Lucas
+ *
+ */
 
 public class ExitGameAction extends AbstractInputAction {
 

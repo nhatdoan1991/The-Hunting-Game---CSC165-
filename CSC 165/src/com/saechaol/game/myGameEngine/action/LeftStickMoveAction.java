@@ -1,23 +1,21 @@
 package com.saechaol.game.myGameEngine.action;
 
-/**
- * Polls the left stick for data
- */
-
 import ray.input.action.AbstractInputAction;
-import ray.rage.game.*;
 import net.java.games.input.Component;
 import net.java.games.input.Controller;
 import net.java.games.input.Event;
-import com.saechaol.game.a1.MyGame;
+
+/**
+ * An action handler that polls the gamepad's left stick axes for information
+ * @author Lucas
+ *
+ */
 
 public class LeftStickMoveAction extends AbstractInputAction {
 
-	private MyGame game;
 	private Controller controller;
 	
-	public LeftStickMoveAction(MyGame g, Controller c) {
-		game = g;
+	public LeftStickMoveAction(Controller c) {
 		controller = c;
 	}
 

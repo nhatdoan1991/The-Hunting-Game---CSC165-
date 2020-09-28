@@ -16,6 +16,12 @@ import ray.rage.scene.ManualObjectSection;
 import ray.rage.scene.SceneManager;
 import ray.rage.util.BufferUtil;
 
+
+/**
+ * This class defines a pyramid object and provides a way to instantiate one independent of the game
+ * @author Lucas
+ *
+ */
 public class ManualPyramidObject {
 	
 	public static ManualObject makePyramid(Engine engine, SceneManager sceneManager) throws IOException {

@@ -3,15 +3,20 @@ package com.saechaol.game.myGameEngine.camera;
 import java.util.ArrayList;
 
 import net.java.games.input.Controller;
-import net.java.games.input.Event;
 import ray.input.InputManager;
 import ray.input.action.AbstractInputAction;
 import ray.input.action.Action;
 import ray.rage.scene.Camera;
 import ray.rage.scene.SceneNode;
-import ray.rml.Quaternion;
 import ray.rml.Vector3;
 import ray.rml.Vector3f;
+
+/**
+ * Camera3PController handles and initializes the orbiting camera view, as well as 
+ * reinitializes the controls for both the keyboard and the gamepad
+ * @author Lucas
+ *
+ */
 
 public class Camera3PController {
 
@@ -33,6 +38,10 @@ public class Camera3PController {
 		updateCameraPosition();
 	}
 	
+	/**
+	 * Updates the camera's position as it rotates around the player
+	 * @return a Vector representing the camera's current position
+	 */
 	public Vector3 updateCameraPosition() {
 		double theta = Math.toRadians(cameraAzimuth);
 		double phi = Math.toRadians(cameraElevation);
@@ -45,6 +54,11 @@ public class Camera3PController {
 		return cameraNode.getLocalPosition();
 	}
 	
+	/**
+	 * Reinitializes the controls specifically for 3P camera mode.
+	 * @param inputManager
+	 * @param controllerName
+	 */
 	private void setupInput(InputManager inputManager, String controllerName) {
 		Action orbitAction = new OrbitAroundAction();
 		Action elevateAction = new OrbitElevationAction();
@@ -88,6 +102,17 @@ public class Camera3PController {
 						net.java.games.input.Component.Identifier.Key.R,
 						zoomInAction,
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.E, 
+						null, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.Q, 
+						null, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
 			}
 		}
 		
@@ -121,6 +146,11 @@ public class Camera3PController {
 
 	}
 	
+	/**
+	 * An action handler that controls how the player orbits left and right
+	 * @author Lucas
+	 *
+	 */
 	private class OrbitAroundAction extends AbstractInputAction {
 
 		@Override
@@ -134,13 +164,16 @@ public class Camera3PController {
 				rotation = 0.0f;
 			cameraAzimuth += rotation;
 			cameraAzimuth = cameraAzimuth % 360;
-	//		if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
-	//		if (cameraAzimuth > 30.0f) { cameraAzimuth = 330.0f; }
 			updateCameraPosition();
 		}
 		
 	}
 	
+	/**
+	 * An action handler that controls how the player orbits left 
+	 * @author Lucas
+	 *
+	 */
 	private class YawLeftAction extends AbstractInputAction {
 
 		@Override
@@ -154,6 +187,11 @@ public class Camera3PController {
 		
 	}
 	
+	/**
+	 * An action handler that controls how the player orbits right
+	 * @author Lucas
+	 *
+	 */
 	private class YawRightAction extends AbstractInputAction {
 
 		@Override
@@ -167,6 +205,11 @@ public class Camera3PController {
 		
 	}
 	
+	/**
+	 * An action handler that controls 3P camera upwards elevation
+	 * @author Lucas
+	 *
+	 */
 	private class ElevateUpAction extends AbstractInputAction {
 		
 		@Override
@@ -178,6 +221,11 @@ public class Camera3PController {
 		}
 	}
 	
+	/**
+	 * An action handler that controls 3P camera downwards elevation
+	 * @author Lucas
+	 *
+	 */
 	private class ElevateDownAction extends AbstractInputAction {
 		
 		@Override
@@ -189,8 +237,11 @@ public class Camera3PController {
 		}
 	}
 	
-	
-	
+	/**
+	 * An action handler that controls 3P camera elevation
+	 * @author Lucas
+	 *
+	 */
 	private class OrbitElevationAction extends AbstractInputAction {
 		
 		@Override
@@ -209,6 +260,11 @@ public class Camera3PController {
 		}
 	}
 	
+	/**
+	 * An action handler that controls 3P camera inwards zoom
+	 * @author Lucas
+	 *
+	 */
 	private class ZoomInAction extends AbstractInputAction {
 		
 		@Override
@@ -220,6 +276,11 @@ public class Camera3PController {
 		}
 	}
 	
+	/**
+	 * An action handler that controls 3P camera outwards zoom
+	 * @author Lucas
+	 *
+	 */
 	private class ZoomOutAction extends AbstractInputAction {
 		
 		@Override
@@ -231,6 +292,11 @@ public class Camera3PController {
 		}
 	}
 	
+	/**
+	 * An action handler that controls 3P camera zoom
+	 * @author Lucas
+	 *
+	 */
 	private class OrbitRadiusAction extends AbstractInputAction {
 		
 		@Override

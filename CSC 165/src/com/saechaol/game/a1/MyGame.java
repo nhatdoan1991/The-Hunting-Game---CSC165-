@@ -350,14 +350,14 @@ public class MyGame extends VariableFrameRateGame {
 		
 		// Build action objects for listening to user input
 		exitGameAction = new ExitGameAction(this);
-		moveCameraForwardAction = new MoveCameraForwardAction(this, camera);
-		moveCameraBackwardAction = new MoveCameraBackwardAction(this, camera);
-		moveCameraLeftAction = new MoveCameraLeftAction(this, camera);
-		moveCameraRightAction = new MoveCameraRightAction(this, camera);
-		moveCameraUpAction = new MoveCameraUpAction(this, camera);
-		moveCameraDownAction = new MoveCameraDownAction(this, camera);
-		leftStickXAction = new LeftStickXAction(this, camera);
-		leftStickYAction = new LeftStickYAction(this, camera);
+		moveCameraForwardAction = new MoveCameraForwardAction(this);
+		moveCameraBackwardAction = new MoveCameraBackwardAction(this);
+		moveCameraLeftAction = new MoveCameraLeftAction(this);
+		moveCameraRightAction = new MoveCameraRightAction(this);
+		moveCameraUpAction = new MoveCameraUpAction(this);
+		moveCameraDownAction = new MoveCameraDownAction(this);
+		leftStickXAction = new LeftStickXAction(this);
+		leftStickYAction = new LeftStickYAction(this);
 		rideDolphinToggleAction = new RideDolphinToggleAction(this);
 		yawCameraLeftAction = new YawCameraLeftAction(this);
 		yawCameraRightAction = new YawCameraRightAction(this);
@@ -365,8 +365,8 @@ public class MyGame extends VariableFrameRateGame {
 		pitchCameraDownAction = new PitchCameraDownAction(this);
 		rollCameraLeftAction = new RollCameraLeftAction(this);
 		rollCameraRightAction = new RollCameraRightAction(this);
-		rightStickXAction = new RightStickXAction(this, camera);
-		rightStickYAction = new RightStickYAction(this, camera);
+		rightStickXAction = new RightStickXAction(this);
+		rightStickYAction = new RightStickYAction(this);
 		invertYawAction = new InvertYawAction(this);
 		toggleCameraAction = new ToggleCameraAction(this, camera, inputManager);
 		skipSongAction = new SkipSongAction(this);
@@ -463,6 +463,16 @@ public class MyGame extends VariableFrameRateGame {
 						net.java.games.input.Component.Identifier.Key.DOWN,
 						pitchCameraDownAction,
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.F,
+						null,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards,
+						net.java.games.input.Component.Identifier.Key.R,
+						null,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			}
 		}
 		
@@ -534,6 +544,11 @@ public class MyGame extends VariableFrameRateGame {
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Axis.RY, 
 					rightStickYAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Axis.Z, 
+					null, 
 					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			
 		}

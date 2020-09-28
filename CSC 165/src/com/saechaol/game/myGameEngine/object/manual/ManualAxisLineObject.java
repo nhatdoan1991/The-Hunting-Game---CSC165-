@@ -8,7 +8,6 @@ import java.nio.IntBuffer;
 import ray.rage.Engine;
 import ray.rage.asset.material.Material;
 import ray.rage.asset.texture.Texture;
-import ray.rage.rendersystem.Renderable.DataSource;
 import ray.rage.rendersystem.Renderable.Primitive;
 import ray.rage.rendersystem.shader.GpuShaderProgram;
 import ray.rage.rendersystem.states.FrontFaceState;
@@ -20,6 +19,12 @@ import ray.rage.scene.ManualObjectSection;
 import ray.rage.scene.SceneManager;
 import ray.rage.scene.SceneNode;
 import ray.rage.util.BufferUtil;
+
+/**
+ * This class renders and draws the axis lines from the origin as Manual Objects
+ * @author Lucas
+ *
+ */
 
 public class ManualAxisLineObject {
 	

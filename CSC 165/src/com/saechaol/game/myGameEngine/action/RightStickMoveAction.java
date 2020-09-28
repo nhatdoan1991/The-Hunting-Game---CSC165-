@@ -1,23 +1,21 @@
 package com.saechaol.game.myGameEngine.action;
 
-/**
- * Polls the right stick for data
- */
-
-import ray.input.action.AbstractInputAction;
-import ray.rage.game.*;
 import net.java.games.input.Component;
 import net.java.games.input.Controller;
 import net.java.games.input.Event;
-import com.saechaol.game.a1.MyGame;
+import ray.input.action.AbstractInputAction;
+
+/**
+ * An action handler that polls the right stick for input information
+ * @author Lucas
+ *
+ */
 
 public class RightStickMoveAction extends AbstractInputAction {
 
-	private MyGame game;
 	private Controller controller;
 	
-	public RightStickMoveAction(MyGame g, Controller c) {
-		game = g;
+	public RightStickMoveAction(Controller c) {
 		controller = c;
 	}
 

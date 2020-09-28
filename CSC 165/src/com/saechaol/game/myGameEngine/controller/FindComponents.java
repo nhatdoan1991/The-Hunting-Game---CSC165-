@@ -1,15 +1,15 @@
 package com.saechaol.game.myGameEngine.controller;
 
+import net.java.games.input.Controller;
+import net.java.games.input.ControllerEnvironment;
+import net.java.games.input.Version;
+import net.java.games.input.Component;
+
 /**
  * This class is intended to help find and locate connected controllers and lists their components, as well as any other utility functionality
  * @author Lucas
  *
  */
-
-import net.java.games.input.Controller;
-import net.java.games.input.ControllerEnvironment;
-import net.java.games.input.Version;
-import net.java.games.input.Component;
 
 public class FindComponents {
 
