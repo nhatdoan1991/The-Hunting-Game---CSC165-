@@ -92,7 +92,6 @@ public class Camera3PController {
 		}
 		
 		if(controllerName == null) {
-			System.out.println("No gamepad detected!");
 		} else {
 			inputManager.associateAction(controllerName, 
 					net.java.games.input.Component.Identifier.Axis.RX, 
@@ -108,6 +107,16 @@ public class Camera3PController {
 					net.java.games.input.Component.Identifier.Axis.Z, 
 					orbitRadiusAction, 
 					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(controllerName, 
+					net.java.games.input.Component.Identifier.Button._4, 
+					null, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			inputManager.associateAction(controllerName, 
+					net.java.games.input.Component.Identifier.Button._5, 
+					null, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		}
 
 	}
@@ -125,8 +134,8 @@ public class Camera3PController {
 				rotation = 0.0f;
 			cameraAzimuth += rotation;
 			cameraAzimuth = cameraAzimuth % 360;
-			if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
-			if (cameraAzimuth > 30.0f) { cameraAzimuth = 330.0f; }
+	//		if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
+	//		if (cameraAzimuth > 30.0f) { cameraAzimuth = 330.0f; }
 			updateCameraPosition();
 		}
 		

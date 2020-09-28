@@ -53,7 +53,7 @@ public class RideDolphinToggleAction extends AbstractInputAction {
 	private void dismountDolphin() {
 		Vector3f dolphinNodePoint = (Vector3f) game.dolphinNode.getLocalPosition();
 		
-		Vector3f pointOne = (Vector3f) Vector3f.createFrom(0.20f, 0.20f, -0.25f);
+		Vector3f pointOne = (Vector3f) Vector3f.createFrom(0.30f, 0.30f, -0.35f);
 		Vector3f pointTwo = (Vector3f) dolphinNodePoint.add(pointOne);
 		game.camera.setPo(pointTwo);
 	}

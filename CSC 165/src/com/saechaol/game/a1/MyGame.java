@@ -1,14 +1,9 @@
 package com.saechaol.game.a1;
 
-/**
- * A RAGE game in which you crash a dolphin through planets in space.
- * 
- * @author Lucas Saechao
- */
-
-import java.awt.*;
 import java.awt.geom.AffineTransform;
-import java.io.*;
+import java.awt.Color;
+import java.awt.GraphicsEnvironment;
+import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -16,67 +11,134 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
-import com.saechaol.game.myGameEngine.action.*;
-import com.saechaol.game.myGameEngine.action.a1.*;
+import com.saechaol.game.myGameEngine.action.ExitGameAction;
+import com.saechaol.game.myGameEngine.action.InvertYawAction;
+import com.saechaol.game.myGameEngine.action.LeftStickXAction;
+import com.saechaol.game.myGameEngine.action.LeftStickYAction;
+import com.saechaol.game.myGameEngine.action.MoveCameraBackwardAction;
+import com.saechaol.game.myGameEngine.action.MoveCameraDownAction;
+import com.saechaol.game.myGameEngine.action.MoveCameraForwardAction;
+import com.saechaol.game.myGameEngine.action.MoveCameraLeftAction;
+import com.saechaol.game.myGameEngine.action.MoveCameraRightAction;
+import com.saechaol.game.myGameEngine.action.MoveCameraUpAction;
+import com.saechaol.game.myGameEngine.action.PitchCameraDownAction;
+import com.saechaol.game.myGameEngine.action.PitchCameraUpAction;
+import com.saechaol.game.myGameEngine.action.RightStickXAction;
+import com.saechaol.game.myGameEngine.action.RightStickYAction;
+import com.saechaol.game.myGameEngine.action.RollCameraLeftAction;
+import com.saechaol.game.myGameEngine.action.RollCameraRightAction;
+import com.saechaol.game.myGameEngine.action.SkipSongAction;
+import com.saechaol.game.myGameEngine.action.ToggleCameraAction;
+import com.saechaol.game.myGameEngine.action.YawCameraLeftAction;
+import com.saechaol.game.myGameEngine.action.YawCameraRightAction;
+import com.saechaol.game.myGameEngine.action.a1.RideDolphinToggleAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
-import com.saechaol.game.myGameEngine.object.manual.*;
+import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
+import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
+import com.saechaol.game.myGameEngine.object.manual.ManualCubeObject;
 
 import net.java.games.input.Controller;
-import ray.rage.*;
-import ray.rage.game.*;
-import ray.rage.rendersystem.*;
-import ray.rage.rendersystem.Renderable.*;
-import ray.rage.scene.*;
-import ray.rage.scene.Camera.Frustum.*;
-import ray.rage.scene.controllers.*;
+
 import ray.rage.util.Configuration;
-import ray.rml.*;
+import ray.rml.Vector3;
+import ray.rml.Vector3f;
+import ray.rage.Engine;
+import ray.rage.asset.texture.Texture;
+import ray.rage.asset.texture.TextureManager;
+import ray.rage.game.Game;
+import ray.rage.game.VariableFrameRateGame;
+import ray.rage.rendersystem.RenderSystem;
+import ray.rage.rendersystem.RenderWindow;
+import ray.rage.rendersystem.Renderable.Primitive;
 import ray.rage.rendersystem.gl4.GL4RenderSystem;
-import ray.rage.rendersystem.states.*;
-import ray.rage.asset.texture.*;
-import ray.audio.AudioManager;
+import ray.rage.rendersystem.states.RenderState;
+import ray.rage.rendersystem.states.TextureState;
+import ray.rage.rendersystem.states.ZBufferState;
+import ray.rage.scene.Camera;
+import ray.rage.scene.Camera.Frustum.Projection;
+import ray.rage.scene.Entity;
+import ray.rage.scene.Light;
+import ray.rage.scene.ManualObject;
+import ray.rage.scene.SceneManager;
+import ray.rage.scene.SceneNode;
+import ray.rage.scene.SkyBox;
+import ray.rage.scene.controllers.OrbitController;
+import ray.rage.scene.controllers.RotationController;
 import ray.audio.AudioManagerFactory;
 import ray.audio.AudioResource;
 import ray.audio.AudioResourceType;
 import ray.audio.IAudioManager;
 import ray.audio.Sound;
 import ray.audio.SoundType;
-import ray.input.*;
-import ray.input.action.*;
+import ray.input.GenericInputManager;
+import ray.input.InputManager;
+import ray.input.action.Action;
+
+/**
+ * A RAGE game in which you crash a dolphin through planets in space.
+ * 
+ * Controls:
+ * 	1st Person POV Mode
+ * 	-	WASD / Left Stick			:	move forward, back, left, right
+ * 	-	LShift / Left stick button	:	ascend
+ * 	-	C / Right stick button		: 	descend
+ * 	-	Arrow Keys/Right Stick		:	pitch/yaw camera
+ * 	-	QE/Shoulder buttons			:	roll camera
+ * 	-	V / Y button				:	invert yaw controls
+ * 	-	Space / A button			:	mount/dismount dolphin
+ * 	-	P / X button				: 	play next song
+ * 	-	TAB / Menu/Start button		:	toggle 3P camera on/off	
+ * 	-	ESC / View/Select button	:	request shutdown
+ * 
+ * 	3rd Person POV Mode
+ * 	-	Arrow Keys / Right stick	:	orbit camera
+ * 	-	R / Right trigger			:	zoom in
+ * 	-	F / Left trigger			: 	zoom out
+ * 	-	Space / A button			:	dismount and switch to 1P camera
+ * 	-	TAB / Menu/Start button		:	toggle 3P camera on/off
+ * 
+ * @author Lucas Saechao
+ */
 
 public class MyGame extends VariableFrameRateGame {
 	
+	private Action skipSongAction, toggleCameraAction, rollCameraLeftAction, rollCameraRightAction, invertYawAction, 
+		rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, 
+		moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, 
+		pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction;
+	private boolean pauseSong = false;
+	private Controller controller;
+	private DecimalFormat formatFloat = new DecimalFormat("#.##");
+	private float orbitingAxis = 0.0f;
 	private InputManager inputManager;
+	private int totalPlanetCount = 0;
+	private OrbitController dolphinOrbitController;
+	private Sound[] music = new Sound[3];
+	private Sound[] sfx = new Sound[3];
 	private static final Random RAND = new Random();
 	private static final String SPACE_SKYBOX = "SpaceSkyBox";
-	private Sound[] music = new Sound[3];
-	private Sound[] sfx = new Sound[2];
-	public Camera camera;
-	public SceneNode cameraNode, dolphinNode, dolphinCamera, originNode;
-	private Controller controller;
-	private Action skipSongAction, toggleCameraAction, rollCameraLeftAction, rollCameraRightAction, invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
-	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
-	float elapsedTime = 0.0f;
-	String elapsedTimeString, livesString, displayString, positionString, dolphinString;
-	int elapsedTimeSeconds, lives = 3, score = 0, currentSong = 0;
-	public Camera3PController orbitCameraController;
-	private int totalPlanetCount = 0;
-	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private TextureManager textureManager;
 	private Texture[] planetTextures;
 	private Texture moonTexture, starTexture;
 	private ZBufferState zState;
+	
 	public boolean toggleRide = false, invertYaw = true, alive = true, thirdPerson = false;
-	private boolean pauseSong = false;
-	public HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
+	public Camera camera;
+	public Camera3PController orbitCameraController;
 	public IAudioManager audioManager;
+	public SceneNode cameraNode, dolphinNode, dolphinCamera, originNode;
+	
 	ArrayList<SceneNode> planetNodes = new ArrayList<SceneNode>();
 	ArrayList<SceneNode> cubeMoonNodes = new ArrayList<SceneNode>();
 	ArrayList<OrbitController> galaxyOrbitController = new ArrayList<OrbitController>();
 	ArrayList<OrbitController> planetOrbitController = new ArrayList<OrbitController>();
-	private OrbitController dolphinOrbitController;
 	ArrayList<RotationController> planetRotationControllers = new ArrayList<RotationController>();
 	ArrayList<RotationController> cubeMoonRotationControllers = new ArrayList<RotationController>();
+	float elapsedTime = 0.0f;
+	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
+	HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
+	int elapsedTimeSeconds, lives = 3, score = 0, currentSong = 0;
+	String elapsedTimeString, livesString, displayString, positionString, dolphinString;
 	
 	public MyGame() {
 		super();
@@ -84,8 +146,8 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ROTATE CAMERA");
 		System.out.println("Press 'Q/E' or the left and right bumpers to ROLL CAMERA");
 		System.out.println("Press 'V' or 'Y' to INVERT YAW");
-		System.out.println("Press 'LSHIFT' or the left stick to ASCEND");
-		System.out.println("Press 'C' or the right stick to DESCEND");
+		System.out.println("Press 'LSHIFT' or the left stick button to ASCEND");
+		System.out.println("Press 'C' or the right stick button to DESCEND");
 		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
 		System.out.println("Press 'ESC' or 'Select' to EXIT");
 		System.out.println("Press 'P' or 'X' to PLAY NEXT SONG");
@@ -95,21 +157,16 @@ public class MyGame extends VariableFrameRateGame {
 	}
 
 	/**
-	 * Implements VariableFrameRateEngine.setupWindow()
-	 * Initializes a window size 1920x1080 for displays larger than 1080p,
-	 * and a 1280x720 window for displays smaller
+	 * Implements a dialogue to allow the user to pick their preferred viewport size settings
 	 * 
 	 * @param renderSystem
 	 * @param graphicsEnvironment
 	 */
 	@Override
 	protected void setupWindow(RenderSystem renderSystem, GraphicsEnvironment graphicsEnvironment) {
-		int displayHeight = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight();
-		int displayWidth = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth();
-		if (displayHeight > 1920 && displayWidth > 1080)
-			renderSystem.createRenderWindow(new DisplayMode(1920, 1080, 24, 60), false);
-		else
-			renderSystem.createRenderWindow(new DisplayMode(1280, 720, 24, 60), false);
+		DisplaySettingsDialog displaySettingsDialogue = new DisplaySettingsDialog(graphicsEnvironment.getDefaultScreenDevice());
+		displaySettingsDialogue.showIt();
+		renderSystem.createRenderWindow(displaySettingsDialogue.getSelectedDisplayMode(), displaySettingsDialogue.isFullScreenModeSelected());
 	}
 	
 	/**
@@ -125,20 +182,26 @@ public class MyGame extends VariableFrameRateGame {
 		camera = sceneManager.createCamera("mainCamera", Projection.PERSPECTIVE);
 		renderWindow.getViewport(0).setCamera(camera);
 		camera.setMode('n');
-		// initialize the camera frustum and set its position to the origin
+		
+		// initialize the camera's position and UVN vectors
 		camera.setRt( (Vector3f) Vector3f.createFrom(-1.0f, 0.0f, 0.0f));
 		camera.setUp( (Vector3f) Vector3f.createFrom(0.0f, 1.0f, 0.0f));
 		camera.setFd( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, 1.0f));
 		camera.setPo( (Vector3f) Vector3f.createFrom(0.0f, 0.0f, 0.0f));
 		
-		// initialize the cameraNode, add it to the scene graph and then attach the camera to it
+		// initialize the camera node
 		cameraNode = rootNode.createChildSceneNode(camera.getName() + "Node");
 		cameraNode.attachObject(camera);
 	}
 
 	/**
-	 * Initializes the game's scene with a single dolphin entity, an ambient and point light,
-	 * and rotates it about its Y axis
+	 * Initializes the entire game's scene in the following order:
+	 * 	-	textures
+	 * 	-	entities / scene nodes / controllers
+	 * 	-	lights
+	 * 	-	skybox
+	 * 	-	input
+	 * 	-	audio
 	 * 
 	 * @param engine
 	 * @param sceneManager
@@ -146,7 +209,9 @@ public class MyGame extends VariableFrameRateGame {
 	@Override
 	protected void setupScene(Engine engine, SceneManager sceneManager) throws IOException {
 		// initialize input manager
-		setupInputs();
+		if (inputManager == null)
+			inputManager = new GenericInputManager();
+
 		RenderSystem renderSystem = sceneManager.getRenderSystem();
 		if (textureManager == null) {
 			textureManager = this.getEngine().getTextureManager();
@@ -189,6 +254,7 @@ public class MyGame extends VariableFrameRateGame {
 		
 		dolphinOrbitController = new OrbitController(dolphinNode, 1.0f, 0.5f, 0.0f, false);
 		sceneManager.addController(dolphinOrbitController);
+		
 		orbitCameraController = new Camera3PController(camera, cameraNode, dolphinNode, inputManager.getFirstGamepadName(), inputManager);
 		dolphinCamera = dolphinNode.createChildSceneNode("dolphinCamera");
 		dolphinCamera.moveBackward(0.3f);
@@ -228,14 +294,21 @@ public class MyGame extends VariableFrameRateGame {
 		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		dolphinTextureState.setTexture(dolphinTexture);
 		dolphinEntity.setRenderState(dolphinTextureState);
+		setupInputs();
 		initializeAudio(sceneManager);
 	}
 	
+	/**
+	 * Initializes and loads audio resources from the asset folder, 
+	 * and sets music[] and sfx[] to their respective resources, and plays them.
+	 * 
+	 * @param sceneManager
+	 */
 	protected void initializeAudio(SceneManager sceneManager) {
 		Configuration configuration = sceneManager.getConfiguration();
 		String sfxPath = configuration.valueOf("assets.sounds.path.sfx");
 		String musicPath = configuration.valueOf("assets.sounds.path.music");
-		AudioResource gymnopedieOne, gymnopedieTwo, gymnopedieThree, scoreSfx, destroySfx;
+		AudioResource gymnopedieOne, gymnopedieTwo, gymnopedieThree, scoreSfx, destroySfx, lifeUpSfx;
 		audioManager = AudioManagerFactory.createAudioManager("ray.audio.joal.JOALAudioManager");
 		
 		if (!audioManager.initialize()) {
@@ -248,12 +321,14 @@ public class MyGame extends VariableFrameRateGame {
 		gymnopedieThree = audioManager.createAudioResource(musicPath + "gymnopedie_three.wav", AudioResourceType.AUDIO_STREAM);
 		scoreSfx = audioManager.createAudioResource(sfxPath + "score.wav", AudioResourceType.AUDIO_SAMPLE);
 		destroySfx = audioManager.createAudioResource(sfxPath + "destroyed.wav", AudioResourceType.AUDIO_SAMPLE);
+		lifeUpSfx = audioManager.createAudioResource(sfxPath + "lifeup.wav", AudioResourceType.AUDIO_SAMPLE);
 	
 		music[0] = new Sound(gymnopedieOne, SoundType.SOUND_MUSIC, 100, false);
 		music[1] = new Sound(gymnopedieTwo, SoundType.SOUND_MUSIC, 100, false);
 		music[2] = new Sound(gymnopedieThree, SoundType.SOUND_MUSIC, 100, false);
 		sfx[0] = new Sound(scoreSfx, SoundType.SOUND_EFFECT, 25, false);
 		sfx[1] = new Sound(destroySfx, SoundType.SOUND_EFFECT, 25, false);
+		sfx[2] = new Sound(lifeUpSfx, SoundType.SOUND_EFFECT, 25, false);
 		
 		for (Sound m : music) {
 			m.initialize(audioManager);
@@ -267,12 +342,9 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	/**
-	 * Initializes controller inputs
+	 * Initializes input devices for the game
 	 */
 	protected void setupInputs() {
-		if (inputManager == null)
-			inputManager = new GenericInputManager();
-
 		String gamepadName = inputManager.getFirstGamepadName();
 		controller = inputManager.getControllerByName(gamepadName);
 		
@@ -299,6 +371,7 @@ public class MyGame extends VariableFrameRateGame {
 		toggleCameraAction = new ToggleCameraAction(this, camera, inputManager);
 		skipSongAction = new SkipSongAction(this);
 		
+		// binds actions to ALL keyboards
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
 			if (keyboards.getType() == Controller.Type.KEYBOARD) {
@@ -467,7 +540,9 @@ public class MyGame extends VariableFrameRateGame {
 	}
 
 	/**
-	 * Updates and redraws the viewport with running elapsed time and keyboard count
+	 * Updates and redraws the viewport, as well as handle other recurring 
+	 * calculations such as collision detection, position synchronization,
+	 * and music.
 	 * 
 	 * @param engine
 	 */
@@ -483,6 +558,19 @@ public class MyGame extends VariableFrameRateGame {
 		displayString += " | Score = " + score;
 		displayString += " | Camera position: (" + formatFloat.format(camera.getPo().x()) + ", " + formatFloat.format(camera.getPo().y()) + ", " + formatFloat.format(camera.getPo().z()) + ")";
 		displayString += " | Dolphin position: (" + formatFloat.format(dolphinNode.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().z()) + ")";
+		displayString += " | Current song: ";
+		switch (currentSong % 3) {
+		case 0:
+			displayString += "Erik Satie — Gymnopédie No. 1";
+			break;
+		case 1:
+			displayString += "Erik Satie — Gymnopédie No. 2";
+			break;
+		case 2:
+			displayString += "Erik Satie — Gymnopédie No. 3";
+			break;
+		}
+		
 		renderSystem.setHUD(displayString, 15, 15);
 		inputManager.update(elapsedTime);
 		checkPlayerDistanceToDolphin(10.0f);
@@ -490,6 +578,7 @@ public class MyGame extends VariableFrameRateGame {
 			moonCollisionDetection();
 			planetCollisionDetection();
 			replacePlanet();
+			incrementMoonOrbitAxis();
 		}
 		if (thirdPerson) {
 			synchronize3PDolphinCameraPosition(orbitCameraController.updateCameraPosition());
@@ -498,13 +587,23 @@ public class MyGame extends VariableFrameRateGame {
 		}
 	}
 	
+	/**
+	 * Invoked by SkipAudioAction. Stops the current soundtrack and plays the next one.
+	 */
 	public void playAudio() {
 		music[currentSong].stop();
 		currentSong++;
-		currentSong %= 3;
+		currentSong %= music.length;
 		music[currentSong].play();
 	}
 	
+	/**
+	 * Initializes the skybox for the game during setupScene, and textures it
+	 * 
+	 * @param engine
+	 * @param sceneManager
+	 * @throws IOException
+	 */
 	private void initializeSkybox(Engine engine, SceneManager sceneManager) throws IOException {
 		// initialize skybox
 		SkyBox worldSkybox = sceneManager.createSkyBox(SPACE_SKYBOX);
@@ -563,12 +662,16 @@ public class MyGame extends VariableFrameRateGame {
 		return rotationController;
 	}
 	
+	/**
+	 * Ensures that the 3P camera is always near the dolphin
+	 * @param position
+	 */
 	private void synchronize3PDolphinCameraPosition(Vector3 position) {
 		camera.setPo((Vector3f) position);
 	}
 	
 	/**
-	 * Ensures that the player's position is the same as the dolphin's when riding the dolphin
+	 * Ensures that the player's camera is always near the dolphin, facing the same direction
 	 */
 	private void synchronizePlayerDolphinPosition() {
 		if (!toggleRide) {
@@ -581,8 +684,8 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	/**
-	 * Places the player back on the dolphin if they stray 10 units too far in any direction
-	 * The boundary is spherical rather than a bounded X box
+	 * Places the player back on the dolphin if they stray a certain radius too far
+	 * @param radius
 	 */
 	private void checkPlayerDistanceToDolphin(float radius) {
 		Vector3f playerPosition = (Vector3f) camera.getPo();
@@ -595,8 +698,11 @@ public class MyGame extends VariableFrameRateGame {
 		}
 	}
 	
+
 	/**
-	 * Detects planet collision detection
+	 * Uses the formula for the radius of a sphere and check's if the player's position intersects the
+	 * resulting value to calculate collision detection. If true, the player is given a score, and the planet is
+	 * removed from the game and replaced with a new planet.
 	 */
 	private void planetCollisionDetection() {
 		activePlanets.forEach((k, v) -> {
@@ -604,7 +710,6 @@ public class MyGame extends VariableFrameRateGame {
 				Vector3f playerPosition = (Vector3f) camera.getPo();
 				Vector3f planetPosition = (Vector3f) k.getLocalPosition();
 				if (toggleRide && (Math.pow((playerPosition.x() - planetPosition.x()), 2) + Math.pow((playerPosition.y() - planetPosition.y()), 2) + Math.pow((playerPosition.z() - planetPosition.z()), 2)) < Math.pow((2.15f), 2.0f)) {
-					System.out.println("Score!");
 					try {
 						incrementScore();
 					} catch (IOException e) {
@@ -616,13 +721,16 @@ public class MyGame extends VariableFrameRateGame {
 		});
 	}
 	
+	/**
+	 * Helper function for planetCollisionDetection and incrementScore. Replaces the planet
+	 * within the activePlanets HashMap with a new planet, while mindful of concurrently modifying
+	 * the activePlanets HashMap
+	 */
 	private void replacePlanet() {
 		HashMap<SceneNode, Boolean> currentlyActive = new HashMap<SceneNode, Boolean>();
 		activePlanets.forEach((k, v) -> {
 			if (!v) {
 				int planetIndex = planetNodes.indexOf(k);
-				System.out.println(k);
-				System.out.println(cubeMoonNodes.get(planetIndex));
 				// remove planet and moon from collection
 				planetNodes.remove(k);
 				SceneNode kMoon = cubeMoonNodes.remove(planetIndex); 
@@ -647,6 +755,15 @@ public class MyGame extends VariableFrameRateGame {
 		activePlanets = currentlyActive;
 	}
 	
+	/**
+	 * Instantiates a planet with a random texture. Called by setupScene to initialize at least one planet
+	 * of every texture. Planets are instantiated in random locations some units away from the origin.
+	 * 
+	 * @param engine
+	 * @param sceneManager
+	 * @return
+	 * @throws IOException
+	 */
 	private SceneNode instantiateNewPlanet(Engine engine, SceneManager sceneManager) throws IOException {
 		Entity planetEntity = sceneManager.createEntity("planetEntity" + totalPlanetCount, "earth.obj");
 		ManualObject cubeEntity = ManualCubeObject.makeCubeObject(engine, sceneManager, Integer.toString(totalPlanetCount));
@@ -748,7 +865,7 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	/**
-	 * 
+	 * Checks to see if the player has collided with one of the moons, and decrements their lives accordingly
 	 */
 	private void moonCollisionDetection() {
 		Iterator<SceneNode> activeMoonsIterator = cubeMoonNodes.iterator();
@@ -770,6 +887,18 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	/**
+	 * Simulates a sinusodial axial tilt by multiplying the orbit controller's vertical distance by sin(x)
+	 */
+	private void incrementMoonOrbitAxis() {
+		Iterator<OrbitController> orbitControllerIterator = planetOrbitController.iterator();
+		orbitControllerIterator.forEachRemaining(controller -> {
+			controller.setVerticalDistance((float) Math.sin(orbitingAxis) * 10.0f);
+		});
+		orbitingAxis += 0.05f;
+		orbitingAxis %= 360;
+	}
+	
+	/**
 	 * Inverts Yaw rotation for those who like inverted controls
 	 */
 	public void invertYaw() {
@@ -779,6 +908,9 @@ public class MyGame extends VariableFrameRateGame {
 			invertYaw = true;
 	}
 	
+	/**
+	 * Toggles the third person camera
+	 */
 	public void toggleCamera() {
 		if (thirdPerson)
 			thirdPerson = false;
@@ -786,12 +918,13 @@ public class MyGame extends VariableFrameRateGame {
 			thirdPerson = true;
 	}
 	
+
 	/**
-	 * Increments score
-	 * @throws IOException 
+	 * Increments player score and gives them an orbiting star
+	 * @throws IOException
 	 */
 	private void incrementScore() throws IOException {
-		System.out.println("Score incremented!");
+		System.out.println("Score!");
 		
 		Entity starEntity = this.getEngine().getSceneManager().createEntity("starEntity" + score, "star.obj");
 		starEntity.setPrimitive(Primitive.TRIANGLES);
@@ -806,10 +939,18 @@ public class MyGame extends VariableFrameRateGame {
 		starNode.scale(0.05f, 0.05f, 0.05f);
 		dolphinOrbitController.addNode(starNode);
 		dolphinOrbitController.setDistanceFromTarget(dolphinOrbitController.getDistanceFromTarget() + 0.05f);
-		sfx[0].play();
 		score++;
+		if (score % 10 == 0) {
+			sfx[2].play();
+			lives++;
+		} else
+			sfx[0].play();
 	}
 	
+	/**
+	 * Called by the collision detection methods. 
+	 * When the player has lost all their lives, the game will automatically close.
+	 */
 	private void decrementLives() {
 		sfx[1].play();
 		if (lives > 0) {
@@ -834,6 +975,9 @@ public class MyGame extends VariableFrameRateGame {
 			return false;
 	}
 	
+	/**
+	 * Rebinds inputs to the original controls. Typically invoked by ToggleCameraAction.
+	 */
 	public void reinitializeInputs() {
 		setupInputs();
 		dolphinNode.attachChild(dolphinCamera);
@@ -842,7 +986,7 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	/**
-	 * Returns a random float array
+	 * Returns a random float array of size 3
 	 * @param args
 	 */
 	private float[] randomFloatArray(float upperBound) {
