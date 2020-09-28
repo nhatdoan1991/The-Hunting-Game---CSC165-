@@ -34,6 +34,13 @@ import ray.rml.*;
 import ray.rage.rendersystem.gl4.GL4RenderSystem;
 import ray.rage.rendersystem.states.*;
 import ray.rage.asset.texture.*;
+import ray.audio.AudioManager;
+import ray.audio.AudioManagerFactory;
+import ray.audio.AudioResource;
+import ray.audio.AudioResourceType;
+import ray.audio.IAudioManager;
+import ray.audio.Sound;
+import ray.audio.SoundType;
 import ray.input.*;
 import ray.input.action.*;
 
@@ -42,15 +49,17 @@ public class MyGame extends VariableFrameRateGame {
 	private InputManager inputManager;
 	private static final Random RAND = new Random();
 	private static final String SPACE_SKYBOX = "SpaceSkyBox";
+	private Sound[] music = new Sound[3];
+	private Sound[] sfx = new Sound[2];
 	public Camera camera;
-	public Camera3PController orbitCameraController;
 	public SceneNode cameraNode, dolphinNode, dolphinCamera, originNode;
 	private Controller controller;
-	private Action toggleCameraAction, rollCameraLeftAction, rollCameraRightAction, invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
+	private Action skipSongAction, toggleCameraAction, rollCameraLeftAction, rollCameraRightAction, invertYawAction, rightStickXAction, rightStickYAction, leftStickXAction, leftStickYAction, moveCameraUpAction, moveCameraDownAction, moveCameraBackwardAction, moveCameraLeftAction, moveCameraRightAction, moveCameraForwardAction, pitchCameraUpAction, pitchCameraDownAction, yawCameraLeftAction, yawCameraRightAction, rideDolphinToggleAction, exitGameAction, pauseGameAction;
 	GL4RenderSystem renderSystem; // Initialized to minimize variable allocation in update()
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, livesString, displayString, positionString, dolphinString;
-	int elapsedTimeSeconds, lives = 3, score = 0;
+	int elapsedTimeSeconds, lives = 3, score = 0, currentSong = 0;
+	public Camera3PController orbitCameraController;
 	private int totalPlanetCount = 0;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private TextureManager textureManager;
@@ -58,7 +67,9 @@ public class MyGame extends VariableFrameRateGame {
 	private Texture moonTexture, starTexture;
 	private ZBufferState zState;
 	public boolean toggleRide = false, invertYaw = true, alive = true, thirdPerson = false;
+	private boolean pauseSong = false;
 	public HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
+	public IAudioManager audioManager;
 	ArrayList<SceneNode> planetNodes = new ArrayList<SceneNode>();
 	ArrayList<SceneNode> cubeMoonNodes = new ArrayList<SceneNode>();
 	ArrayList<OrbitController> galaxyOrbitController = new ArrayList<OrbitController>();
@@ -77,6 +88,7 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("Press 'C' or the right stick to DESCEND");
 		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
 		System.out.println("Press 'ESC' or 'Select' to EXIT");
+		System.out.println("Press 'P' or 'X' to PLAY NEXT SONG");
 		System.out.println("Press 'TAB' or 'Start' to TOGGLE 3P CAMERA");
 		System.out.println("----------------------------------------------------");
 		formatFloat.setRoundingMode(RoundingMode.DOWN);
@@ -177,7 +189,7 @@ public class MyGame extends VariableFrameRateGame {
 		
 		dolphinOrbitController = new OrbitController(dolphinNode, 1.0f, 0.5f, 0.0f, false);
 		sceneManager.addController(dolphinOrbitController);
-		
+		orbitCameraController = new Camera3PController(camera, cameraNode, dolphinNode, inputManager.getFirstGamepadName(), inputManager);
 		dolphinCamera = dolphinNode.createChildSceneNode("dolphinCamera");
 		dolphinCamera.moveBackward(0.3f);
 		dolphinCamera.moveUp(0.3f);
@@ -215,7 +227,43 @@ public class MyGame extends VariableFrameRateGame {
 		Texture dolphinTexture = textureManager.getAssetByPath("Dolphin_HighPolyUV.png");
 		TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		dolphinTextureState.setTexture(dolphinTexture);
-		dolphinEntity.setRenderState(dolphinTextureState);		
+		dolphinEntity.setRenderState(dolphinTextureState);
+		initializeAudio(sceneManager);
+	}
+	
+	protected void initializeAudio(SceneManager sceneManager) {
+		Configuration configuration = sceneManager.getConfiguration();
+		String sfxPath = configuration.valueOf("assets.sounds.path.sfx");
+		String musicPath = configuration.valueOf("assets.sounds.path.music");
+		AudioResource gymnopedieOne, gymnopedieTwo, gymnopedieThree, scoreSfx, destroySfx;
+		audioManager = AudioManagerFactory.createAudioManager("ray.audio.joal.JOALAudioManager");
+		
+		if (!audioManager.initialize()) {
+			System.out.println("The Audio Manager failed to initialize :(");
+			return;
+		}
+		
+		gymnopedieOne = audioManager.createAudioResource(musicPath + "gymnopedie_one.wav", AudioResourceType.AUDIO_STREAM);
+		gymnopedieTwo = audioManager.createAudioResource(musicPath + "gymnopedie_two.wav", AudioResourceType.AUDIO_STREAM);
+		gymnopedieThree = audioManager.createAudioResource(musicPath + "gymnopedie_three.wav", AudioResourceType.AUDIO_STREAM);
+		scoreSfx = audioManager.createAudioResource(sfxPath + "score.wav", AudioResourceType.AUDIO_SAMPLE);
+		destroySfx = audioManager.createAudioResource(sfxPath + "destroyed.wav", AudioResourceType.AUDIO_SAMPLE);
+	
+		music[0] = new Sound(gymnopedieOne, SoundType.SOUND_MUSIC, 100, false);
+		music[1] = new Sound(gymnopedieTwo, SoundType.SOUND_MUSIC, 100, false);
+		music[2] = new Sound(gymnopedieThree, SoundType.SOUND_MUSIC, 100, false);
+		sfx[0] = new Sound(scoreSfx, SoundType.SOUND_EFFECT, 25, false);
+		sfx[1] = new Sound(destroySfx, SoundType.SOUND_EFFECT, 25, false);
+		
+		for (Sound m : music) {
+			m.initialize(audioManager);
+		}
+		
+		for (Sound s : sfx) {
+			s.initialize(audioManager);
+		}
+		
+		music[currentSong].play();
 	}
 	
 	/**
@@ -249,6 +297,7 @@ public class MyGame extends VariableFrameRateGame {
 		rightStickYAction = new RightStickYAction(this, camera);
 		invertYawAction = new InvertYawAction(this);
 		toggleCameraAction = new ToggleCameraAction(this, camera, inputManager);
+		skipSongAction = new SkipSongAction(this);
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -259,6 +308,11 @@ public class MyGame extends VariableFrameRateGame {
 						exitGameAction, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.P, 
+						skipSongAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.TAB, 
 						toggleCameraAction, 
@@ -340,7 +394,7 @@ public class MyGame extends VariableFrameRateGame {
 		}
 		
 		if (isGamepadNull(gamepadName)) {
-			System.out.println("No gamepad attached!");
+			System.out.println("No gamepad detected!");
 		} else {
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._6, 
@@ -382,6 +436,11 @@ public class MyGame extends VariableFrameRateGame {
 			inputManager.associateAction(gamepadName,
 					net.java.games.input.Component.Identifier.Button._0,
 					rideDolphinToggleAction,
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._2, 
+					skipSongAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 			
 			inputManager.associateAction(gamepadName, 
@@ -437,6 +496,13 @@ public class MyGame extends VariableFrameRateGame {
 		} else {
 			synchronizePlayerDolphinPosition();
 		}
+	}
+	
+	public void playAudio() {
+		music[currentSong].stop();
+		currentSong++;
+		currentSong %= 3;
+		music[currentSong].play();
 	}
 	
 	private void initializeSkybox(Engine engine, SceneManager sceneManager) throws IOException {
@@ -581,7 +647,6 @@ public class MyGame extends VariableFrameRateGame {
 		activePlanets = currentlyActive;
 	}
 	
-
 	private SceneNode instantiateNewPlanet(Engine engine, SceneManager sceneManager) throws IOException {
 		Entity planetEntity = sceneManager.createEntity("planetEntity" + totalPlanetCount, "earth.obj");
 		ManualObject cubeEntity = ManualCubeObject.makeCubeObject(engine, sceneManager, Integer.toString(totalPlanetCount));
@@ -741,16 +806,18 @@ public class MyGame extends VariableFrameRateGame {
 		starNode.scale(0.05f, 0.05f, 0.05f);
 		dolphinOrbitController.addNode(starNode);
 		dolphinOrbitController.setDistanceFromTarget(dolphinOrbitController.getDistanceFromTarget() + 0.05f);
-		
+		sfx[0].play();
 		score++;
 	}
 	
 	private void decrementLives() {
+		sfx[1].play();
 		if (lives > 0) {
 			System.out.println("Damage taken! ");
 			lives--;
 		} else if (lives == 0) {
 			System.out.print("You are dead. Game over :(");
+			audioManager.shutdown();
 			this.setState(Game.State.STOPPING);
 		}
 	}
