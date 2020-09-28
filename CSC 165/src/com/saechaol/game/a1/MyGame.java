@@ -55,6 +55,7 @@ public class MyGame extends VariableFrameRateGame {
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private TextureManager textureManager;
 	private Texture[] planetTextures;
+	private Texture moonTexture, starTexture;
 	private ZBufferState zState;
 	public boolean toggleRide = false, invertYaw = true, alive = true, thirdPerson = false;
 	public HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
@@ -62,6 +63,7 @@ public class MyGame extends VariableFrameRateGame {
 	ArrayList<SceneNode> cubeMoonNodes = new ArrayList<SceneNode>();
 	ArrayList<OrbitController> galaxyOrbitController = new ArrayList<OrbitController>();
 	ArrayList<OrbitController> planetOrbitController = new ArrayList<OrbitController>();
+	private OrbitController dolphinOrbitController;
 	ArrayList<RotationController> planetRotationControllers = new ArrayList<RotationController>();
 	ArrayList<RotationController> cubeMoonRotationControllers = new ArrayList<RotationController>();
 	
@@ -149,6 +151,8 @@ public class MyGame extends VariableFrameRateGame {
 		planetTextures[3] = textureManager.getAssetByPath("earth-night.jpeg");
 		planetTextures[4] = textureManager.getAssetByPath("red.jpeg");
 		planetTextures[5] = textureManager.getAssetByPath("chain-fence.jpeg");
+		moonTexture = textureManager.getAssetByPath("moon.jpeg");
+		starTexture = textureManager.getAssetByPath("star.png");
 		
 		// initialize the dolphin entity
 		Entity dolphinEntity = sceneManager.createEntity("dolphinEntity", "dolphinHighPoly.obj");
@@ -170,6 +174,9 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinNode = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntity.getName() + "Node");
 		dolphinNode.moveBackward(2.0f);
 		dolphinNode.attachObject(dolphinEntity);
+		
+		dolphinOrbitController = new OrbitController(dolphinNode, 1.0f, 0.5f, 0.0f, false);
+		sceneManager.addController(dolphinOrbitController);
 		
 		dolphinCamera = dolphinNode.createChildSceneNode("dolphinCamera");
 		dolphinCamera.moveBackward(0.3f);
@@ -532,7 +539,11 @@ public class MyGame extends VariableFrameRateGame {
 				Vector3f planetPosition = (Vector3f) k.getLocalPosition();
 				if (toggleRide && (Math.pow((playerPosition.x() - planetPosition.x()), 2) + Math.pow((playerPosition.y() - planetPosition.y()), 2) + Math.pow((playerPosition.z() - planetPosition.z()), 2)) < Math.pow((2.15f), 2.0f)) {
 					System.out.println("Score!");
-					incrementScore();
+					try {
+						incrementScore();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 					activePlanets.put(k, false);
 				}
 			}
@@ -570,6 +581,7 @@ public class MyGame extends VariableFrameRateGame {
 		activePlanets = currentlyActive;
 	}
 	
+
 	private SceneNode instantiateNewPlanet(Engine engine, SceneManager sceneManager) throws IOException {
 		Entity planetEntity = sceneManager.createEntity("planetEntity" + totalPlanetCount, "earth.obj");
 		ManualObject cubeEntity = ManualCubeObject.makeCubeObject(engine, sceneManager, Integer.toString(totalPlanetCount));
@@ -589,8 +601,6 @@ public class MyGame extends VariableFrameRateGame {
 			default:
 				planetTexture = planetTextures[RAND.nextInt(6)];
 		}
-		
-		Texture cubeTexture = textureManager.getAssetByPath("moon.jpeg");
 		
 		float[] coordinates = randomFloatArray(79.0f);
 		
@@ -625,7 +635,7 @@ public class MyGame extends VariableFrameRateGame {
 		planetEntity.setRenderState(planetTextureState);
 		
 		TextureState cubeTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		cubeTextureState.setTexture(cubeTexture);
+		cubeTextureState.setTexture(moonTexture);
 		cubeEntity.setRenderState(cubeTextureState);
 		
 		// initialize planet and moon positions
@@ -713,9 +723,25 @@ public class MyGame extends VariableFrameRateGame {
 	
 	/**
 	 * Increments score
+	 * @throws IOException 
 	 */
-	private void incrementScore() {
+	private void incrementScore() throws IOException {
 		System.out.println("Score incremented!");
+		
+		Entity starEntity = this.getEngine().getSceneManager().createEntity("starEntity" + score, "star.obj");
+		starEntity.setPrimitive(Primitive.TRIANGLES);
+		starEntity.setRenderState(zState);
+		
+		TextureState starTextureState = (TextureState) this.getEngine().getSceneManager().getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
+		starTextureState.setTexture(starTexture);
+		starEntity.setRenderState(starTextureState);
+		
+		SceneNode starNode = this.getEngine().getSceneManager().getRootSceneNode().createChildSceneNode(starEntity.getName() + "Node");
+		starNode.attachObject(starEntity);
+		starNode.scale(0.05f, 0.05f, 0.05f);
+		dolphinOrbitController.addNode(starNode);
+		dolphinOrbitController.setDistanceFromTarget(dolphinOrbitController.getDistanceFromTarget() + 0.05f);
+		
 		score++;
 	}
 	
