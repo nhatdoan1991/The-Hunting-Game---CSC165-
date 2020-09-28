@@ -166,7 +166,7 @@ public class MyGame extends VariableFrameRateGame {
 	protected void setupWindow(RenderSystem renderSystem, GraphicsEnvironment graphicsEnvironment) {
 		DisplaySettingsDialog displaySettingsDialogue = new DisplaySettingsDialog(graphicsEnvironment.getDefaultScreenDevice());
 		displaySettingsDialogue.showIt();
-		renderSystem.createRenderWindow(displaySettingsDialogue.getSelectedDisplayMode(), displaySettingsDialogue.isFullScreenModeSelected()).setTitle("Saechao Lucas A1");
+		renderSystem.createRenderWindow(displaySettingsDialogue.getSelectedDisplayMode(), displaySettingsDialogue.isFullScreenModeSelected()).setTitle("Planet Chaser | Saechao Lucas A1");
 	}
 	
 	/**
