@@ -38,15 +38,22 @@ public class ToggleCameraAction implements Action {
 				camera.setMode('n');
 				setupOrbitCamera();
 			}
+			printControls();
 		}
 	}
 	
 	private void setupOrbitCamera() {
-		if (!game.isGamepadNull(inputManager.getFirstGamepadName())) {
-			game.orbitCameraController = new Camera3PController(camera, game.cameraNode, game.dolphinNode, inputManager.getFirstGamepadName(), inputManager);
-		}
+		game.orbitCameraController = new Camera3PController(camera, game.cameraNode, game.dolphinNode, inputManager.getFirstGamepadName(), inputManager);
 		game.dolphinNode.detachChild(game.dolphinCamera);
 		game.dolphinCamera.detachAllObjects();
 		game.cameraNode.attachObject(camera);
+	}
+	
+	private void printControls() {
+		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ORBIT CAMERA");
+		System.out.println("Press 'R/F' or the left and right triggers to ZOOM CAMERA");
+		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
+		System.out.println("Press 'TAB' or 'Start' to TOGGLE 1P CAMERA");
+		System.out.println("----------------------------------------------------");
 	}
 }

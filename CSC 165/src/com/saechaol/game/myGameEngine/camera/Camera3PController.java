@@ -22,11 +22,6 @@ public class Camera3PController {
 	private Vector3 worldUpVector;
 	
 	public Camera3PController(Camera c, SceneNode cNode, SceneNode cTarget, String controllerName, InputManager inputManager) {
-		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ORBIT CAMERA");
-		System.out.println("Press 'R/F' or the left and right triggers to ZOOM CAMERA");
-		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
-		System.out.println("Press 'TAB' or 'Start' to TOGGLE 1P CAMERA");
-		System.out.println("----------------------------------------------------");
 		camera = c;
 		cameraNode = cNode;
 		cameraTarget = cTarget;
@@ -96,20 +91,25 @@ public class Camera3PController {
 			}
 		}
 		
-		inputManager.associateAction(controllerName, 
-				net.java.games.input.Component.Identifier.Axis.RX, 
-				orbitAction, 
-				InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		
-		inputManager.associateAction(controllerName, 
-				net.java.games.input.Component.Identifier.Axis.RY, 
-				elevateAction, 
-				InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		
-		inputManager.associateAction(controllerName, 
-				net.java.games.input.Component.Identifier.Axis.Z, 
-				orbitRadiusAction, 
-				InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		if(controllerName == null) {
+			System.out.println("No gamepad detected!");
+		} else {
+			inputManager.associateAction(controllerName, 
+					net.java.games.input.Component.Identifier.Axis.RX, 
+					orbitAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(controllerName, 
+					net.java.games.input.Component.Identifier.Axis.RY, 
+					elevateAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(controllerName, 
+					net.java.games.input.Component.Identifier.Axis.Z, 
+					orbitRadiusAction, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		}
+
 	}
 	
 	private class OrbitAroundAction extends AbstractInputAction {
@@ -125,8 +125,8 @@ public class Camera3PController {
 				rotation = 0.0f;
 			cameraAzimuth += rotation;
 			cameraAzimuth = cameraAzimuth % 360;
-			if (cameraAzimuth < 130.0f) { cameraAzimuth = 130.0f; }
-			if (cameraAzimuth > 230.0f) { cameraAzimuth = 230.0f; }
+			if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
+			if (cameraAzimuth > 30.0f) { cameraAzimuth = 330.0f; }
 			updateCameraPosition();
 		}
 		
@@ -138,8 +138,8 @@ public class Camera3PController {
 		public void performAction(float time, net.java.games.input.Event e) {
 			cameraAzimuth += 1.2f;
 			cameraAzimuth = cameraAzimuth % 360;
-			if (cameraAzimuth < 130.0f) { cameraAzimuth = 130.0f; }
-			if (cameraAzimuth > 230.0f) { cameraAzimuth = 230.0f; }
+			if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
+			if (cameraAzimuth > 330.0f) { cameraAzimuth = 330.0f; }
 			updateCameraPosition();
 		}
 		
@@ -151,8 +151,8 @@ public class Camera3PController {
 		public void performAction(float time, net.java.games.input.Event e) {
 			cameraAzimuth -= 1.2f;
 			cameraAzimuth = cameraAzimuth % 360;
-			if (cameraAzimuth < 130.0f) { cameraAzimuth = 130.0f; }
-			if (cameraAzimuth > 230.0f) { cameraAzimuth = 230.0f; }
+			if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
+			if (cameraAzimuth > 330.0f) { cameraAzimuth = 330.0f; }
 			updateCameraPosition();
 		}
 		
