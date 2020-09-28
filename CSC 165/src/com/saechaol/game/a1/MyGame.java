@@ -576,13 +576,13 @@ public class MyGame extends VariableFrameRateGame {
 		displayString += " | Current song: ";
 		switch (currentSong % 3) {
 		case 0:
-			displayString += "Erik Satie — Gymnopédie No. 1";
+			displayString += "Erik Satie - Gymnopedie No. 1";
 			break;
 		case 1:
-			displayString += "Erik Satie — Gymnopédie No. 2";
+			displayString += "Erik Satie - Gymnopedie No. 2";
 			break;
 		case 2:
-			displayString += "Erik Satie — Gymnopédie No. 3";
+			displayString += "Erik Satie - Gymnopedie No. 3";
 			break;
 		}
 		
