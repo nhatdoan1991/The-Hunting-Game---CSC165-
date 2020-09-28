@@ -149,9 +149,9 @@ public class MyGame extends VariableFrameRateGame {
 		System.out.println("Press 'LSHIFT' or the left stick button to ASCEND");
 		System.out.println("Press 'C' or the right stick button to DESCEND");
 		System.out.println("Press 'Space' or 'A' to RIDE/HOP OFF DOLPHIN");
-		System.out.println("Press 'ESC' or 'Select' to EXIT");
 		System.out.println("Press 'P' or 'X' to PLAY NEXT SONG");
 		System.out.println("Press 'TAB' or 'Start' to TOGGLE 3P CAMERA");
+		System.out.println("Press 'ESC' or 'Select' to EXIT");
 		System.out.println("----------------------------------------------------");
 		formatFloat.setRoundingMode(RoundingMode.DOWN);
 	}
