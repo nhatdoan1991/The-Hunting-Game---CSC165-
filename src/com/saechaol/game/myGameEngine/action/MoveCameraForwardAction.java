@@ -4,6 +4,7 @@ import com.saechaol.game.a1.MyGame;
 
 import net.java.games.input.Event;
 import ray.input.action.AbstractInputAction;
+import ray.rage.scene.SceneNode;
 import ray.rml.Vector3f;
 
 /**
@@ -15,9 +16,15 @@ import ray.rml.Vector3f;
 public class MoveCameraForwardAction extends AbstractInputAction {
 
 	private MyGame game;
+	private SceneNode dolphin;
 	
 	public MoveCameraForwardAction(MyGame g) {
 		game = g;
+	}
+	
+	public MoveCameraForwardAction(MyGame g, SceneNode d) {
+		game = g;
+		dolphin = d;
 	}
 	
 	@Override
@@ -31,6 +38,8 @@ public class MoveCameraForwardAction extends AbstractInputAction {
 			Vector3f pointTwo = (Vector3f) position.add(pointOne);
 			game.camera.setPo( (Vector3f) Vector3f.createFrom(pointTwo.x(), pointTwo.y(), pointTwo.z()));
 		
+		} else if (dolphin != null) {
+			dolphin.moveForward(speed * 1.5f);
 		} else {
 		//	System.out.println("Node mode forward");
 			game.dolphinNode.moveForward(speed * 1.5f);

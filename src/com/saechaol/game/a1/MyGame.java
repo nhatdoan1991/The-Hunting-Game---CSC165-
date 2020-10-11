@@ -306,8 +306,8 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	protected void initializeAudio(SceneManager sceneManager) {
 		Configuration configuration = sceneManager.getConfiguration();
-		String sfxPath = configuration.valueOf("assets.sounds.path.sfx");
-		String musicPath = configuration.valueOf("assets.sounds.path.music");
+		String sfxPath = configuration.valueOf("assets.sounds.path.a1.sfx");
+		String musicPath = configuration.valueOf("assets.sounds.path.a1.music");
 		AudioResource gymnopedieOne, gymnopedieTwo, gymnopedieThree, scoreSfx, destroySfx, lifeUpSfx;
 		audioManager = AudioManagerFactory.createAudioManager("ray.audio.joal.JOALAudioManager");
 		
@@ -1017,6 +1017,11 @@ public class MyGame extends VariableFrameRateGame {
 		}
 		return randomFloat;
 	}
+	
+    @Override
+    protected void loadConfiguration(Configuration config) throws IOException {
+        config.load("assets/config/rage.properties");
+    }
 	
 	public static void main(String[] args) {
 		System.out.println("MyGame.main() running!");
