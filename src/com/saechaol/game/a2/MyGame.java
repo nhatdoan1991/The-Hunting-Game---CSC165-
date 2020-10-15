@@ -1,13 +1,23 @@
 package com.saechaol.game.a2;
 
 import java.awt.Color;
+import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
+import java.util.ArrayList;
 
+import com.saechaol.game.myGameEngine.action.AvatarLeftStickXAction;
+import com.saechaol.game.myGameEngine.action.AvatarLeftStickYAction;
+import com.saechaol.game.myGameEngine.action.AvatarMoveBackwardAction;
+import com.saechaol.game.myGameEngine.action.AvatarMoveForwardAction;
+import com.saechaol.game.myGameEngine.action.AvatarMoveLeftAction;
+import com.saechaol.game.myGameEngine.action.AvatarMoveRightAction;
+import com.saechaol.game.myGameEngine.action.ExitGameAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
 
+import net.java.games.input.Controller;
 import ray.input.GenericInputManager;
 import ray.input.InputManager;
 import ray.input.action.Action;
@@ -36,12 +46,16 @@ import ray.rage.util.Configuration;
 
 public class MyGame extends VariableFrameRateGame {
 
+	private Action	moveLeftActionP1, moveRightActionP1, moveForwardActionP1, moveBackwardActionP1, 
+					leftStickXActionP2, leftStickYActionP2, exitGameAction;
 	private Camera3PController orbitCameraOne, orbitCameraTwo;
 	GL4RenderSystem renderSystem;
 	float elapsedTime = 0.0f;
 	String elapsedTimeString, displayString;
 	int elapsedTimeSeconds;
+	public SceneNode dolphinNodeOne, dolphinNodeTwo;
 	private static final String SPACE_SKYBOX = "SpaceSkyBox";
+	private static final String BUILD_STATE = "test"; // test for debugging, release for submission
 	private TextureManager textureManager;
 	private InputManager inputManager;
 
@@ -61,9 +75,18 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	@Override
 	protected void setupWindow(RenderSystem renderSystem, GraphicsEnvironment graphicsEnvironment) {
-		DisplaySettingsDialog displaySettingsDialogue = new DisplaySettingsDialog(graphicsEnvironment.getDefaultScreenDevice());
-		displaySettingsDialogue.showIt();
-		renderSystem.createRenderWindow(displaySettingsDialogue.getSelectedDisplayMode(),displaySettingsDialogue.isFullScreenModeSelected()).setTitle("Competitive Planet Chaser | Saechao Lucas A2");
+		if (BUILD_STATE.equalsIgnoreCase("release")) {
+			DisplaySettingsDialog displaySettingsDialogue = new DisplaySettingsDialog(graphicsEnvironment.getDefaultScreenDevice());
+			displaySettingsDialogue.showIt();
+			renderSystem.createRenderWindow(displaySettingsDialogue.getSelectedDisplayMode(),displaySettingsDialogue.isFullScreenModeSelected()).setTitle("Competitive Planet Chaser | Saechao Lucas A2");	
+		} else if (BUILD_STATE.equalsIgnoreCase("test")) {
+			int displayHeight = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getHeight();
+			int displayWidth = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDisplayMode().getWidth();
+			if (displayHeight > 1920 && displayWidth > 1080)
+				renderSystem.createRenderWindow(new DisplayMode(1920, 1080, 24, 60), false);
+			else
+				renderSystem.createRenderWindow(new DisplayMode(1280, 720, 24, 60), false);
+		}
 	}
 
 	@Override
@@ -71,7 +94,7 @@ public class MyGame extends VariableFrameRateGame {
 		SceneNode rootNode = sceneManager.getRootSceneNode();
 
 		Camera cameraOne = sceneManager.createCamera("cameraOne", Projection.PERSPECTIVE);
-		renderWindow.getViewport(0).setCamera(cameraOne);
+		renderWindow.getViewport(1).setCamera(cameraOne);
 
 		SceneNode cameraOneNode = rootNode.createChildSceneNode(cameraOne.getName() + "Node");
 		
@@ -80,7 +103,7 @@ public class MyGame extends VariableFrameRateGame {
 		cameraOne.getFrustum().setFarClipDistance(1000.0f);
 		
 		Camera cameraTwo = sceneManager.createCamera("cameraTwo", Projection.PERSPECTIVE); 
-		renderWindow.getViewport(1).setCamera(cameraTwo);
+		renderWindow.getViewport(0).setCamera(cameraTwo);
 		
 		SceneNode cameraTwoNode = rootNode.createChildSceneNode(cameraTwo.getName() + "Node");
 		
@@ -108,8 +131,8 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
 		dolphinEntityTwo.setPrimitive(Primitive.TRIANGLES);
 		
-		SceneNode dolphinNodeOne = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityOne.getName() + "Node");
-		SceneNode dolphinNodeTwo = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityTwo.getName() + "Node");
+		dolphinNodeOne = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityOne.getName() + "Node");
+		dolphinNodeTwo = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityTwo.getName() + "Node");
 		
 		dolphinNodeOne.attachObject(dolphinEntityOne);
 		dolphinNodeTwo.attachObject(dolphinEntityTwo);
@@ -142,6 +165,7 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinEntityTwo.setRenderState(dolphinTwoTextureState);
 		
 		setupOrbitCameras(engine, sceneManager);
+		setupInputs(sceneManager);
 	}
 
 	@Override
@@ -197,10 +221,7 @@ public class MyGame extends VariableFrameRateGame {
 	}
 
 	protected void setupOrbitCameras(Engine engine, SceneManager sceneManager) {
-		SceneNode dolphinNodeOne = sceneManager.getSceneNode("dolphinEntityOneNode");
 		SceneNode cameraOneNode = sceneManager.getSceneNode("cameraOneNode");
-		
-		SceneNode dolphinNodeTwo = sceneManager.getSceneNode("dolphinEntityTwoNode");
 		SceneNode cameraTwoNode = sceneManager.getSceneNode("cameraTwoNode");
 		
 		Camera cameraOne = sceneManager.getCamera("cameraOne");
@@ -209,19 +230,100 @@ public class MyGame extends VariableFrameRateGame {
 		String keyboardName = inputManager.getKeyboardName();
 		String gamepadName = inputManager.getFirstGamepadName();
 		
-		orbitCameraOne = new Camera3PController(cameraOne, cameraOneNode, dolphinNodeOne, gamepadName, inputManager);
-		orbitCameraTwo = new Camera3PController(cameraTwo, cameraTwoNode, dolphinNodeTwo, keyboardName, inputManager);
+		orbitCameraOne = new Camera3PController(cameraOne, cameraOneNode, dolphinNodeOne, keyboardName, inputManager);
+		orbitCameraTwo = new Camera3PController(cameraTwo, cameraTwoNode, dolphinNodeTwo, gamepadName, inputManager);
 	}
 	
 	protected void setupInputs(SceneManager sceneManager) {
-		/*
-		String keyboardName = inputManager.getKeyboardName();
 		String gamepadName = inputManager.getFirstGamepadName();
 		String mouseName = inputManager.getMouseName();
 		
-		SceneNode dolphinNodeOne = sceneManager.getSceneNode("dolphinEntityNodeOne");
-		SceneNode dolphinNodeTwo = sceneManager.getSceneNode("dolphinEntityNodeTwo");
-		*/
+		moveLeftActionP1 = new AvatarMoveLeftAction(this, dolphinNodeOne.getName());
+		moveRightActionP1 = new AvatarMoveRightAction(this, dolphinNodeOne.getName());
+		moveForwardActionP1 = new AvatarMoveForwardAction(this, dolphinNodeOne.getName());
+		moveBackwardActionP1 = new AvatarMoveBackwardAction(this, dolphinNodeOne.getName());
+		leftStickXActionP2 = new AvatarLeftStickXAction(this, dolphinNodeTwo.getName());
+		leftStickYActionP2 = new AvatarLeftStickYAction(this, dolphinNodeTwo.getName());
+		exitGameAction = new ExitGameAction(this);
+		
+		/*
+		 * Player One - KB / Mouse
+		 * 	- WASD		:	Move
+		 * 	- Arrows	:	Orbit camera
+		 * 	- SPACE		:	Jump
+		 * 	- ESC		:	Quit
+		 * 	- P			:	Pause or Self Destruct
+		 * 	- Tab		:	Reset camera
+		 * 	- F			:	Zoom out
+		 * 	- R			:	Zoom in
+		 */
+		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
+		for (Controller keyboards : controllersArrayList) {
+			if (keyboards.getType() == Controller.Type.KEYBOARD) {
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.A, 
+						moveLeftActionP1, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.D, 
+						moveRightActionP1, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.W, 
+						moveForwardActionP1, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.S, 
+						moveBackwardActionP1, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.ESCAPE, 
+						exitGameAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+			}
+		}
+		
+		/*
+		 * Player Two - Gamepad
+		 *	- LStick 	:	X/Y 	:	Move
+		 *	- RStick	:	RX/RY	:	Orbit camera
+		 * 	- Dpad		:	POV		:	
+		 *	- A			:	0		:	Jump
+		 * 	- B			:	1		:	
+		 * 	- X			:	2		:	
+		 * 	- Y			:	3		:	
+		 * 	- LB		:	4		:	
+		 * 	- RB		:	5		:	
+		 * 	- View		:	6		:	Quit
+		 * 	- Menu		:	7		:	Pause or Self Destruct
+		 *	- LS		:	8		:	
+		 *	- RS		:	9		:	Reset camera
+		 * 	- LT		:	Z+		:	Zoom out
+		 * 	- RT		:	Z-		:	Zoom in
+		 */
+		if (gamepadName == null) {
+			System.out.println("No gamepad detected!");
+		} else {
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Axis.X, 
+					leftStickXActionP2, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Axis.Y, 
+					leftStickYActionP2, 
+					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._6, 
+					exitGameAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+		}
+		
 		
 	}
 
@@ -241,6 +343,8 @@ public class MyGame extends VariableFrameRateGame {
 		
 		displayString = "Player Two Time: " + elapsedTimeString;
 		renderSystem.setHUD2(displayString, 15, 15);
+		
+		inputManager.update(elapsedTime);
 		
 		orbitCameraOne.updateCameraPosition();
 		orbitCameraTwo.updateCameraPosition();

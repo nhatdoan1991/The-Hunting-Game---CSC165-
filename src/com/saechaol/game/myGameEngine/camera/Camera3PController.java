@@ -70,80 +70,81 @@ public class Camera3PController {
 		Action zoomInAction = new ZoomInAction();
 		Action zoomOutAction = new ZoomOutAction();
 		
-		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
-		for (Controller keyboards : controllersArrayList) {
-			if (keyboards.getType() == Controller.Type.KEYBOARD) {
-				inputManager.associateAction(keyboards,
-						net.java.games.input.Component.Identifier.Key.LEFT,
-						yawLeftAction,
+		if (cameraTarget.getName().equalsIgnoreCase("dolphinEntityOneNode")) {
+			ArrayList<Controller> controllersArrayList = inputManager.getControllers();
+			for (Controller keyboards : controllersArrayList) {
+				if (keyboards.getType() == Controller.Type.KEYBOARD) {
+					inputManager.associateAction(keyboards,
+							net.java.games.input.Component.Identifier.Key.LEFT,
+							yawLeftAction,
+							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+					
+					inputManager.associateAction(keyboards,
+							net.java.games.input.Component.Identifier.Key.RIGHT,
+							yawRightAction,
+							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+					
+					inputManager.associateAction(keyboards,
+							net.java.games.input.Component.Identifier.Key.UP,
+							elevateUpAction,
+							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+					
+					inputManager.associateAction(keyboards,
+							net.java.games.input.Component.Identifier.Key.DOWN,
+							elevateDownAction,
+							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+					
+					inputManager.associateAction(keyboards,
+							net.java.games.input.Component.Identifier.Key.F,
+							zoomOutAction,
+							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+					
+					inputManager.associateAction(keyboards,
+							net.java.games.input.Component.Identifier.Key.R,
+							zoomInAction,
+							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+					
+					inputManager.associateAction(keyboards, 
+							net.java.games.input.Component.Identifier.Key.E, 
+							null, 
+							InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+					
+					inputManager.associateAction(keyboards, 
+							net.java.games.input.Component.Identifier.Key.Q, 
+							null, 
+							InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+					
+				}
+			}
+		} else if (cameraTarget.getName().equalsIgnoreCase("dolphinEntityTwoNode")) {
+			if(controllerName == null) {
+			} else {
+				inputManager.associateAction(controllerName, 
+						net.java.games.input.Component.Identifier.Axis.RX, 
+						orbitAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 				
-				inputManager.associateAction(keyboards,
-						net.java.games.input.Component.Identifier.Key.RIGHT,
-						yawRightAction,
+				inputManager.associateAction(controllerName, 
+						net.java.games.input.Component.Identifier.Axis.RY, 
+						elevateAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 				
-				inputManager.associateAction(keyboards,
-						net.java.games.input.Component.Identifier.Key.UP,
-						elevateUpAction,
+				inputManager.associateAction(controllerName, 
+						net.java.games.input.Component.Identifier.Axis.Z, 
+						orbitRadiusAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 				
-				inputManager.associateAction(keyboards,
-						net.java.games.input.Component.Identifier.Key.DOWN,
-						elevateDownAction,
-						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-				
-				inputManager.associateAction(keyboards,
-						net.java.games.input.Component.Identifier.Key.F,
-						zoomOutAction,
-						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-				
-				inputManager.associateAction(keyboards,
-						net.java.games.input.Component.Identifier.Key.R,
-						zoomInAction,
-						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-				
-				inputManager.associateAction(keyboards, 
-						net.java.games.input.Component.Identifier.Key.E, 
+				inputManager.associateAction(controllerName, 
+						net.java.games.input.Component.Identifier.Button._4, 
 						null, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 				
-				inputManager.associateAction(keyboards, 
-						net.java.games.input.Component.Identifier.Key.Q, 
+				inputManager.associateAction(controllerName, 
+						net.java.games.input.Component.Identifier.Button._5, 
 						null, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-				
 			}
 		}
-		
-		if(controllerName == null) {
-		} else {
-			inputManager.associateAction(controllerName, 
-					net.java.games.input.Component.Identifier.Axis.RX, 
-					orbitAction, 
-					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-			
-			inputManager.associateAction(controllerName, 
-					net.java.games.input.Component.Identifier.Axis.RY, 
-					elevateAction, 
-					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-			
-			inputManager.associateAction(controllerName, 
-					net.java.games.input.Component.Identifier.Axis.Z, 
-					orbitRadiusAction, 
-					InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-			
-			inputManager.associateAction(controllerName, 
-					net.java.games.input.Component.Identifier.Button._4, 
-					null, 
-					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-			
-			inputManager.associateAction(controllerName, 
-					net.java.games.input.Component.Identifier.Button._5, 
-					null, 
-					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		}
-
 	}
 	
 	/**
@@ -164,6 +165,8 @@ public class Camera3PController {
 				rotation = 0.0f;
 			cameraAzimuth += rotation;
 			cameraAzimuth = cameraAzimuth % 360;
+			if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
+			if (cameraAzimuth > 330.0f) { cameraAzimuth = 330.0f; }
 			updateCameraPosition();
 		}
 		
@@ -215,7 +218,7 @@ public class Camera3PController {
 		@Override
 		public void performAction(float time, net.java.games.input.Event e) {
 			cameraElevation -= 1.2f;
-			if (cameraElevation < -40.0f) { cameraElevation = -40.0f; }
+			if (cameraElevation < 0.0f) { cameraElevation = 0.0f; }
 			if (cameraElevation > 40.0f) { cameraElevation = 40.0f; }
 			updateCameraPosition();
 		}
@@ -231,7 +234,7 @@ public class Camera3PController {
 		@Override
 		public void performAction(float time, net.java.games.input.Event e) {
 			cameraElevation += 1.2f;
-			if (cameraElevation < -40.0f) { cameraElevation = -40.0f; }
+			if (cameraElevation < 0.0f) { cameraElevation = 0.0f; }
 			if (cameraElevation > 40.0f) { cameraElevation = 40.0f; }
 			updateCameraPosition();
 		}
@@ -254,7 +257,7 @@ public class Camera3PController {
 			} else 
 				rotation = 0.0f;
 			cameraElevation += rotation;
-			if (cameraElevation < -40.0f) { cameraElevation = -40.0f; }
+			if (cameraElevation < 0.0f) { cameraElevation = 0.0f; }
 			if (cameraElevation > 40.0f) { cameraElevation = 40.0f; }
 			updateCameraPosition();
 		}

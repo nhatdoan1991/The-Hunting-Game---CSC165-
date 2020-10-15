@@ -3,7 +3,6 @@ package com.saechaol.game.myGameEngine.action;
 import ray.input.action.AbstractInputAction;
 import ray.rage.game.*;
 import net.java.games.input.Event;
-import com.saechaol.game.a1.MyGame;
 
 /**
  * An action handler that requests game shutdown
@@ -13,9 +12,9 @@ import com.saechaol.game.a1.MyGame;
 
 public class ExitGameAction extends AbstractInputAction {
 
-	private MyGame game;
+	private BaseGame game;
 	
-	public ExitGameAction(MyGame g) {
+	public ExitGameAction(BaseGame g) {
 		game = g;
 	}
 	
