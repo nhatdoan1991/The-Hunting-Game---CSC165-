@@ -5,6 +5,8 @@ import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import java.awt.geom.AffineTransform;
 import java.io.IOException;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 
 import com.saechaol.game.myGameEngine.action.AvatarLeftStickXAction;
@@ -14,13 +16,20 @@ import com.saechaol.game.myGameEngine.action.AvatarMoveForwardAction;
 import com.saechaol.game.myGameEngine.action.AvatarMoveLeftAction;
 import com.saechaol.game.myGameEngine.action.AvatarMoveRightAction;
 import com.saechaol.game.myGameEngine.action.ExitGameAction;
+import com.saechaol.game.myGameEngine.action.StartPhysicsAction;
+import com.saechaol.game.myGameEngine.action.a2.AvatarJumpAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
+import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
+import com.saechaol.game.myGameEngine.object.manual.ManualFloorObject;
 
 import net.java.games.input.Controller;
 import ray.input.GenericInputManager;
 import ray.input.InputManager;
 import ray.input.action.Action;
+import ray.physics.PhysicsEngine;
+import ray.physics.PhysicsEngineFactory;
+import ray.physics.PhysicsObject;
 import ray.rage.Engine;
 import ray.rage.asset.texture.Texture;
 import ray.rage.asset.texture.TextureManager;
@@ -34,8 +43,10 @@ import ray.rage.rendersystem.Viewport;
 import ray.rage.rendersystem.gl4.GL4RenderSystem;
 import ray.rage.rendersystem.states.RenderState;
 import ray.rage.rendersystem.states.TextureState;
+import ray.rage.rendersystem.states.ZBufferState;
 import ray.rage.scene.Camera;
 import ray.rage.scene.Light;
+import ray.rage.scene.ManualObject;
 import ray.rage.scene.Camera.Frustum.Projection;
 import ray.rage.scene.Entity;
 import ray.rage.scene.SceneManager;
@@ -43,27 +54,49 @@ import ray.rage.scene.SceneManagerFactory;
 import ray.rage.scene.SceneNode;
 import ray.rage.scene.SkyBox;
 import ray.rage.util.Configuration;
+import ray.rml.Matrix4;
+import ray.rml.Matrix4f;
 
 public class MyGame extends VariableFrameRateGame {
 
 	private Action	moveLeftActionP1, moveRightActionP1, moveForwardActionP1, moveBackwardActionP1, 
-					leftStickXActionP2, leftStickYActionP2, exitGameAction;
+					leftStickXActionP2, leftStickYActionP2, exitGameAction, startPhysicsAction,
+					avatarJumpAction;
 	private Camera3PController orbitCameraOne, orbitCameraTwo;
-	GL4RenderSystem renderSystem;
+	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	float elapsedTime = 0.0f;
-	String elapsedTimeString, displayString;
-	int elapsedTimeSeconds;
+	GL4RenderSystem renderSystem;
+	int elapsedTimeSeconds, playerOneLives = 2, playerTwoLives = 2, playerOneScore = 0, playerTwoScore = 0;
+	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString, playerTwoScoreString;
 	public SceneNode dolphinNodeOne, dolphinNodeTwo;
-	private static final String SPACE_SKYBOX = "SpaceSkyBox";
+	private static final String SKYBOX = "TestSkybox";
 	private static final String BUILD_STATE = "test"; // test for debugging, release for submission
 	private TextureManager textureManager;
 	private InputManager inputManager;
+	private ZBufferState zState;
 
+	/*
+	 * Physics stuff
+	 */
+	private SceneNode ballOneNode, ballTwoNode, groundNode;
+	private SceneNode cameraPositionNode;
+	private final static String GROUND_E = "Ground";
+	private final static String GROUND_N = "GroundNode";
+	
+	public PhysicsEngine physicsEngine;
+	public PhysicsObject	ballOnePhysicsObject, ballTwoPhysicsObject, groundPlane,
+							dolphinOnePhysicsObject, dolphinTwoPhysicsObject;
+	public boolean running = false;
+	/*
+	 * End of physics stuff
+	 */
+	
 	public MyGame() {
 		super();
 		System.out.println("Press 'W/A/S/D' or control the left stick to MOVE");
 		System.out.println("Press 'ESC' or 'Select' to EXIT");
 		System.out.println("----------------------------------------------------");
+		formatFloat.setRoundingMode(RoundingMode.DOWN);
 	}
 
 	/**
@@ -125,6 +158,13 @@ public class MyGame extends VariableFrameRateGame {
 		
 		setupSkybox(engine, sceneManager);
 		
+		// initialize zState
+		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
+		zState.setEnabled(true);
+		
+		// initialize world axes
+		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
+		
 		Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "dolphinHighPoly.obj");
 		Entity dolphinEntityTwo = sceneManager.createEntity("dolphinEntityTwo", "dolphinHighPoly.obj");
 		
@@ -166,8 +206,106 @@ public class MyGame extends VariableFrameRateGame {
 		
 		setupOrbitCameras(engine, sceneManager);
 		setupInputs(sceneManager);
+	
+		/*
+		 * Physics stuff
+		 */
+		Entity ballOneEntity = sceneManager.createEntity("ballOneEntity", "earth.obj");
+		ballOneNode = sceneManager.getRootSceneNode().createChildSceneNode(ballOneEntity.getName() + "Node");
+		ballOneNode.attachObject(ballOneEntity);
+		ballOneNode.moveLeft(4.0f);
+		ballOneNode.moveUp(2.0f);
+		
+		Entity ballTwoEntity = sceneManager.createEntity("ballTwoEntity", "earth.obj");
+		ballTwoNode = sceneManager.getRootSceneNode().createChildSceneNode(ballTwoEntity.getName() + "Node");
+		ballTwoNode.attachObject(ballTwoEntity);
+		ballTwoNode.moveForward(4.0f);
+		
+		ManualObject groundEntity = ManualFloorObject.manualFloorObject(engine, sceneManager);
+		
+		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(GROUND_N);
+		groundNode.attachObject(groundEntity);
+		groundNode.setLocalPosition(0.0f, -0.5f, 0.0f);
+		/*
+		 * End of physics stuff
+		 */
+		
+		setupPhysics();
+		setupPhysicsWorld();
+		
+		System.out.println("Press SPACE to start the physics engine");
 	}
 
+	private void setupPhysics() {
+		String engine = "ray.physics.JBullet.JBulletPhysicsEngine";
+		float[] gravity = { 0.0f, -9.8f, 0.0f };
+		
+		physicsEngine = PhysicsEngineFactory.createPhysicsEngine(engine);
+		physicsEngine.initSystem();
+		physicsEngine.setGravity(gravity);
+	}
+	
+	private void setupPhysicsWorld() {
+		float mass = 1.0f;
+		float up[] = { 0.0f, 1.0f, 0.0f };
+		double[] temptf;
+		
+		temptf = toDoubleArray(ballOneNode.getLocalTransform().toFloatArray());
+		ballOnePhysicsObject = physicsEngine.addSphereObject(physicsEngine.nextUID(), mass, temptf, 2.0f);
+		
+		ballOnePhysicsObject.setBounciness(1.0f);
+		ballOneNode.setPhysicsObject(ballOnePhysicsObject);
+		
+		temptf = toDoubleArray(ballTwoNode.getLocalTransform().toFloatArray());
+		ballTwoPhysicsObject = physicsEngine.addSphereObject(physicsEngine.nextUID(), mass, temptf, 2.0f);
+		
+		ballTwoPhysicsObject.setBounciness(1.0f);
+		ballTwoNode.setPhysicsObject(ballTwoPhysicsObject);
+		
+		temptf = toDoubleArray(dolphinNodeOne.getLocalTransform().toFloatArray());
+		dolphinOnePhysicsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, temptf, 0.5f, 0.5f);
+		
+		dolphinOnePhysicsObject.setBounciness(0.0f);
+		dolphinOnePhysicsObject.setFriction(0.0f);
+	//	dolphinNodeOne.setPhysicsObject(dolphinOnePhysicsObject);
+		
+		temptf = toDoubleArray(dolphinNodeTwo.getLocalTransform().toFloatArray());
+		dolphinTwoPhysicsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, temptf, 0.5f, 0.5f);
+		
+		dolphinTwoPhysicsObject.setBounciness(1.0f);
+		dolphinTwoPhysicsObject.setFriction(0.0f);
+	//	dolphinNodeTwo.setPhysicsObject(dolphinTwoPhysicsObject);
+		
+		temptf = toDoubleArray(groundNode.getLocalTransform().toFloatArray());
+		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), temptf, up, 0.0f);
+		
+		groundPlane.setBounciness(0.5f);
+		groundNode.scale(100.0f, 0.5f, 100.0f);
+		groundNode.setLocalPosition(0.0f, -0.5f, 0.0f);
+		groundNode.setPhysicsObject(groundPlane);
+		
+	}
+	
+	private float[] toFloatArray(double[] arr) {
+		if (arr == null) return null;
+		int n = arr.length;
+		float[] ret = new float[n];
+		for (int i = 0; i < n; i++) {
+			ret[i] = (float) arr[i];
+		}
+		return ret;
+	}
+	
+	private double[] toDoubleArray(float[] arr) {
+		if (arr == null) return null;
+		int n = arr.length;
+		double[] ret = new double[n];
+		for (int i = 0; i < n; i++) {
+			ret[i] = (double) arr[i];
+		}
+		return ret;
+	}
+	
 	@Override
 	protected void setupWindowViewports(RenderWindow renderWindow) {
 		renderWindow.addKeyListener(this);
@@ -184,17 +322,17 @@ public class MyGame extends VariableFrameRateGame {
 	}
 	
 	protected void setupSkybox(Engine engine, SceneManager sceneManager) throws IOException {
-		SkyBox worldSkybox = sceneManager.createSkyBox(SPACE_SKYBOX);
+		SkyBox worldSkybox = sceneManager.createSkyBox(SKYBOX);
 		Configuration configuration = engine.getConfiguration();
 		
 		// initialize skybox textures
-		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.a2"));
-		Texture skyboxFrontTexture = textureManager.getAssetByPath("spaceSkyboxFront.jpg");
-		Texture skyboxBackTexture = textureManager.getAssetByPath("spaceSkyboxBack.jpg");
-		Texture skyboxLeftTexture = textureManager.getAssetByPath("spaceSkyboxLeft.jpg");
-		Texture skyboxRightTexture = textureManager.getAssetByPath("spaceSkyboxRight.jpg");
-		Texture skyboxTopTexture = textureManager.getAssetByPath("spaceSkyboxTop.jpg");
-		Texture skyboxBottomTexture = textureManager.getAssetByPath("spaceSkyboxBottom.jpg");
+		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.test"));
+		Texture skyboxFrontTexture = textureManager.getAssetByPath("front.jpg");
+		Texture skyboxBackTexture = textureManager.getAssetByPath("back.jpg");
+		Texture skyboxLeftTexture = textureManager.getAssetByPath("left.jpg");
+		Texture skyboxRightTexture = textureManager.getAssetByPath("right.jpg");
+		Texture skyboxTopTexture = textureManager.getAssetByPath("top.jpg");
+		Texture skyboxBottomTexture = textureManager.getAssetByPath("bottom.jpg");
 		
 		// transform skybox textures
 		AffineTransform skyboxAffineTransform = new AffineTransform();
@@ -245,6 +383,8 @@ public class MyGame extends VariableFrameRateGame {
 		leftStickXActionP2 = new AvatarLeftStickXAction(this, dolphinNodeTwo.getName());
 		leftStickYActionP2 = new AvatarLeftStickYAction(this, dolphinNodeTwo.getName());
 		exitGameAction = new ExitGameAction(this);
+		startPhysicsAction = new StartPhysicsAction(this);
+		avatarJumpAction = new AvatarJumpAction(this);
 		
 		/*
 		 * Player One - KB / Mouse
@@ -284,6 +424,16 @@ public class MyGame extends VariableFrameRateGame {
 						net.java.games.input.Component.Identifier.Key.ESCAPE, 
 						exitGameAction, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.P, 
+						startPhysicsAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.SPACE, 
+						avatarJumpAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 			}
 		}
 		
@@ -335,16 +485,47 @@ public class MyGame extends VariableFrameRateGame {
 	protected void update(Engine engine) {
 		renderSystem = (GL4RenderSystem) engine.getRenderSystem();
 		elapsedTime += engine.getElapsedTimeMillis();
+		
+		if (running) {
+			Matrix4 matrix;
+			physicsEngine.update(elapsedTime);
+			for (SceneNode sceneNode : engine.getSceneManager().getSceneNodes()) {
+				if (sceneNode.getPhysicsObject() != null) {
+					matrix = Matrix4f.createFrom(toFloatArray(sceneNode.getPhysicsObject().getTransform()));
+					sceneNode.setLocalPosition(matrix.value(0, 3), matrix.value(1, 3), matrix.value(2, 3));
+				}
+			}
+		}
+		
 		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
+		playerOneLivesString = Integer.toString(playerOneLives);
+		playerTwoLivesString = Integer.toString(playerTwoLives);
+		playerOneScoreString = Integer.toString(playerOneScore);
+		playerTwoScoreString = Integer.toString(playerTwoScore);
 		
 		displayString = "Player One Time: " + elapsedTimeString;
+		displayString += " | Lives = " + playerOneLivesString;
+		displayString += " | Score = " + playerOneScoreString;
+		displayString += " | Position: (" + formatFloat.format(dolphinNodeOne.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNodeOne.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNodeOne.getWorldPosition().z()) + ")";
 		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(1).getActualBottom()) + 15);
 		
 		displayString = "Player Two Time: " + elapsedTimeString;
+		displayString += " | Lives = " + playerTwoLivesString;
+		displayString += " | Score = " + playerTwoScoreString;
+		displayString += " | Position: (" + formatFloat.format(dolphinNodeTwo.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNodeTwo.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNodeTwo.getWorldPosition().z()) + ")";
+
 		renderSystem.setHUD2(displayString, 15, 15);
 		
 		inputManager.update(elapsedTime);
+		
+		/*
+ 		displayString += " | Lives = " + livesString;
+		displayString += " | Score = " + score;
+		displayString += " | Camera position: (" + formatFloat.format(camera.getPo().x()) + ", " + formatFloat.format(camera.getPo().y()) + ", " + formatFloat.format(camera.getPo().z()) + ")";
+		displayString += " | Dolphin position: (" + formatFloat.format(dolphinNode.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().z()) + ")";
+		displayString += " | Current song: ";
+		 */
 		
 		orbitCameraOne.updateCameraPosition();
 		orbitCameraTwo.updateCameraPosition();

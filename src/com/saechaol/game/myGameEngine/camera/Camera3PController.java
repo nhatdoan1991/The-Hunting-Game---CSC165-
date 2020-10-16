@@ -3,11 +3,16 @@ package com.saechaol.game.myGameEngine.camera;
 import java.util.ArrayList;
 
 import net.java.games.input.Controller;
+import net.java.games.input.Event;
 import ray.input.InputManager;
 import ray.input.action.AbstractInputAction;
 import ray.input.action.Action;
 import ray.rage.scene.Camera;
 import ray.rage.scene.SceneNode;
+import ray.rml.Angle;
+import ray.rml.Degreef;
+import ray.rml.Quaternion;
+import ray.rml.Quaternionf;
 import ray.rml.Vector3;
 import ray.rml.Vector3f;
 
@@ -23,7 +28,7 @@ public class Camera3PController {
 	private Camera camera;
 	private SceneNode cameraNode;
 	private SceneNode cameraTarget;
-	private float cameraAzimuth, cameraElevation, radius;
+	private float cameraAzimuth, cameraElevation, radius, cameraAzimuthMin = 130.0f, cameraAzimuthMax = 230.0f;
 	private Vector3 worldUpVector;
 	
 	public Camera3PController(Camera c, SceneNode cNode, SceneNode cTarget, String controllerName, InputManager inputManager) {
@@ -69,6 +74,8 @@ public class Camera3PController {
 		Action elevateDownAction = new ElevateDownAction();
 		Action zoomInAction = new ZoomInAction();
 		Action zoomOutAction = new ZoomOutAction();
+		Action avatarTurnLeftAction = new AvatarTurnLeftAction();
+		Action avatarTurnRightAction = new AvatarTurnRightAction();
 		
 		if (cameraTarget.getName().equalsIgnoreCase("dolphinEntityOneNode")) {
 			ArrayList<Controller> controllersArrayList = inputManager.getControllers();
@@ -105,14 +112,14 @@ public class Camera3PController {
 							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 					
 					inputManager.associateAction(keyboards, 
-							net.java.games.input.Component.Identifier.Key.E, 
-							null, 
-							InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+							net.java.games.input.Component.Identifier.Key.Q, 
+							avatarTurnLeftAction, 
+							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 					
 					inputManager.associateAction(keyboards, 
-							net.java.games.input.Component.Identifier.Key.Q, 
-							null, 
-							InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+							net.java.games.input.Component.Identifier.Key.E, 
+							avatarTurnRightAction, 
+							InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 					
 				}
 			}
@@ -164,9 +171,8 @@ public class Camera3PController {
 			} else 
 				rotation = 0.0f;
 			cameraAzimuth += rotation;
-			cameraAzimuth = cameraAzimuth % 360;
-			if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
-			if (cameraAzimuth > 330.0f) { cameraAzimuth = 330.0f; }
+			if (cameraAzimuth < cameraAzimuthMin) { cameraAzimuth = cameraAzimuthMin; }
+			if (cameraAzimuth > cameraAzimuthMax) { cameraAzimuth = cameraAzimuthMax; }
 			updateCameraPosition();
 		}
 		
@@ -182,9 +188,8 @@ public class Camera3PController {
 		@Override
 		public void performAction(float time, net.java.games.input.Event e) {
 			cameraAzimuth += 1.2f;
-			cameraAzimuth = cameraAzimuth % 360;
-			if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
-			if (cameraAzimuth > 330.0f) { cameraAzimuth = 330.0f; }
+			if (cameraAzimuth < cameraAzimuthMin) { cameraAzimuth = cameraAzimuthMin; }
+			if (cameraAzimuth > cameraAzimuthMax) { cameraAzimuth = cameraAzimuthMax; }
 			updateCameraPosition();
 		}
 		
@@ -200,9 +205,50 @@ public class Camera3PController {
 		@Override
 		public void performAction(float time, net.java.games.input.Event e) {
 			cameraAzimuth -= 1.2f;
-			cameraAzimuth = cameraAzimuth % 360;
-			if (cameraAzimuth < 30.0f) { cameraAzimuth = 30.0f; }
-			if (cameraAzimuth > 330.0f) { cameraAzimuth = 330.0f; }
+			if (cameraAzimuth < cameraAzimuthMin) { cameraAzimuth = cameraAzimuthMin; }
+			if (cameraAzimuth > cameraAzimuthMax) { cameraAzimuth = cameraAzimuthMax; }
+			updateCameraPosition();
+		}
+		
+	}
+	
+	/**
+	 * An action handler that rotates the player avatar left, and maintains camera location 
+	 * @author Lucas
+	 *
+	 */
+	private class AvatarTurnLeftAction extends AbstractInputAction {
+
+		@Override
+		public void performAction(float time, net.java.games.input.Event e) {
+			Angle rotationSpeed = Degreef.createFrom(1.2f);
+			cameraTarget.yaw(rotationSpeed);
+			cameraAzimuth += 1.2f;
+			cameraAzimuthMax += 1.2;
+			cameraAzimuthMin += 1.2;
+			if (cameraAzimuth < cameraAzimuthMin) { cameraAzimuth = cameraAzimuthMin; }
+			if (cameraAzimuth > cameraAzimuthMax) { cameraAzimuth = cameraAzimuthMax; }
+			updateCameraPosition();
+		}
+		
+	}
+	
+	/**
+	 * An action handler that rotates the player avatar right, and maintains camera location
+	 * @author Lucas
+	 *
+	 */
+	private class AvatarTurnRightAction extends AbstractInputAction {
+
+		@Override
+		public void performAction(float time, net.java.games.input.Event e) {
+			Angle rotationSpeed = Degreef.createFrom(-1.2f);
+			cameraTarget.yaw(rotationSpeed);
+			cameraAzimuth -= 1.2f;
+			cameraAzimuthMax -= 1.2;
+			cameraAzimuthMin -= 1.2;
+			if (cameraAzimuth < cameraAzimuthMin) { cameraAzimuth = cameraAzimuthMin; }
+			if (cameraAzimuth > cameraAzimuthMax) { cameraAzimuth = cameraAzimuthMax; }
 			updateCameraPosition();
 		}
 		
