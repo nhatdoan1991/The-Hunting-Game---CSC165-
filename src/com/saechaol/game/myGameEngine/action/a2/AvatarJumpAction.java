@@ -8,17 +8,23 @@ import ray.input.action.AbstractInputAction;
 public class AvatarJumpAction extends AbstractInputAction {
 
 	private MyGame game;
+	private String player;
 	
-	public AvatarJumpAction(MyGame g) {
+	public AvatarJumpAction(MyGame g, String p) {
 		game = g;
+		player = p;
 	}
 	
 	@Override
 	public void performAction(float time, Event e) {
-		
-		game.dolphinOnePhysicsObject.applyForce(0.0f, 200.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-		game.dolphinNodeOne.setPhysicsObject(game.dolphinOnePhysicsObject);
-		game.physicsEngine.update(game.getEngine().getElapsedTimeMillis());
+		switch (player) {
+		case "dolphinEntityOneNode":
+			game.dolphinOnePhysicsObject.applyForce(0.0f, 400.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+			break;
+		case "dolphinEntityTwoNode":
+			game.dolphinTwoPhysicsObject.applyForce(0.0f, 400.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+			break;
+		}
 	}
 
 }

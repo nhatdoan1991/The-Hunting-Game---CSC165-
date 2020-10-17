@@ -143,15 +143,25 @@ public class Camera3PController {
 				
 				inputManager.associateAction(controllerName, 
 						net.java.games.input.Component.Identifier.Button._4, 
-						null, 
-						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+						avatarTurnLeftAction, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 				
 				inputManager.associateAction(controllerName, 
 						net.java.games.input.Component.Identifier.Button._5, 
-						null, 
-						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+						avatarTurnRightAction, 
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 			}
 		}
+	}
+	
+	private double[] toDoubleArray(float[] arr) {
+		if (arr == null) return null;
+		int n = arr.length;
+		double[] ret = new double[n];
+		for (int i = 0; i < n; i++) {
+			ret[i] = (double) arr[i];
+		}
+		return ret;
 	}
 	
 	/**
@@ -226,6 +236,16 @@ public class Camera3PController {
 			cameraAzimuth += 1.2f;
 			cameraAzimuthMax += 1.2;
 			cameraAzimuthMin += 1.2;
+			/*
+			   Matrix3f = 	[  0.79652 |   0.00000 |  -0.60459]
+    						[  0.00000 |   1.00000 |   0.00000]
+    						[  0.60459 |   0.00000 |   0.79652]
+    						
+    		   Matrix3f = 	[  0.86602 |   0.00000 |  -0.50000]
+    						[  0.00000 |   1.00000 |   0.00000]
+    						[  0.50000 |   0.00000 |   0.86602]
+			 */
+			
 			if (cameraAzimuth < cameraAzimuthMin) { cameraAzimuth = cameraAzimuthMin; }
 			if (cameraAzimuth > cameraAzimuthMax) { cameraAzimuth = cameraAzimuthMax; }
 			updateCameraPosition();

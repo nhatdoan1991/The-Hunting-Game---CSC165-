@@ -61,7 +61,7 @@ public class MyGame extends VariableFrameRateGame {
 
 	private Action	moveLeftActionP1, moveRightActionP1, moveForwardActionP1, moveBackwardActionP1, 
 					leftStickXActionP2, leftStickYActionP2, exitGameAction, startPhysicsAction,
-					avatarJumpAction;
+					avatarJumpActionP1, avatarJumpActionP2;
 	private Camera3PController orbitCameraOne, orbitCameraTwo;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	float elapsedTime = 0.0f;
@@ -86,7 +86,7 @@ public class MyGame extends VariableFrameRateGame {
 	public PhysicsEngine physicsEngine;
 	public PhysicsObject	ballOnePhysicsObject, ballTwoPhysicsObject, groundPlane,
 							dolphinOnePhysicsObject, dolphinTwoPhysicsObject;
-	public boolean running = false;
+	public boolean running = true;
 	/*
 	 * End of physics stuff
 	 */
@@ -204,36 +204,18 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinEntityOne.setRenderState(dolphinOneTextureState);
 		dolphinEntityTwo.setRenderState(dolphinTwoTextureState);
 		
-		setupOrbitCameras(engine, sceneManager);
 		setupInputs(sceneManager);
 	
-		/*
-		 * Physics stuff
-		 */
-		Entity ballOneEntity = sceneManager.createEntity("ballOneEntity", "earth.obj");
-		ballOneNode = sceneManager.getRootSceneNode().createChildSceneNode(ballOneEntity.getName() + "Node");
-		ballOneNode.attachObject(ballOneEntity);
-		ballOneNode.moveLeft(4.0f);
-		ballOneNode.moveUp(2.0f);
-		
-		Entity ballTwoEntity = sceneManager.createEntity("ballTwoEntity", "earth.obj");
-		ballTwoNode = sceneManager.getRootSceneNode().createChildSceneNode(ballTwoEntity.getName() + "Node");
-		ballTwoNode.attachObject(ballTwoEntity);
-		ballTwoNode.moveForward(4.0f);
-		
+		// Physics stuff
 		ManualObject groundEntity = ManualFloorObject.manualFloorObject(engine, sceneManager);
-		
 		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(GROUND_N);
 		groundNode.attachObject(groundEntity);
-		groundNode.setLocalPosition(0.0f, -0.5f, 0.0f);
-		/*
-		 * End of physics stuff
-		 */
+		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
+		// End of physics stuff
 		
 		setupPhysics();
 		setupPhysicsWorld();
-		
-		System.out.println("Press SPACE to start the physics engine");
+		setupOrbitCameras(engine, sceneManager);
 	}
 
 	private void setupPhysics() {
@@ -248,40 +230,37 @@ public class MyGame extends VariableFrameRateGame {
 	private void setupPhysicsWorld() {
 		float mass = 1.0f;
 		float up[] = { 0.0f, 1.0f, 0.0f };
-		double[] temptf;
+		double[] transform;
 		
-		temptf = toDoubleArray(ballOneNode.getLocalTransform().toFloatArray());
-		ballOnePhysicsObject = physicsEngine.addSphereObject(physicsEngine.nextUID(), mass, temptf, 2.0f);
-		
-		ballOnePhysicsObject.setBounciness(1.0f);
-		ballOneNode.setPhysicsObject(ballOnePhysicsObject);
-		
-		temptf = toDoubleArray(ballTwoNode.getLocalTransform().toFloatArray());
-		ballTwoPhysicsObject = physicsEngine.addSphereObject(physicsEngine.nextUID(), mass, temptf, 2.0f);
-		
-		ballTwoPhysicsObject.setBounciness(1.0f);
-		ballTwoNode.setPhysicsObject(ballTwoPhysicsObject);
-		
-		temptf = toDoubleArray(dolphinNodeOne.getLocalTransform().toFloatArray());
-		dolphinOnePhysicsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, temptf, 0.5f, 0.5f);
+		transform = toDoubleArray(dolphinNodeOne.getLocalTransform().toFloatArray());
+		dolphinOnePhysicsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
 		
 		dolphinOnePhysicsObject.setBounciness(0.0f);
 		dolphinOnePhysicsObject.setFriction(0.0f);
-	//	dolphinNodeOne.setPhysicsObject(dolphinOnePhysicsObject);
+		dolphinOnePhysicsObject.setDamping(0.99f, 0.99f);
+		dolphinOnePhysicsObject.setSleepThresholds(0.0f, 0.0f);
+		dolphinNodeOne.setPhysicsObject(dolphinOnePhysicsObject);
 		
-		temptf = toDoubleArray(dolphinNodeTwo.getLocalTransform().toFloatArray());
-		dolphinTwoPhysicsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, temptf, 0.5f, 0.5f);
+		transform = toDoubleArray(dolphinNodeTwo.getLocalTransform().toFloatArray());
+		dolphinTwoPhysicsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
 		
-		dolphinTwoPhysicsObject.setBounciness(1.0f);
+		dolphinTwoPhysicsObject.setBounciness(0.0f);
 		dolphinTwoPhysicsObject.setFriction(0.0f);
-	//	dolphinNodeTwo.setPhysicsObject(dolphinTwoPhysicsObject);
+		dolphinTwoPhysicsObject.setDamping(0.99f, 0.99f);
+		dolphinTwoPhysicsObject.setSleepThresholds(0.0f, 0.0f);
+		dolphinNodeTwo.setPhysicsObject(dolphinTwoPhysicsObject);
 		
-		temptf = toDoubleArray(groundNode.getLocalTransform().toFloatArray());
-		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), temptf, up, 0.0f);
+		transform = toDoubleArray(groundNode.getLocalTransform().toFloatArray());
+		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), transform, up, 0.0f);
 		
 		groundPlane.setBounciness(0.5f);
-		groundNode.scale(100.0f, 0.5f, 100.0f);
-		groundNode.setLocalPosition(0.0f, -0.5f, 0.0f);
+		groundNode.scale(100.0f, 1.0f, 100.0f);
+		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
+		double[] planeTransform = groundPlane.getTransform();
+		planeTransform[12] = groundNode.getLocalPosition().x();
+		planeTransform[13] = groundNode.getLocalPosition().y();
+		planeTransform[14] = groundNode.getLocalPosition().z();
+		groundPlane.setTransform(planeTransform);
 		groundNode.setPhysicsObject(groundPlane);
 		
 	}
@@ -289,21 +268,25 @@ public class MyGame extends VariableFrameRateGame {
 	private float[] toFloatArray(double[] arr) {
 		if (arr == null) return null;
 		int n = arr.length;
-		float[] ret = new float[n];
+		float[] outputFloat = new float[n];
+		
 		for (int i = 0; i < n; i++) {
-			ret[i] = (float) arr[i];
+			outputFloat[i] = (float) arr[i];
 		}
-		return ret;
+		
+		return outputFloat;
 	}
 	
 	private double[] toDoubleArray(float[] arr) {
 		if (arr == null) return null;
 		int n = arr.length;
-		double[] ret = new double[n];
+		double[] outputFloat = new double[n];
+		
 		for (int i = 0; i < n; i++) {
-			ret[i] = (double) arr[i];
+			outputFloat[i] = (double) arr[i];
+		
 		}
-		return ret;
+		return outputFloat;
 	}
 	
 	@Override
@@ -384,8 +367,8 @@ public class MyGame extends VariableFrameRateGame {
 		leftStickYActionP2 = new AvatarLeftStickYAction(this, dolphinNodeTwo.getName());
 		exitGameAction = new ExitGameAction(this);
 		startPhysicsAction = new StartPhysicsAction(this);
-		avatarJumpAction = new AvatarJumpAction(this);
-		
+		avatarJumpActionP1 = new AvatarJumpAction(this, dolphinNodeOne.getName());
+		avatarJumpActionP2 = new AvatarJumpAction(this, dolphinNodeTwo.getName());
 		/*
 		 * Player One - KB / Mouse
 		 * 	- WASD		:	Move
@@ -425,14 +408,14 @@ public class MyGame extends VariableFrameRateGame {
 						exitGameAction, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
 				
-				inputManager.associateAction(keyboards, 
-						net.java.games.input.Component.Identifier.Key.P, 
-						startPhysicsAction, 
-						InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+	//			inputManager.associateAction(keyboards, 
+	//					net.java.games.input.Component.Identifier.Key.P, 
+	//					startPhysicsAction, 
+	//					InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
 				
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.SPACE, 
-						avatarJumpAction, 
+						avatarJumpActionP1, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 			}
 		}
@@ -445,7 +428,7 @@ public class MyGame extends VariableFrameRateGame {
 		 *	- A			:	0		:	Jump
 		 * 	- B			:	1		:	
 		 * 	- X			:	2		:	
-		 * 	- Y			:	3		:	
+		 * 	- Y			:	3		:	Start physics
 		 * 	- LB		:	4		:	
 		 * 	- RB		:	5		:	
 		 * 	- View		:	6		:	Quit
@@ -472,6 +455,16 @@ public class MyGame extends VariableFrameRateGame {
 					net.java.games.input.Component.Identifier.Button._6, 
 					exitGameAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+			
+	//		inputManager.associateAction(gamepadName, 
+	//				net.java.games.input.Component.Identifier.Button._3, 
+	//				startPhysicsAction, 
+	//				InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._0, 
+					avatarJumpActionP2, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		}
 		
 		
@@ -495,6 +488,7 @@ public class MyGame extends VariableFrameRateGame {
 					sceneNode.setLocalPosition(matrix.value(0, 3), matrix.value(1, 3), matrix.value(2, 3));
 				}
 			}
+			
 		}
 		
 		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
@@ -519,18 +513,22 @@ public class MyGame extends VariableFrameRateGame {
 		
 		inputManager.update(elapsedTime);
 		
-		/*
- 		displayString += " | Lives = " + livesString;
-		displayString += " | Score = " + score;
-		displayString += " | Camera position: (" + formatFloat.format(camera.getPo().x()) + ", " + formatFloat.format(camera.getPo().y()) + ", " + formatFloat.format(camera.getPo().z()) + ")";
-		displayString += " | Dolphin position: (" + formatFloat.format(dolphinNode.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNode.getWorldPosition().z()) + ")";
-		displayString += " | Current song: ";
-		 */
-		
 		orbitCameraOne.updateCameraPosition();
 		orbitCameraTwo.updateCameraPosition();
 	}
 
+	public void synchronizeAvatarPhysics(SceneNode player) {
+		if (running) {
+			double[] transform = player.getPhysicsObject().getTransform();
+			transform[12] = player.getLocalPosition().x();
+			transform[13] = player.getLocalPosition().y();
+			transform[14] = player.getLocalPosition().z();
+			player.getPhysicsObject().setTransform(transform);
+		} else {
+			player.getPhysicsObject().setTransform(toDoubleArray(player.getWorldTransform().toFloatArray()));
+		}
+	}
+	
 	@Override
 	protected void loadConfiguration(Configuration config) throws IOException {
 		config.load("assets/config/a2.properties");

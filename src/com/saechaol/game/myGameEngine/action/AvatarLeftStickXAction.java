@@ -24,18 +24,22 @@ public class AvatarLeftStickXAction extends AbstractInputAction {
 				switch (player) {
 				case "dolphinEntityOneNode":
 					game.dolphinNodeOne.moveRight(-speed * 1.5f);
+					game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 					break;
 				case "dolphinEntityTwoNode":
 					game.dolphinNodeTwo.moveRight(-speed * 1.5f);
+					game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
 					break;
 				}
 			} else if (speed < 0) {
 				switch (player) {
 				case "dolphinEntityOneNode":
 					game.dolphinNodeOne.moveLeft(speed * 1.5f);
+					game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 					break;
 				case "dolphinEntityTwoNode":
 					game.dolphinNodeTwo.moveLeft(speed * 1.5f);
+					game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
 					break;
 				}
 			}
