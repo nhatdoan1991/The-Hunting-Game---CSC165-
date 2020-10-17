@@ -69,7 +69,7 @@ public class MyGame extends VariableFrameRateGame {
 	int elapsedTimeSeconds, playerOneLives = 2, playerTwoLives = 2, playerOneScore = 0, playerTwoScore = 0;
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString, playerTwoScoreString;
 	public SceneNode dolphinNodeOne, dolphinNodeTwo;
-	private static final String SKYBOX = "TestSkybox";
+	private static final String SKYBOX = "OceanSkybox";
 	private static final String BUILD_STATE = "test"; // test for debugging, release for submission
 	private TextureManager textureManager;
 	private InputManager inputManager;
@@ -309,13 +309,13 @@ public class MyGame extends VariableFrameRateGame {
 		Configuration configuration = engine.getConfiguration();
 		
 		// initialize skybox textures
-		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.test"));
-		Texture skyboxFrontTexture = textureManager.getAssetByPath("front.jpg");
-		Texture skyboxBackTexture = textureManager.getAssetByPath("back.jpg");
-		Texture skyboxLeftTexture = textureManager.getAssetByPath("left.jpg");
-		Texture skyboxRightTexture = textureManager.getAssetByPath("right.jpg");
-		Texture skyboxTopTexture = textureManager.getAssetByPath("top.jpg");
-		Texture skyboxBottomTexture = textureManager.getAssetByPath("bottom.jpg");
+		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.a2"));
+		Texture skyboxFrontTexture = textureManager.getAssetByPath("oceanFront.jpg");
+		Texture skyboxBackTexture = textureManager.getAssetByPath("oceanBack.jpg");
+		Texture skyboxLeftTexture = textureManager.getAssetByPath("oceanLeft.jpg");
+		Texture skyboxRightTexture = textureManager.getAssetByPath("oceanRight.jpg");
+		Texture skyboxTopTexture = textureManager.getAssetByPath("oceanTop.jpg");
+		Texture skyboxBottomTexture = textureManager.getAssetByPath("oceanBottom.jpg");
 		
 		// transform skybox textures
 		AffineTransform skyboxAffineTransform = new AffineTransform();
@@ -407,12 +407,7 @@ public class MyGame extends VariableFrameRateGame {
 						net.java.games.input.Component.Identifier.Key.ESCAPE, 
 						exitGameAction, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
-				
-	//			inputManager.associateAction(keyboards, 
-	//					net.java.games.input.Component.Identifier.Key.P, 
-	//					startPhysicsAction, 
-	//					InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
-				
+
 				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.SPACE, 
 						avatarJumpActionP1, 
@@ -455,11 +450,6 @@ public class MyGame extends VariableFrameRateGame {
 					net.java.games.input.Component.Identifier.Button._6, 
 					exitGameAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
-			
-	//		inputManager.associateAction(gamepadName, 
-	//				net.java.games.input.Component.Identifier.Button._3, 
-	//				startPhysicsAction, 
-	//				InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
 			
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._0, 

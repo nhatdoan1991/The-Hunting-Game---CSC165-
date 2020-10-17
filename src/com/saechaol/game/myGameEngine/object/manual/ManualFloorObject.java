@@ -8,6 +8,7 @@ import java.nio.IntBuffer;
 import ray.rage.Engine;
 import ray.rage.asset.material.Material;
 import ray.rage.asset.texture.Texture;
+import ray.rage.rendersystem.Renderable.DataSource;
 import ray.rage.rendersystem.shader.GpuShaderProgram;
 import ray.rage.rendersystem.states.FrontFaceState;
 import ray.rage.rendersystem.states.RenderState;
@@ -25,25 +26,47 @@ public class ManualFloorObject {
     	floor.setGpuShaderProgram(sceneManager.getRenderSystem().getGpuShaderProgram(GpuShaderProgram.Type.RENDERING));
 		
     	Material floorMaterial = sceneManager.getMaterialManager().getAssetByPath("default.mtl");
-    	Texture floorTexture = engine.getTextureManager().getAssetByPath("water.png");
+    	Texture floorTexture = engine.getTextureManager().getAssetByPath("oceanTexture.jpg");
     	
-    	float [] floorVertices = new float[] {
+    	float[] floorVertices = {
     			-100.0f, 0.0f, -100.0f, 
     			-100.0f, 0.0f, 100.0f, 
     			100.0f, 0.0f, 0.0f,
-    			
+    
     			100.0f, 0.0f, 100.0f, 
     			100.0f, 0.0f, -100.0f, 
-    			-100.0f, 0.0f, 100.0f
+    			-100.0f, 0.0f, 100.0f	// front
     	};
     	
-    	int[] indices = new int[] { 0, 1, 2, 3, 4, 5 };
+    	float[] floorTextureCoordinates = {
+    			0.0f, 0.0f, 
+    			1.0f, 1.0f, 
+    			0.0f, 1.0f,
+    			1.0f, 1.0f, 
+    			0.0f, 0.0f, 
+    			1.0f, 0.0f,		// front
+    	};
+    	
+		float[] floorNormals = {
+				0.0f, 1.0f, 1.0f,
+				0.0f, 1.0f, 1.0f,
+				0.0f, 1.0f, 1.0f,
+				0.0f, 1.0f, 1.0f,
+				0.0f, 1.0f, 1.0f,
+				0.0f, 1.0f, 1.0f,		// front
+		};
+    	
+    	int[] indices = { 0, 1, 2, 3, 4, 5 };
     	
     	FloatBuffer floorVertexBuffer = BufferUtil.directFloatBuffer(floorVertices);
-    	IntBuffer floorIndexBuffer = BufferUtil.directIntBuffer(indices);
+		FloatBuffer floorTextureCoordinateBuffer = BufferUtil.directFloatBuffer(floorTextureCoordinates);
+		FloatBuffer floorNormalsBuffer = BufferUtil.directFloatBuffer(floorNormals);
+    	IntBuffer floorIndicesBuffer = BufferUtil.directIntBuffer(indices);
     	
     	floorSection.setVertexBuffer(floorVertexBuffer);
-    	floorSection.setIndexBuffer(floorIndexBuffer);
+    	floorSection.setTextureCoordsBuffer(floorTextureCoordinateBuffer);
+    	floorSection.setNormalsBuffer(floorNormalsBuffer);
+    	floorSection.setIndexBuffer(floorIndicesBuffer);
     	
     	
     	floorMaterial.setEmissive(Color.BLUE);
@@ -54,6 +77,7 @@ public class ManualFloorObject {
     	
     	FrontFaceState floorFrontFaceState = (FrontFaceState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.FRONT_FACE);
     	
+    	floor.setDataSource(DataSource.INDEX_BUFFER);
     	floor.setRenderState(floorTextureState);
     	floor.setRenderState(floorFrontFaceState);
     	
