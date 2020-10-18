@@ -261,8 +261,8 @@ public class MyGame extends VariableFrameRateGame {
 		SceneNode pointLightFlashNode = sceneManager.getRootSceneNode().createChildSceneNode(pointLightFlash.getName() + "Node");
 		pointLightFlashNode.attachObject(pointLightFlash);
 		
-		dolphinNodeOne.moveLeft(0.5f);
-		dolphinNodeTwo.moveRight(0.5f);
+		dolphinNodeOne.moveLeft(1.0f);
+		dolphinNodeTwo.moveRight(1.0f);
 		
 		// manually assign textures
 		Texture dolphinOneTexture = textureManager.getAssetByPath("red.jpeg");
@@ -559,7 +559,7 @@ public class MyGame extends VariableFrameRateGame {
 		 * 	- LB		:	4		:	
 		 * 	- RB		:	5		:	
 		 * 	- View		:	6		:	Quit
-		 * 	- Menu		:	7		:	Pause or Self Destruct
+		 * 	- Menu		:	7		:	Quit
 		 *	- LS		:	8		:	
 		 *	- RS		:	9		:	Reset camera
 		 * 	- LT		:	Z+		:	Zoom out
@@ -580,6 +580,11 @@ public class MyGame extends VariableFrameRateGame {
 			
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._6, 
+					exitGameAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._7, 
 					exitGameAction, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
 			
@@ -753,7 +758,7 @@ public class MyGame extends VariableFrameRateGame {
 		Vector3f playerTwoPosition = (Vector3f) dolphinNodeTwo.getWorldPosition();
 		if ((Math.pow((playerOnePosition.x() - playerTwoPosition.x()), 2) + Math.pow((playerOnePosition.y() - playerTwoPosition.y()), 2) + Math.pow((playerOnePosition.z() - playerTwoPosition.z()), 2)) < Math.pow((0.4f), 2.0f)) {
 			if (playerOneCharge && !playerTwoCharge && (playerTwoInvulnerable <= elapsedTimeSeconds)) { // P1 > P2
-				dolphinNodeTwo.setLocalPosition(0.5f, 0.0f, 0.0f);
+				dolphinNodeTwo.setLocalPosition(1.0f, 0.0f, 0.0f);
 				double[] transformP2 = dolphinNodeTwo.getPhysicsObject().getTransform();
 				transformP2[12] = dolphinNodeTwo.getLocalPosition().x();
 				transformP2[13] = dolphinNodeTwo.getLocalPosition().y();
@@ -763,7 +768,7 @@ public class MyGame extends VariableFrameRateGame {
 				playerTwoInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
 				
 			} else if (playerTwoCharge && !playerOneCharge && (playerOneInvulnerable <= elapsedTimeSeconds)) { // P2 > P1
-				dolphinNodeOne.setLocalPosition(-0.5f, 0.0f, 0.0f);
+				dolphinNodeOne.setLocalPosition(-1.0f, 0.0f, 0.0f);
 				double[] transformP1 = dolphinNodeOne.getPhysicsObject().getTransform();
 				transformP1[12] = dolphinNodeOne.getLocalPosition().x();
 				transformP1[13] = dolphinNodeOne.getLocalPosition().y();
@@ -773,8 +778,8 @@ public class MyGame extends VariableFrameRateGame {
 				playerOneInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
 				
 			} else if ((playerOneCharge && playerTwoCharge) || (!playerOneCharge && !playerTwoCharge) && (playerOneInvulnerable <= elapsedTimeSeconds && playerTwoInvulnerable <= elapsedTimeSeconds)) {
-				dolphinNodeOne.setLocalPosition(-0.5f, 0.0f, 0.0f);
-				dolphinNodeTwo.setLocalPosition(0.5f, 0.0f, 0.0f);
+				dolphinNodeOne.setLocalPosition(-1.0f, 0.0f, 0.0f);
+				dolphinNodeTwo.setLocalPosition(1.0f, 0.0f, 0.0f);
 				
 				double[] transformP1 = dolphinNodeOne.getPhysicsObject().getTransform();
 				transformP1[12] = dolphinNodeOne.getLocalPosition().x();
@@ -889,7 +894,7 @@ public class MyGame extends VariableFrameRateGame {
 		// initialize randomized parameters for the galaxy orbit controller
 		float[] galaxyOrbitParameters = { 
 				RAND.nextFloat() * 0.1f, 
-				(RAND.nextFloat() * 65.0f) + 15.0f,
+				(RAND.nextFloat() * 65.0f) + 25.0f,
 				(RAND.nextFloat() * 1.0f)
 		};
 		
@@ -995,9 +1000,9 @@ public class MyGame extends VariableFrameRateGame {
 			Vector3f dolphinPosition = (Vector3f) player.getLocalPosition();
 			if ((Math.pow((dolphinPosition.x() - node.getLocalPosition().x()), 2) + Math.pow((dolphinPosition.y() - node.getLocalPosition().y()), 2) + Math.pow((dolphinPosition.z() - node.getLocalPosition().z()), 2)) < Math.pow((2.15f), 2.0f)) {
 				if (player.getName() == "dolphinEntityOneNode")
-					player.setLocalPosition(-0.5f, 0.0f, 0.0f);
+					player.setLocalPosition(-1.0f, 0.0f, 0.0f);
 				else 
-					player.setLocalPosition(0.5f, 0.0f, 0.0f);
+					player.setLocalPosition(1.0f, 0.0f, 0.0f);
 				double[] transform = player.getPhysicsObject().getTransform();
 				transform[12] = player.getLocalPosition().x();
 				transform[13] = player.getLocalPosition().y();
