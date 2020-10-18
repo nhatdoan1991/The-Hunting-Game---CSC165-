@@ -22,11 +22,17 @@ public class AvatarMoveForwardAction extends AbstractInputAction {
 		float speed = game.getEngine().getElapsedTimeMillis() * 0.003f;
 		switch (player) {
 		case "dolphinEntityOneNode":
-			game.dolphinNodeOne.moveForward(speed * 1.5f);
+			if (game.playerCharge.get(game.dolphinNodeOne)) 
+				game.dolphinNodeOne.moveForward(speed * 3.0f);
+			else
+				game.dolphinNodeOne.moveForward(speed * 1.5f);
 			game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 			break;
 		case "dolphinEntityTwoNode":
-			game.dolphinNodeTwo.moveForward(speed * 1.5f);
+			if (game.playerCharge.get(game.dolphinNodeTwo))
+				game.dolphinNodeTwo.moveForward(speed * 3.0f);
+			else
+				game.dolphinNodeTwo.moveForward(speed * 1.5f);
 			game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
 			break;
 		}

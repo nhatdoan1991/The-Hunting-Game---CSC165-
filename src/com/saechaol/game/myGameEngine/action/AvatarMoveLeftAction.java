@@ -20,11 +20,17 @@ public class AvatarMoveLeftAction extends AbstractInputAction {
 		float speed = game.getEngine().getElapsedTimeMillis() * 0.003f;
 		switch (player) {
 		case "dolphinEntityOneNode":
-			game.dolphinNodeOne.moveLeft(-speed * 1.5f);
+			if (game.playerCharge.get(game.dolphinNodeOne)) 
+				game.dolphinNodeOne.moveLeft(-speed * 3.0f);
+			else
+				game.dolphinNodeOne.moveLeft(-speed * 1.5f);
 			game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 			break;
 		case "dolphinEntityTwoNode":
-			game.dolphinNodeTwo.moveLeft(-speed * 1.5f);
+			if (game.playerCharge.get(game.dolphinNodeTwo))
+				game.dolphinNodeTwo.moveLeft(-speed * 3.0f);
+			else
+				game.dolphinNodeTwo.moveLeft(-speed * 1.5f);
 			game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
 			break;
 		}

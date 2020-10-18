@@ -23,22 +23,34 @@ public class AvatarLeftStickYAction extends AbstractInputAction {
 			if (speed > 0) {
 				switch (player) {
 				case "dolphinEntityOneNode":
-					game.dolphinNodeOne.moveForward(-speed * 1.5f);
+					if (game.playerCharge.get(game.dolphinNodeOne)) 
+						game.dolphinNodeOne.moveForward(-speed * 3.0f);
+					else
+						game.dolphinNodeOne.moveForward(-speed * 1.5f);
 					game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 					break;
 				case "dolphinEntityTwoNode":
-					game.dolphinNodeTwo.moveForward(-speed * 1.5f);
+					if (game.playerCharge.get(game.dolphinNodeTwo))
+						game.dolphinNodeTwo.moveForward(-speed * 3.0f);
+					else
+						game.dolphinNodeTwo.moveForward(-speed * 1.5f);
 					game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
 					break;
 				}
 			} else if (speed < 0) {
 				switch (player) {
 				case "dolphinEntityOneNode":
-					game.dolphinNodeOne.moveBackward(speed * 1.5f);
+					if (game.playerCharge.get(game.dolphinNodeOne)) 
+						game.dolphinNodeOne.moveBackward(speed * 3.0f);
+					else
+						game.dolphinNodeOne.moveBackward(speed * 1.5f);
 					game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 					break;
 				case "dolphinEntityTwoNode":
-					game.dolphinNodeTwo.moveBackward(speed * 1.5f);
+					if (game.playerCharge.get(game.dolphinNodeTwo))
+						game.dolphinNodeTwo.moveBackward(speed * 3.0f);
+					else
+						game.dolphinNodeTwo.moveBackward(speed * 1.5f);
 					game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
 					break;
 				}

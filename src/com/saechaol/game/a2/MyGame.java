@@ -68,9 +68,12 @@ import ray.rage.scene.SceneManager;
 import ray.rage.scene.SceneManagerFactory;
 import ray.rage.scene.SceneNode;
 import ray.rage.scene.SkyBox;
+import ray.rage.scene.Tessellation;
 import ray.rage.util.Configuration;
+import ray.rml.Degreef;
 import ray.rml.Matrix4;
 import ray.rml.Matrix4f;
+import ray.rml.Vector3;
 import ray.rml.Vector3f;
 
 public class MyGame extends VariableFrameRateGame {
@@ -85,7 +88,7 @@ public class MyGame extends VariableFrameRateGame {
 	private float orbitingAxis = 0.0f;
 	int elapsedTimeSeconds, playerOneLives = 2, playerTwoLives = 2, playerOneScore = 0, playerTwoScore = 0, currentSong = 0;
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString, playerTwoScoreString;
-	public SceneNode dolphinNodeOne, dolphinNodeTwo, originNode;
+	public SceneNode dolphinNodeOne, dolphinNodeTwo, originNode, tessellationNode;
 	private static final String SKYBOX = "OceanSkybox";
 	private static final String BUILD_STATE = "test"; // test for debugging, release for submission
 	private TextureManager textureManager;
@@ -116,6 +119,8 @@ public class MyGame extends VariableFrameRateGame {
 	public IAudioManager audioManager;
 	private Sound[] music = new Sound[3];
 	private Sound[] sfx = new Sound[3];
+	private Tessellation tessellationEntity;
+	
 	/*
 	 * Physics stuff
 	 */
@@ -125,7 +130,7 @@ public class MyGame extends VariableFrameRateGame {
 	public PhysicsEngine physicsEngine;
 	public PhysicsObject	ballOnePhysicsObject, ballTwoPhysicsObject, groundPlane,
 							dolphinOnePhysicsObject, dolphinTwoPhysicsObject;
-	public boolean running = true;
+	public boolean running = true, jumpP1 = false, jumpP2 = false;
 	/*
 	 * End of physics stuff
 	 */
@@ -252,17 +257,44 @@ public class MyGame extends VariableFrameRateGame {
 		
 		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
 		
-		Light pointLightFlash = sceneManager.createLight("pointLightFlash", Light.Type.POINT);
-		pointLightFlash.setAmbient(new Color(1.0f, 1.0f, 1.0f));
-		pointLightFlash.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
-		pointLightFlash.setSpecular(new Color(1.0f, 1.0f, 1.0f));
-		pointLightFlash.setRange(20.0f);
-	
-		SceneNode pointLightFlashNode = sceneManager.getRootSceneNode().createChildSceneNode(pointLightFlash.getName() + "Node");
-		pointLightFlashNode.attachObject(pointLightFlash);
+		Light keyLight = sceneManager.createLight("keyLightOne", Light.Type.POINT);
+		keyLight.setAmbient(new Color(0.5f, 0.5f, 0.5f));
+		keyLight.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
+		keyLight.setSpecular(new Color(0.5f, 0.5f, 0.5f));
+		keyLight.setRange(500.0f);
 		
-		dolphinNodeOne.moveLeft(1.0f);
-		dolphinNodeTwo.moveRight(1.0f);
+		SceneNode keyLightNode = sceneManager.getRootSceneNode().createChildSceneNode(keyLight.getName() + "Node");
+		keyLightNode.moveUp(500.0f);
+		keyLightNode.attachObject(keyLight);
+		
+		Light pointLightFlashOne = sceneManager.createLight("pointLightFlashOne", Light.Type.SPOT);
+		pointLightFlashOne.setAmbient(new Color(0.25f, 0.25f, 0.25f));
+		pointLightFlashOne.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
+		pointLightFlashOne.setSpecular(new Color(0.5f, 0.5f, 0.5f));
+		pointLightFlashOne.setConeCutoffAngle(Degreef.createFrom(20.0f));
+		pointLightFlashOne.setConstantAttenuation(0.3f);
+		pointLightFlashOne.setLinearAttenuation(0.06f);
+		pointLightFlashOne.setQuadraticAttenuation(0.001f);
+		pointLightFlashOne.setFalloffExponent(40.0f);
+		pointLightFlashOne.setRange(30.0f);
+		SceneNode flashNodeOne = dolphinNodeOne.createChildSceneNode(pointLightFlashOne.getName() + "Node");
+		flashNodeOne.attachObject(pointLightFlashOne);
+		
+		Light pointLightFlashTwo = sceneManager.createLight("pointLightFlashTwo", Light.Type.SPOT);
+		pointLightFlashTwo.setAmbient(new Color(0.25f, 0.25f, 0.25f));
+		pointLightFlashTwo.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
+		pointLightFlashTwo.setSpecular(new Color(0.5f, 0.5f, 0.5f));
+		pointLightFlashTwo.setConeCutoffAngle(Degreef.createFrom(20.0f));
+		pointLightFlashTwo.setConstantAttenuation(0.3f);
+		pointLightFlashTwo.setLinearAttenuation(0.06f);
+		pointLightFlashTwo.setQuadraticAttenuation(0.001f);
+		pointLightFlashTwo.setFalloffExponent(40.0f);
+		pointLightFlashTwo.setRange(20.0f);
+		SceneNode flashNodeTwo = dolphinNodeTwo.createChildSceneNode(pointLightFlashTwo.getName() + "Node");
+		flashNodeTwo.attachObject(pointLightFlashTwo);
+		
+		dolphinNodeOne.moveLeft(3.0f);
+		dolphinNodeTwo.moveRight(3.0f);
 		
 		// manually assign textures
 		Texture dolphinOneTexture = textureManager.getAssetByPath("red.jpeg");
@@ -289,8 +321,65 @@ public class MyGame extends VariableFrameRateGame {
 		setupPhysics();
 		setupPhysicsWorld();
 		setupOrbitCameras(engine, sceneManager);
-		
+		setupTessellation(sceneManager);
 		setupAudio(sceneManager);
+	}
+	
+	protected void setupTessellation(SceneManager sceneManager) {
+		tessellationEntity = sceneManager.createTessellation("tessellationEntity", 8);
+		tessellationEntity.setSubdivisions(32.0f);
+		
+		tessellationNode = sceneManager.getRootSceneNode().createChildSceneNode(tessellationEntity.getName() + "Node");
+		tessellationNode.attachObject(tessellationEntity);
+		
+		tessellationNode.translate(0.0f, -10.f, 0.0f);
+		tessellationNode.scale(1000.0f, 1000.0f, 1000.0f);
+		tessellationEntity.setHeightMap(this.getEngine(), "noisemap.jpg");
+		tessellationEntity.setTexture(this.getEngine(), "grass.jpg");
+		tessellationEntity.setQuality(8);
+	}
+	
+	public void updateVerticalPosition() {
+		Vector3 avatarWorldPositionP1 = dolphinNodeOne.getWorldPosition();
+		Vector3 avatarLocalPositionP1 = dolphinNodeOne.getLocalPosition();
+		Vector3 terrainPositionP1 = (Vector3) Vector3f.createFrom(
+				avatarLocalPositionP1.x(),
+				tessellationEntity.getWorldHeight(avatarWorldPositionP1.x(), avatarWorldPositionP1.z()) + 0.5f,
+				avatarLocalPositionP1.z()
+		);
+		
+		if (avatarLocalPositionP1.y() <= terrainPositionP1.y() + 0.5f) {
+			Vector3 avatarPositionP1 = terrainPositionP1;
+			dolphinNodeOne.setLocalPosition(avatarPositionP1);
+			synchronizeAvatarPhysics(dolphinNodeOne);
+			if (jumpP1) {
+				dolphinNodeOne.getPhysicsObject().applyForce(0.0f, 2000.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+				jumpP1 = false;
+			}
+		} else if (avatarLocalPositionP1.y() > terrainPositionP1.y() + 1.0f) {
+			jumpP1 = true;
+		}
+		
+		Vector3 avatarWorldPositionP2 = dolphinNodeTwo.getWorldPosition();
+		Vector3 avatarLocalPositionP2 = dolphinNodeTwo.getLocalPosition();
+		Vector3 terrainPositionP2 = (Vector3) Vector3f.createFrom(
+				avatarLocalPositionP2.x(),
+				tessellationEntity.getWorldHeight(avatarWorldPositionP2.x(), avatarWorldPositionP2.z()) + 0.5f,
+				avatarLocalPositionP2.z()
+		);
+		
+		if (avatarLocalPositionP2.y() <= terrainPositionP2.y() + 0.5f) {
+			Vector3 avatarPositionP2 = terrainPositionP2;
+			dolphinNodeTwo.setLocalPosition(avatarPositionP2);
+			synchronizeAvatarPhysics(dolphinNodeTwo);
+			if (jumpP2) {
+				dolphinNodeTwo.getPhysicsObject().applyForce(0.0f, 2000.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+				jumpP2 = false;
+			}
+		} else if (avatarLocalPositionP2.y() > terrainPositionP2.y() + 1.0f) {
+			jumpP2 = true;
+		}
+		
 	}
 	
 	/**
@@ -372,7 +461,7 @@ public class MyGame extends VariableFrameRateGame {
 		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), transform, up, 0.0f);
 		
 		groundPlane.setBounciness(0.5f);
-		groundNode.scale(100.0f, 1.0f, 100.0f);
+		groundNode.scale(500.0f, 1.0f, 500.0f);
 		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
 		double[] planeTransform = groundPlane.getTransform();
 		planeTransform[12] = groundNode.getLocalPosition().x();
@@ -475,7 +564,6 @@ public class MyGame extends VariableFrameRateGame {
 	
 	protected void setupInputs(SceneManager sceneManager) {
 		String gamepadName = inputManager.getFirstGamepadName();
-		String mouseName = inputManager.getMouseName();
 		
 		moveLeftActionP1 = new AvatarMoveLeftAction(this, dolphinNodeOne.getName());
 		moveRightActionP1 = new AvatarMoveRightAction(this, dolphinNodeOne.getName());
@@ -684,29 +772,31 @@ public class MyGame extends VariableFrameRateGame {
 		}
 		
 		renderSystem.setHUD2(displayString, 15, 15);
-		
+		updateVerticalPosition();
 		inputManager.update(elapsedTime);
 		
 		checkChargeTime();
 		
-		if (dolphinNodeOne.getWorldPosition().y() > 1.0f) {
+		if (jumpP1) {
 			velocityP1 -= 1.0f;
-			if (Math.abs(velocityP1) > TERMINAL_VELOCITY) {
+			if (Math.abs(velocityP2) > TERMINAL_VELOCITY) {
 				velocityP1 = TERMINAL_VELOCITY * -1;
 			}
 			dolphinNodeOne.getPhysicsObject().applyForce(0.0f, velocityP1, 0.0f, 0.0f, 0.0f, 0.0f);
-		} else if (dolphinNodeOne.getWorldPosition().y() <= 0.5f) {
+		} else if (dolphinNodeOne.getWorldPosition().y() <= 0.5f && jumpP1) {
 			velocityP1 = 0.0f;
+			jumpP1 = false;
 		}
 		
-		if (dolphinNodeTwo.getWorldPosition().y() > 1.0f) {
+		if (dolphinNodeTwo.getWorldPosition().y() > 1.0f && jumpP2) {
 			velocityP2 -= 1.0f;
 			if (Math.abs(velocityP2) > TERMINAL_VELOCITY) {
 				velocityP2 = TERMINAL_VELOCITY * -1;
 			}
 			dolphinNodeTwo.getPhysicsObject().applyForce(0.0f, velocityP2, 0.0f, 0.0f, 0.0f, 0.0f);
-		} else if (dolphinNodeTwo.getWorldPosition().y() <= 0.5f) {
+		} else if (dolphinNodeTwo.getWorldPosition().y() <= 0.5f && jumpP2) {
 			velocityP2 = 0.0f;
+			jumpP2 = false;
 		}
 		
 		orbitCameraOne.updateCameraPosition();
@@ -724,7 +814,6 @@ public class MyGame extends VariableFrameRateGame {
 			replacePlanet();
 			incrementMoonOrbitAxis();
 		}
-		
 	}
 	
 	/**
@@ -758,7 +847,7 @@ public class MyGame extends VariableFrameRateGame {
 		Vector3f playerTwoPosition = (Vector3f) dolphinNodeTwo.getWorldPosition();
 		if ((Math.pow((playerOnePosition.x() - playerTwoPosition.x()), 2) + Math.pow((playerOnePosition.y() - playerTwoPosition.y()), 2) + Math.pow((playerOnePosition.z() - playerTwoPosition.z()), 2)) < Math.pow((0.4f), 2.0f)) {
 			if (playerOneCharge && !playerTwoCharge && (playerTwoInvulnerable <= elapsedTimeSeconds)) { // P1 > P2
-				dolphinNodeTwo.setLocalPosition(1.0f, 0.0f, 0.0f);
+				dolphinNodeTwo.setLocalPosition(3.0f, 0.0f, 0.0f);
 				double[] transformP2 = dolphinNodeTwo.getPhysicsObject().getTransform();
 				transformP2[12] = dolphinNodeTwo.getLocalPosition().x();
 				transformP2[13] = dolphinNodeTwo.getLocalPosition().y();
@@ -768,7 +857,7 @@ public class MyGame extends VariableFrameRateGame {
 				playerTwoInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
 				
 			} else if (playerTwoCharge && !playerOneCharge && (playerOneInvulnerable <= elapsedTimeSeconds)) { // P2 > P1
-				dolphinNodeOne.setLocalPosition(-1.0f, 0.0f, 0.0f);
+				dolphinNodeOne.setLocalPosition(-3.0f, 0.0f, 0.0f);
 				double[] transformP1 = dolphinNodeOne.getPhysicsObject().getTransform();
 				transformP1[12] = dolphinNodeOne.getLocalPosition().x();
 				transformP1[13] = dolphinNodeOne.getLocalPosition().y();
@@ -778,8 +867,8 @@ public class MyGame extends VariableFrameRateGame {
 				playerOneInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
 				
 			} else if ((playerOneCharge && playerTwoCharge) || (!playerOneCharge && !playerTwoCharge) && (playerOneInvulnerable <= elapsedTimeSeconds && playerTwoInvulnerable <= elapsedTimeSeconds)) {
-				dolphinNodeOne.setLocalPosition(-1.0f, 0.0f, 0.0f);
-				dolphinNodeTwo.setLocalPosition(1.0f, 0.0f, 0.0f);
+				dolphinNodeOne.setLocalPosition(-3.0f, 0.0f, 0.0f);
+				dolphinNodeTwo.setLocalPosition(3.0f, 0.0f, 0.0f);
 				
 				double[] transformP1 = dolphinNodeOne.getPhysicsObject().getTransform();
 				transformP1[12] = dolphinNodeOne.getLocalPosition().x();
@@ -933,7 +1022,7 @@ public class MyGame extends VariableFrameRateGame {
 		// attach entities to nodes
 		planetNode.attachObject(planetEntity);
 		cubeNode.attachObject(cubeEntity);
-		galaxyOrbitController.add(new OrbitController(originNode, galaxyOrbitParameters[0], galaxyOrbitParameters[1], galaxyOrbitParameters[2], RAND.nextBoolean()));
+		galaxyOrbitController.add(new OrbitController(originNode, galaxyOrbitParameters[0], galaxyOrbitParameters[1], galaxyOrbitParameters[2] + 8.0f, RAND.nextBoolean()));
 		planetOrbitController.add(new OrbitController(planetNode, planetOrbitParameters[0], planetOrbitParameters[1], 0.0f, RAND.nextBoolean()));
 	
 		// add rotation controllers if node is NOT always facing target
@@ -1000,9 +1089,9 @@ public class MyGame extends VariableFrameRateGame {
 			Vector3f dolphinPosition = (Vector3f) player.getLocalPosition();
 			if ((Math.pow((dolphinPosition.x() - node.getLocalPosition().x()), 2) + Math.pow((dolphinPosition.y() - node.getLocalPosition().y()), 2) + Math.pow((dolphinPosition.z() - node.getLocalPosition().z()), 2)) < Math.pow((2.15f), 2.0f)) {
 				if (player.getName() == "dolphinEntityOneNode")
-					player.setLocalPosition(-1.0f, 0.0f, 0.0f);
+					player.setLocalPosition(-3.0f, 0.0f, 0.0f);
 				else 
-					player.setLocalPosition(1.0f, 0.0f, 0.0f);
+					player.setLocalPosition(3.0f, 0.0f, 0.0f);
 				double[] transform = player.getPhysicsObject().getTransform();
 				transform[12] = player.getLocalPosition().x();
 				transform[13] = player.getLocalPosition().y();

@@ -26,25 +26,25 @@ public class ManualFloorObject {
     	floor.setGpuShaderProgram(sceneManager.getRenderSystem().getGpuShaderProgram(GpuShaderProgram.Type.RENDERING));
 		
     	Material floorMaterial = sceneManager.getMaterialManager().getAssetByPath("default.mtl");
-    	Texture floorTexture = engine.getTextureManager().getAssetByPath("oceanTexture.jpg");
+    	Texture floorTexture = engine.getTextureManager().getAssetByPath("waterTexture.jpg");
     	
     	float[] floorVertices = {
-    			-100.0f, 0.0f, -100.0f, 
-    			-100.0f, 0.0f, 100.0f, 
-    			100.0f, 0.0f, 0.0f,
+    			-1.0f, 0.0f, -1.0f, 
+    			-1.0f, 0.0f, 1.0f, 
+    			1.0f, 0.0f, 1.0f,
     
-    			100.0f, 0.0f, 100.0f, 
-    			100.0f, 0.0f, -100.0f, 
-    			-100.0f, 0.0f, 100.0f	// front
+    			1.0f, 0.0f, 1.0f, 
+    			1.0f, 0.0f, -1.0f, 
+    			-1.0f, 0.0f, -1.0f	// front
     	};
     	
     	float[] floorTextureCoordinates = {
-    			0.0f, 0.0f, 
     			1.0f, 1.0f, 
-    			0.0f, 1.0f,
-    			1.0f, 1.0f, 
+    			0.0f, 1.0f, 
+    			0.0f, 0.0f,
     			0.0f, 0.0f, 
-    			1.0f, 0.0f,		// front
+    			1.0f, 0.0f, 
+    			1.0f, 1.0f,		// front
     	};
     	
 		float[] floorNormals = {

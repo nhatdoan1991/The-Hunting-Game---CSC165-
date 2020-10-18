@@ -139,9 +139,9 @@ public class ManualAxisLineObject {
 		yAxisNode.attachObject(yAxis);
 		zAxisNode.attachObject(zAxis);
 		
-		xAxisNode.scale(1.0f, 1.0f, 1.0f);
-		yAxisNode.scale(1.0f, 1.0f, 1.0f);
-		zAxisNode.scale(1.0f, 1.0f, 1.0f);
+		xAxisNode.scale(5.0f, 1.0f, 1.0f);
+		yAxisNode.scale(1.0f, 5.0f, 1.0f);
+		zAxisNode.scale(1.0f, 1.0f, 5.0f);
 		
 		xAxisNode.setLocalPosition(0.0f, 0.0f, 0.0f);
 		yAxisNode.setLocalPosition(0.0f, 0.0f, 0.0f);
