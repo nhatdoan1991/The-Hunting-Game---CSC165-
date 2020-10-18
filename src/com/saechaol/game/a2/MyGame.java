@@ -25,6 +25,8 @@ import com.saechaol.game.myGameEngine.action.a2.AvatarChargeAction;
 import com.saechaol.game.myGameEngine.action.a2.AvatarJumpAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
+import com.saechaol.game.myGameEngine.node.Controller.StretchController;
+import com.saechaol.game.myGameEngine.node.Controller.VerticalOrbitController;
 import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
 import com.saechaol.game.myGameEngine.object.manual.ManualCubeObject;
 import com.saechaol.game.myGameEngine.object.manual.ManualFloorObject;
@@ -96,7 +98,8 @@ public class MyGame extends VariableFrameRateGame {
 	ArrayList<OrbitController> planetOrbitController = new ArrayList<OrbitController>();
 	ArrayList<RotationController> planetRotationControllers = new ArrayList<RotationController>();
 	ArrayList<RotationController> cubeMoonRotationControllers = new ArrayList<RotationController>();
-	private OrbitController[] playerOrbitController = new OrbitController[2];
+	private OrbitController playerOrbitController;
+	private VerticalOrbitController playerOrbitControllerVertical;
 	private int starUID = 0;
 	public int chargeTimeP1 = 1000, chargeTimeP2 = 1000;
 	public float cooldownP1 = 0, cooldownP2 = 0;
@@ -104,6 +107,7 @@ public class MyGame extends VariableFrameRateGame {
 	private int playerOneInvulnerable = 0, playerTwoInvulnerable = 0;
 	private static final int TERMINAL_VELOCITY = 1000;
 	public float velocityP1 = 0.0f, velocityP2 = 0.0f;
+	private StretchController playerStretchController;
 	/*
 	 * Physics stuff
 	 */
@@ -228,11 +232,17 @@ public class MyGame extends VariableFrameRateGame {
 		playerCharge.put(dolphinNodeOne, false);
 		playerCharge.put(dolphinNodeTwo, false);
 		
-		playerOrbitController[0] = new OrbitController(dolphinNodeOne, 1.0f, 0.5f, 0.0f, false);
-		sceneManager.addController(playerOrbitController[0]);
 		
-		playerOrbitController[1] = new OrbitController(dolphinNodeTwo, 1.0f, 0.5f, 0.0f, false);
-		sceneManager.addController(playerOrbitController[1]);
+		playerStretchController = new StretchController();
+		sceneManager.addController(playerStretchController);
+		
+		
+		
+		playerOrbitController = new OrbitController(dolphinNodeOne, 1.0f, 0.5f, 0.0f, false);
+		sceneManager.addController(playerOrbitController);
+		
+		playerOrbitControllerVertical = new VerticalOrbitController(dolphinNodeTwo, 1.0f, 0.5f, 0.0f, false);
+		sceneManager.addController(playerOrbitControllerVertical);
 		
 		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
 		
@@ -564,6 +574,7 @@ public class MyGame extends VariableFrameRateGame {
 		displayString += " | Position: (" + formatFloat.format(dolphinNodeOne.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNodeOne.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNodeOne.getWorldPosition().z()) + ")";
 		if (cooldownP1 - elapsedTimeSeconds < 0) {
 			displayString += " | Charge Ready!";
+			playerStretchController.removeNode(dolphinNodeOne);
 		} else if (cooldownP1 - elapsedTimeSeconds > 10) {
 			displayString += " | Charge active!";
 		} else {
@@ -577,6 +588,7 @@ public class MyGame extends VariableFrameRateGame {
 		displayString += " | Position: (" + formatFloat.format(dolphinNodeTwo.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNodeTwo.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNodeTwo.getWorldPosition().z()) + ")";
 		if (cooldownP2 - elapsedTimeSeconds < 0) {
 			displayString += " | Charge Ready!";
+			playerStretchController.removeNode(dolphinNodeTwo);
 		} else if (cooldownP2 - elapsedTimeSeconds > 10) {
 			displayString += " | Charge active!";
 		} else {
@@ -634,6 +646,10 @@ public class MyGame extends VariableFrameRateGame {
 		if (elapsedTimeSeconds > chargeTimeP2) {
 			playerCharge.put(dolphinNodeTwo, false);
 		}
+	}
+	
+	public void addToStretchController(SceneNode player) {
+		playerStretchController.addNode(player);
 	}
 	
 	private void playerCollisionDetection() {
@@ -967,14 +983,14 @@ public class MyGame extends VariableFrameRateGame {
 		switch(playerName) {
 		case "dolphinEntityOneNode":
 			currentPlayer = "Player One";
-			playerOrbitController[0].addNode(starNode);
-			playerOrbitController[0].setDistanceFromTarget(playerOrbitController[0].getDistanceFromTarget() + 0.05f);
+			playerOrbitController.addNode(starNode);
+			playerOrbitController.setDistanceFromTarget(playerOrbitController.getDistanceFromTarget() + 0.05f);
 			playerOneScore++;
 			break;
 		case "dolphinEntityTwoNode":
 			currentPlayer = "Player Two";
-			playerOrbitController[1].addNode(starNode);
-			playerOrbitController[1].setDistanceFromTarget(playerOrbitController[0].getDistanceFromTarget() + 0.05f);
+			playerOrbitControllerVertical.addNode(starNode);
+			playerOrbitControllerVertical.setDistance(playerOrbitControllerVertical.getDistance() + 0.05f);
 			playerTwoScore++;
 			break;
 		}

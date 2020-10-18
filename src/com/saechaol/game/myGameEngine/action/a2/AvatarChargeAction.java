@@ -25,6 +25,7 @@ public class AvatarChargeAction extends AbstractInputAction {
 			} else if (game.cooldownP1 < timeSeconds && !game.playerCharge.get(game.dolphinNodeOne)) {
 				game.chargeTimeP1 = timeSeconds + 3;
 				game.playerCharge.put(game.dolphinNodeOne, true);
+				game.addToStretchController(game.dolphinNodeOne);
 				game.cooldownP1 = timeSeconds + 13;
 			} else {
 				System.out.println("In cooldown!");
@@ -36,6 +37,7 @@ public class AvatarChargeAction extends AbstractInputAction {
 			} else if (game.cooldownP2 < timeSeconds && !game.playerCharge.get(game.dolphinNodeTwo)) {
 				game.chargeTimeP2 = timeSeconds + 3;
 				game.playerCharge.put(game.dolphinNodeTwo, true);
+				game.addToStretchController(game.dolphinNodeTwo);
 				game.cooldownP2 = timeSeconds + 13;
 			} else {
 				System.out.println("In cooldown!");
