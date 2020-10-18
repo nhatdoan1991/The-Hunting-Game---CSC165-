@@ -19,8 +19,7 @@ import com.saechaol.game.myGameEngine.action.AvatarMoveForwardAction;
 import com.saechaol.game.myGameEngine.action.AvatarMoveLeftAction;
 import com.saechaol.game.myGameEngine.action.AvatarMoveRightAction;
 import com.saechaol.game.myGameEngine.action.ExitGameAction;
-import com.saechaol.game.myGameEngine.action.StartPhysicsAction;
-import com.saechaol.game.myGameEngine.action.a1.RideDolphinToggleAction;
+import com.saechaol.game.myGameEngine.action.SkipSongAction;
 import com.saechaol.game.myGameEngine.action.a2.AvatarChargeAction;
 import com.saechaol.game.myGameEngine.action.a2.AvatarJumpAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
@@ -32,6 +31,12 @@ import com.saechaol.game.myGameEngine.object.manual.ManualCubeObject;
 import com.saechaol.game.myGameEngine.object.manual.ManualFloorObject;
 
 import net.java.games.input.Controller;
+import ray.audio.AudioManagerFactory;
+import ray.audio.AudioResource;
+import ray.audio.AudioResourceType;
+import ray.audio.IAudioManager;
+import ray.audio.Sound;
+import ray.audio.SoundType;
 import ray.input.GenericInputManager;
 import ray.input.InputManager;
 import ray.input.action.Action;
@@ -71,14 +76,14 @@ import ray.rml.Vector3f;
 public class MyGame extends VariableFrameRateGame {
 
 	private Action	moveLeftActionP1, moveRightActionP1, moveForwardActionP1, moveBackwardActionP1, 
-					leftStickXActionP2, leftStickYActionP2, exitGameAction, startPhysicsAction,
+					leftStickXActionP2, leftStickYActionP2, exitGameAction, skipSongAction,
 					avatarJumpActionP1, avatarJumpActionP2, avatarChargeActionP1, avatarChargeActionP2;
 	private Camera3PController orbitCameraOne, orbitCameraTwo;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	float elapsedTime = 0.0f;
 	GL4RenderSystem renderSystem;
 	private float orbitingAxis = 0.0f;
-	int elapsedTimeSeconds, playerOneLives = 2, playerTwoLives = 2, playerOneScore = 0, playerTwoScore = 0;
+	int elapsedTimeSeconds, playerOneLives = 2, playerTwoLives = 2, playerOneScore = 0, playerTwoScore = 0, currentSong = 0;
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString, playerTwoScoreString;
 	public SceneNode dolphinNodeOne, dolphinNodeTwo, originNode;
 	private static final String SKYBOX = "OceanSkybox";
@@ -108,13 +113,14 @@ public class MyGame extends VariableFrameRateGame {
 	private static final int TERMINAL_VELOCITY = 1000;
 	public float velocityP1 = 0.0f, velocityP2 = 0.0f;
 	private StretchController playerStretchController;
+	public IAudioManager audioManager;
+	private Sound[] music = new Sound[3];
+	private Sound[] sfx = new Sound[3];
 	/*
 	 * Physics stuff
 	 */
-	private SceneNode ballOneNode, ballTwoNode, groundNode;
-	private SceneNode cameraPositionNode;
-	private final static String GROUND_E = "Ground";
-	private final static String GROUND_N = "GroundNode";
+	private SceneNode groundNode;
+	private final static String GROUND_NODE = "GroundNode";
 	
 	public PhysicsEngine physicsEngine;
 	public PhysicsObject	ballOnePhysicsObject, ballTwoPhysicsObject, groundPlane,
@@ -275,7 +281,7 @@ public class MyGame extends VariableFrameRateGame {
 
 		// Physics stuff
 		ManualObject groundEntity = ManualFloorObject.manualFloorObject(engine, sceneManager);
-		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(GROUND_N);
+		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(GROUND_NODE);
 		groundNode.attachObject(groundEntity);
 		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
 		// End of physics stuff
@@ -283,6 +289,51 @@ public class MyGame extends VariableFrameRateGame {
 		setupPhysics();
 		setupPhysicsWorld();
 		setupOrbitCameras(engine, sceneManager);
+		
+		setupAudio(sceneManager);
+	}
+	
+	/**
+	 * Initializes and loads audio resources from the asset folder, 
+	 * and sets music[] and sfx[] to their respective resources, and plays them.
+	 * 
+	 * @param sceneManager
+	 */
+	protected void setupAudio(SceneManager sceneManager) {
+		Configuration configuration = sceneManager.getConfiguration();
+		String sfxPath = configuration.valueOf("assets.sounds.path.a2.sfx");
+		String musicPath = configuration.valueOf("assets.sounds.path.a2.music");
+		AudioResource clairDeLune, arabesqueNoOne, reverie, scoreSfx, destroySfx, lifeUpSfx;
+		audioManager = AudioManagerFactory.createAudioManager("ray.audio.joal.JOALAudioManager");
+		
+		if (!audioManager.initialize()) {
+			System.out.println("The Audio Manager failed to initialize :(");
+			return;
+		}
+		
+		clairDeLune = audioManager.createAudioResource(musicPath + "clairdelune.wav", AudioResourceType.AUDIO_STREAM);
+		arabesqueNoOne = audioManager.createAudioResource(musicPath + "arabesque_no_one.wav", AudioResourceType.AUDIO_STREAM);
+		reverie = audioManager.createAudioResource(musicPath + "reverie.wav", AudioResourceType.AUDIO_STREAM);
+		scoreSfx = audioManager.createAudioResource(sfxPath + "score.wav", AudioResourceType.AUDIO_SAMPLE);
+		destroySfx = audioManager.createAudioResource(sfxPath + "destroyed.wav", AudioResourceType.AUDIO_SAMPLE);
+		lifeUpSfx = audioManager.createAudioResource(sfxPath + "lifeup.wav", AudioResourceType.AUDIO_SAMPLE);
+	
+		music[0] = new Sound(clairDeLune, SoundType.SOUND_MUSIC, 100, false);
+		music[1] = new Sound(arabesqueNoOne, SoundType.SOUND_MUSIC, 100, false);
+		music[2] = new Sound(reverie, SoundType.SOUND_MUSIC, 100, false);
+		sfx[0] = new Sound(scoreSfx, SoundType.SOUND_EFFECT, 25, false);
+		sfx[1] = new Sound(destroySfx, SoundType.SOUND_EFFECT, 25, false);
+		sfx[2] = new Sound(lifeUpSfx, SoundType.SOUND_EFFECT, 25, false);
+		
+		for (Sound m : music) {
+			m.initialize(audioManager);
+		}
+		
+		for (Sound s : sfx) {
+			s.initialize(audioManager);
+		}
+		
+		music[currentSong].play();
 	}
 
 	private void setupPhysics() {
@@ -433,7 +484,7 @@ public class MyGame extends VariableFrameRateGame {
 		leftStickXActionP2 = new AvatarLeftStickXAction(this, dolphinNodeTwo.getName());
 		leftStickYActionP2 = new AvatarLeftStickYAction(this, dolphinNodeTwo.getName());
 		exitGameAction = new ExitGameAction(this);
-		startPhysicsAction = new StartPhysicsAction(this);
+		skipSongAction = new SkipSongAction(this);
 		avatarJumpActionP1 = new AvatarJumpAction(this, dolphinNodeOne.getName());
 		avatarJumpActionP2 = new AvatarJumpAction(this, dolphinNodeTwo.getName());
 		avatarChargeActionP1 = new AvatarChargeAction(this, dolphinNodeOne.getName());
@@ -445,7 +496,7 @@ public class MyGame extends VariableFrameRateGame {
 		 * 	- SPACE		:	Jump
 		 *  - LSHIFT	:	Activate charge
 		 * 	- ESC		:	Quit
-		 * 	- P			:	Pause or Self Destruct
+		 * 	- P			:	Skip Song
 		 * 	- Tab		:	Reset camera
 		 * 	- F			:	Zoom out
 		 * 	- R			:	Zoom in
@@ -474,6 +525,11 @@ public class MyGame extends VariableFrameRateGame {
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 				
 				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.P, 
+						skipSongAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
+				inputManager.associateAction(keyboards, 
 						net.java.games.input.Component.Identifier.Key.ESCAPE, 
 						exitGameAction, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
@@ -487,6 +543,7 @@ public class MyGame extends VariableFrameRateGame {
 						net.java.games.input.Component.Identifier.Key.LSHIFT, 
 						avatarChargeActionP1, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+
 			}
 		}
 		
@@ -498,7 +555,7 @@ public class MyGame extends VariableFrameRateGame {
 		 *	- A			:	0		:	Jump
 		 * 	- B			:	1		:	Activate charge
 		 * 	- X			:	2		:	
-		 * 	- Y			:	3		:	Start physics
+		 * 	- Y			:	3		:	Skip Song
 		 * 	- LB		:	4		:	
 		 * 	- RB		:	5		:	
 		 * 	- View		:	6		:	Quit
@@ -535,13 +592,14 @@ public class MyGame extends VariableFrameRateGame {
 					net.java.games.input.Component.Identifier.Button._1, 
 					avatarChargeActionP2, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._3, 
+					skipSongAction, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		}
 		
 		
-	}
-
-	protected void setupAudio() {
-
 	}
 
 	@Override
@@ -580,6 +638,19 @@ public class MyGame extends VariableFrameRateGame {
 		} else {
 			displayString += " | Charge cooldown: " + (cooldownP1 - elapsedTimeSeconds);
 		}
+		displayString += " | Current song: ";
+		switch (currentSong % 3) {
+		case 0:
+			displayString += "Claude Debussy - Suite bergamasque ~ Clair de lune";
+			break;
+		case 1:
+			displayString += "Claude Debussy - Arabesque No. 1";
+			break;
+		case 2:
+			displayString += "Claude Debussy - Reverie";
+			break;
+		}
+		
 		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(1).getActualBottom()) + 15);
 		
 		displayString = "Player Two Time: " + elapsedTimeString;
@@ -593,6 +664,18 @@ public class MyGame extends VariableFrameRateGame {
 			displayString += " | Charge active!";
 		} else {
 			displayString += " | Charge cooldown: " + (cooldownP2 - elapsedTimeSeconds);
+		}
+		displayString += " | Current song: ";
+		switch (currentSong % 3) {
+		case 0:
+			displayString += "Claude Debussy - Suite bergamasque ~ Clair de lune";
+			break;
+		case 1:
+			displayString += "Claude Debussy - Arabesque No. 1";
+			break;
+		case 2:
+			displayString += "Claude Debussy - Reverie";
+			break;
 		}
 		
 		renderSystem.setHUD2(displayString, 15, 15);
@@ -637,6 +720,16 @@ public class MyGame extends VariableFrameRateGame {
 			incrementMoonOrbitAxis();
 		}
 		
+	}
+	
+	/**
+	 * Invoked by SkipAudioAction. Stops the current soundtrack and plays the next one.
+	 */
+	public void playAudio() {
+		music[currentSong].stop();
+		currentSong++;
+		currentSong %= music.length;
+		music[currentSong].play();
 	}
 	
 	private void checkChargeTime() {
@@ -816,8 +909,6 @@ public class MyGame extends VariableFrameRateGame {
 		planetEntity.setRenderState(zState);
 		cubeEntity.setRenderState(zState);
 	
-		//SceneNode planetNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntity.getName() + "Node");
-		//SceneNode cubeNode = sceneManager.getRootSceneNode().createChildSceneNode(cubeEntity.getName() + "Node");
 		SceneNode planetNode = originNode.createChildSceneNode(planetEntity.getName() + "Node");
 		SceneNode cubeNode = originNode.createChildSceneNode(cubeEntity.getName() + "Node");
 		
@@ -923,7 +1014,7 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	private void decrementLives(String playerName) {
 		String currentPlayer;
-		//sfx[1].play(); death sfx
+		sfx[1].play();
 		switch(playerName) {
 		case "dolphinEntityOneNode":
 			currentPlayer = "Player One";
@@ -957,7 +1048,7 @@ public class MyGame extends VariableFrameRateGame {
 			} else if (playerTwoScore > playerOneScore){
 				System.out.println("Player Two took the score victory! ");
 			}
-			// audioManager.shutdown();
+			audioManager.shutdown();
 			this.setState(Game.State.STOPPING);
 		}
 	}
@@ -966,7 +1057,7 @@ public class MyGame extends VariableFrameRateGame {
 	 * Increments player score and gives them an orbiting star
 	 * @throws IOException
 	 */
-	private void incrementScore(String playerName) throws IOException {
+	public void incrementScore(String playerName) throws IOException {
 		String currentPlayer = "";
 		Entity starEntity = this.getEngine().getSceneManager().createEntity("starEntity" + starUID, "star.obj");
 		starUID++;
@@ -986,22 +1077,25 @@ public class MyGame extends VariableFrameRateGame {
 			playerOrbitController.addNode(starNode);
 			playerOrbitController.setDistanceFromTarget(playerOrbitController.getDistanceFromTarget() + 0.05f);
 			playerOneScore++;
+			if (playerOneScore % 10 == 0) {
+				sfx[2].play();
+				playerOneLives++;
+			} else
+				sfx[0].play();
 			break;
 		case "dolphinEntityTwoNode":
 			currentPlayer = "Player Two";
 			playerOrbitControllerVertical.addNode(starNode);
 			playerOrbitControllerVertical.setDistance(playerOrbitControllerVertical.getDistance() + 0.05f);
 			playerTwoScore++;
+			if (playerTwoScore % 10 == 0) {
+				sfx[2].play();
+				playerTwoLives++;
+			} else
+				sfx[0].play();
 			break;
 		}
 		System.out.println(currentPlayer + " has scored a point!");
-		/* SFX
-		if (score % 10 == 0) {
-			sfx[2].play();
-			lives++;
-		} else
-			sfx[0].play();
-		*/
 	}
 	
 	/**

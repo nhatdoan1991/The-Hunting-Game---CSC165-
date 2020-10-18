@@ -27,7 +27,7 @@ import com.saechaol.game.myGameEngine.action.RightStickXAction;
 import com.saechaol.game.myGameEngine.action.RightStickYAction;
 import com.saechaol.game.myGameEngine.action.RollCameraLeftAction;
 import com.saechaol.game.myGameEngine.action.RollCameraRightAction;
-import com.saechaol.game.myGameEngine.action.SkipSongAction;
+import com.saechaol.game.myGameEngine.action.a1.SkipSongAction;
 import com.saechaol.game.myGameEngine.action.ToggleCameraAction;
 import com.saechaol.game.myGameEngine.action.YawCameraLeftAction;
 import com.saechaol.game.myGameEngine.action.YawCameraRightAction;
