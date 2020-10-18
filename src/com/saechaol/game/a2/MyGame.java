@@ -102,6 +102,8 @@ public class MyGame extends VariableFrameRateGame {
 	public float cooldownP1 = 0, cooldownP2 = 0;
 	private static final int INVULNERABLE_SECONDS = 3;
 	private int playerOneInvulnerable = 0, playerTwoInvulnerable = 0;
+	private static final int TERMINAL_VELOCITY = 1000;
+	public float velocityP1 = 0.0f, velocityP2 = 0.0f;
 	/*
 	 * Physics stuff
 	 */
@@ -260,7 +262,7 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinEntityTwo.setRenderState(dolphinTwoTextureState);
 		
 		setupInputs(sceneManager);
-	
+
 		// Physics stuff
 		ManualObject groundEntity = ManualFloorObject.manualFloorObject(engine, sceneManager);
 		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(GROUND_N);
@@ -587,6 +589,26 @@ public class MyGame extends VariableFrameRateGame {
 		
 		checkChargeTime();
 		
+		if (dolphinNodeOne.getWorldPosition().y() > 1.0f) {
+			velocityP1 -= 1.0f;
+			if (Math.abs(velocityP1) > TERMINAL_VELOCITY) {
+				velocityP1 = TERMINAL_VELOCITY * -1;
+			}
+			dolphinNodeOne.getPhysicsObject().applyForce(0.0f, velocityP1, 0.0f, 0.0f, 0.0f, 0.0f);
+		} else if (dolphinNodeOne.getWorldPosition().y() <= 0.5f) {
+			velocityP1 = 0.0f;
+		}
+		
+		if (dolphinNodeTwo.getWorldPosition().y() > 1.0f) {
+			velocityP2 -= 1.0f;
+			if (Math.abs(velocityP2) > TERMINAL_VELOCITY) {
+				velocityP2 = TERMINAL_VELOCITY * -1;
+			}
+			dolphinNodeTwo.getPhysicsObject().applyForce(0.0f, velocityP2, 0.0f, 0.0f, 0.0f, 0.0f);
+		} else if (dolphinNodeTwo.getWorldPosition().y() <= 0.5f) {
+			velocityP2 = 0.0f;
+		}
+		
 		orbitCameraOne.updateCameraPosition();
 		orbitCameraTwo.updateCameraPosition();
 		
@@ -686,6 +708,7 @@ public class MyGame extends VariableFrameRateGame {
 				cubeMoonRotationControllers.remove(planetIndex);
 				this.getEngine().getSceneManager().destroySceneNode(k);
 				this.getEngine().getSceneManager().destroySceneNode(kMoon);
+				
 				try {
 					currentlyActive.put(instantiateNewPlanet(this.getEngine(), this.getEngine().getSceneManager()), true);
 				} catch (IOException e) {
@@ -757,7 +780,7 @@ public class MyGame extends VariableFrameRateGame {
 		// initialize randomized parameters for the galaxy orbit controller
 		float[] galaxyOrbitParameters = { 
 				RAND.nextFloat() * 0.1f, 
-				(RAND.nextFloat() * 40.0f) + 15.0f,
+				(RAND.nextFloat() * 65.0f) + 15.0f,
 				(RAND.nextFloat() * 1.0f)
 		};
 		
@@ -776,9 +799,12 @@ public class MyGame extends VariableFrameRateGame {
 		
 		planetEntity.setRenderState(zState);
 		cubeEntity.setRenderState(zState);
+	
+		//SceneNode planetNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntity.getName() + "Node");
+		//SceneNode cubeNode = sceneManager.getRootSceneNode().createChildSceneNode(cubeEntity.getName() + "Node");
+		SceneNode planetNode = originNode.createChildSceneNode(planetEntity.getName() + "Node");
+		SceneNode cubeNode = originNode.createChildSceneNode(cubeEntity.getName() + "Node");
 		
-		SceneNode planetNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntity.getName() + "Node");
-		SceneNode cubeNode = sceneManager.getRootSceneNode().createChildSceneNode(cubeEntity.getName() + "Node");
 		
 		TextureState planetTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		planetTextureState.setTexture(planetTexture);
@@ -840,7 +866,7 @@ public class MyGame extends VariableFrameRateGame {
 		activePlanets.forEach((k, v) -> {
 			if (v) {
 				Vector3f playerPosition = (Vector3f) player.getWorldPosition();
-				Vector3f planetPosition = (Vector3f) k.getLocalPosition();
+				Vector3f planetPosition = (Vector3f) k.getWorldPosition();
 				if ((Math.pow((playerPosition.x() - planetPosition.x()), 2) + Math.pow((playerPosition.y() - planetPosition.y()), 2) + Math.pow((playerPosition.z() - planetPosition.z()), 2)) < Math.pow((2.15f), 2.0f)) {
 					try {
 						incrementScore(player.getName());
