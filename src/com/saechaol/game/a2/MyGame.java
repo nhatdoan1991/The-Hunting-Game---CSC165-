@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Random;
 
 import com.saechaol.game.myGameEngine.action.AvatarLeftStickXAction;
 import com.saechaol.game.myGameEngine.action.AvatarLeftStickYAction;
@@ -17,10 +20,13 @@ import com.saechaol.game.myGameEngine.action.AvatarMoveLeftAction;
 import com.saechaol.game.myGameEngine.action.AvatarMoveRightAction;
 import com.saechaol.game.myGameEngine.action.ExitGameAction;
 import com.saechaol.game.myGameEngine.action.StartPhysicsAction;
+import com.saechaol.game.myGameEngine.action.a1.RideDolphinToggleAction;
+import com.saechaol.game.myGameEngine.action.a2.AvatarChargeAction;
 import com.saechaol.game.myGameEngine.action.a2.AvatarJumpAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
 import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
+import com.saechaol.game.myGameEngine.object.manual.ManualCubeObject;
 import com.saechaol.game.myGameEngine.object.manual.ManualFloorObject;
 
 import net.java.games.input.Controller;
@@ -48,6 +54,8 @@ import ray.rage.scene.Camera;
 import ray.rage.scene.Light;
 import ray.rage.scene.ManualObject;
 import ray.rage.scene.Camera.Frustum.Projection;
+import ray.rage.scene.controllers.OrbitController;
+import ray.rage.scene.controllers.RotationController;
 import ray.rage.scene.Entity;
 import ray.rage.scene.SceneManager;
 import ray.rage.scene.SceneManagerFactory;
@@ -56,25 +64,44 @@ import ray.rage.scene.SkyBox;
 import ray.rage.util.Configuration;
 import ray.rml.Matrix4;
 import ray.rml.Matrix4f;
+import ray.rml.Vector3f;
 
 public class MyGame extends VariableFrameRateGame {
 
 	private Action	moveLeftActionP1, moveRightActionP1, moveForwardActionP1, moveBackwardActionP1, 
 					leftStickXActionP2, leftStickYActionP2, exitGameAction, startPhysicsAction,
-					avatarJumpActionP1, avatarJumpActionP2;
+					avatarJumpActionP1, avatarJumpActionP2, avatarChargeActionP1, avatarChargeActionP2;
 	private Camera3PController orbitCameraOne, orbitCameraTwo;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	float elapsedTime = 0.0f;
 	GL4RenderSystem renderSystem;
+	private float orbitingAxis = 0.0f;
 	int elapsedTimeSeconds, playerOneLives = 2, playerTwoLives = 2, playerOneScore = 0, playerTwoScore = 0;
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString, playerTwoScoreString;
-	public SceneNode dolphinNodeOne, dolphinNodeTwo;
+	public SceneNode dolphinNodeOne, dolphinNodeTwo, originNode;
 	private static final String SKYBOX = "OceanSkybox";
 	private static final String BUILD_STATE = "test"; // test for debugging, release for submission
 	private TextureManager textureManager;
 	private InputManager inputManager;
+	private static final Random RAND = new Random();
 	private ZBufferState zState;
-
+	HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
+	public HashMap<SceneNode, Boolean> playerCharge = new HashMap<SceneNode, Boolean>();
+	private int totalPlanetCount = 0;
+	private Texture[] planetTextures;
+	private Texture moonTexture, starTexture;
+	ArrayList<SceneNode> planetNodes = new ArrayList<SceneNode>();
+	ArrayList<SceneNode> cubeMoonNodes = new ArrayList<SceneNode>();
+	ArrayList<OrbitController> galaxyOrbitController = new ArrayList<OrbitController>();
+	ArrayList<OrbitController> planetOrbitController = new ArrayList<OrbitController>();
+	ArrayList<RotationController> planetRotationControllers = new ArrayList<RotationController>();
+	ArrayList<RotationController> cubeMoonRotationControllers = new ArrayList<RotationController>();
+	private OrbitController[] playerOrbitController = new OrbitController[2];
+	private int starUID = 0;
+	public int chargeTimeP1 = 1000, chargeTimeP2 = 1000;
+	public float cooldownP1 = 0, cooldownP2 = 0;
+	private static final int INVULNERABLE_SECONDS = 3;
+	private int playerOneInvulnerable = 0, playerTwoInvulnerable = 0;
 	/*
 	 * Physics stuff
 	 */
@@ -162,8 +189,27 @@ public class MyGame extends VariableFrameRateGame {
 		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
 		zState.setEnabled(true);
 		
+		planetTextures = new Texture[6];
+		planetTextures[0] = textureManager.getAssetByPath("earth-day.jpeg");
+		planetTextures[1] = textureManager.getAssetByPath("blue.jpeg");
+		planetTextures[2] = textureManager.getAssetByPath("hexagons.jpeg");
+		planetTextures[3] = textureManager.getAssetByPath("earth-night.jpeg");
+		planetTextures[4] = textureManager.getAssetByPath("red.jpeg");
+		planetTextures[5] = textureManager.getAssetByPath("chain-fence.jpeg");
+		moonTexture = textureManager.getAssetByPath("moon.jpeg");
+		starTexture = textureManager.getAssetByPath("star.png");
+		
 		// initialize world axes
 		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
+		
+		// origin node for orbit controller
+		originNode = sceneManager.getRootSceneNode().createChildSceneNode("originNode");
+		originNode.setLocalPosition(0.0f, 5.0f, 0.0f);
+		
+		// initialize planets
+		for (int i = 0; i < 6; i++) { 
+			activePlanets.put(instantiateNewPlanet(engine, sceneManager), true);
+		}
 		
 		Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "dolphinHighPoly.obj");
 		Entity dolphinEntityTwo = sceneManager.createEntity("dolphinEntityTwo", "dolphinHighPoly.obj");
@@ -176,6 +222,15 @@ public class MyGame extends VariableFrameRateGame {
 		
 		dolphinNodeOne.attachObject(dolphinEntityOne);
 		dolphinNodeTwo.attachObject(dolphinEntityTwo);
+		
+		playerCharge.put(dolphinNodeOne, false);
+		playerCharge.put(dolphinNodeTwo, false);
+		
+		playerOrbitController[0] = new OrbitController(dolphinNodeOne, 1.0f, 0.5f, 0.0f, false);
+		sceneManager.addController(playerOrbitController[0]);
+		
+		playerOrbitController[1] = new OrbitController(dolphinNodeTwo, 1.0f, 0.5f, 0.0f, false);
+		sceneManager.addController(playerOrbitController[1]);
 		
 		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
 		
@@ -369,11 +424,14 @@ public class MyGame extends VariableFrameRateGame {
 		startPhysicsAction = new StartPhysicsAction(this);
 		avatarJumpActionP1 = new AvatarJumpAction(this, dolphinNodeOne.getName());
 		avatarJumpActionP2 = new AvatarJumpAction(this, dolphinNodeTwo.getName());
+		avatarChargeActionP1 = new AvatarChargeAction(this, dolphinNodeOne.getName());
+		avatarChargeActionP2 = new AvatarChargeAction(this, dolphinNodeTwo.getName());
 		/*
 		 * Player One - KB / Mouse
 		 * 	- WASD		:	Move
 		 * 	- Arrows	:	Orbit camera
 		 * 	- SPACE		:	Jump
+		 *  - LSHIFT	:	Activate charge
 		 * 	- ESC		:	Quit
 		 * 	- P			:	Pause or Self Destruct
 		 * 	- Tab		:	Reset camera
@@ -412,6 +470,11 @@ public class MyGame extends VariableFrameRateGame {
 						net.java.games.input.Component.Identifier.Key.SPACE, 
 						avatarJumpActionP1, 
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.LSHIFT, 
+						avatarChargeActionP1, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 			}
 		}
 		
@@ -421,7 +484,7 @@ public class MyGame extends VariableFrameRateGame {
 		 *	- RStick	:	RX/RY	:	Orbit camera
 		 * 	- Dpad		:	POV		:	
 		 *	- A			:	0		:	Jump
-		 * 	- B			:	1		:	
+		 * 	- B			:	1		:	Activate charge
 		 * 	- X			:	2		:	
 		 * 	- Y			:	3		:	Start physics
 		 * 	- LB		:	4		:	
@@ -454,6 +517,11 @@ public class MyGame extends VariableFrameRateGame {
 			inputManager.associateAction(gamepadName, 
 					net.java.games.input.Component.Identifier.Button._0, 
 					avatarJumpActionP2, 
+					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			
+			inputManager.associateAction(gamepadName, 
+					net.java.games.input.Component.Identifier.Button._1, 
+					avatarChargeActionP2, 
 					InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		}
 		
@@ -492,19 +560,155 @@ public class MyGame extends VariableFrameRateGame {
 		displayString += " | Lives = " + playerOneLivesString;
 		displayString += " | Score = " + playerOneScoreString;
 		displayString += " | Position: (" + formatFloat.format(dolphinNodeOne.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNodeOne.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNodeOne.getWorldPosition().z()) + ")";
+		if (cooldownP1 - elapsedTimeSeconds < 0) {
+			displayString += " | Charge Ready!";
+		} else if (cooldownP1 - elapsedTimeSeconds > 10) {
+			displayString += " | Charge active!";
+		} else {
+			displayString += " | Charge cooldown: " + (cooldownP1 - elapsedTimeSeconds);
+		}
 		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(1).getActualBottom()) + 15);
 		
 		displayString = "Player Two Time: " + elapsedTimeString;
 		displayString += " | Lives = " + playerTwoLivesString;
 		displayString += " | Score = " + playerTwoScoreString;
 		displayString += " | Position: (" + formatFloat.format(dolphinNodeTwo.getWorldPosition().x()) + ", " + formatFloat.format(dolphinNodeTwo.getWorldPosition().y()) + ", " + formatFloat.format(dolphinNodeTwo.getWorldPosition().z()) + ")";
-
+		if (cooldownP2 - elapsedTimeSeconds < 0) {
+			displayString += " | Charge Ready!";
+		} else if (cooldownP2 - elapsedTimeSeconds > 10) {
+			displayString += " | Charge active!";
+		} else {
+			displayString += " | Charge cooldown: " + (cooldownP2 - elapsedTimeSeconds);
+		}
+		
 		renderSystem.setHUD2(displayString, 15, 15);
 		
 		inputManager.update(elapsedTime);
 		
+		checkChargeTime();
+		
 		orbitCameraOne.updateCameraPosition();
 		orbitCameraTwo.updateCameraPosition();
+		
+		if (elapsedTime > 500.0) {
+			moonCollisionDetection(dolphinNodeOne);
+			moonCollisionDetection(dolphinNodeTwo);
+			
+			planetCollisionDetection(dolphinNodeOne);
+			planetCollisionDetection(dolphinNodeTwo);
+			
+			playerCollisionDetection();
+			
+			replacePlanet();
+			incrementMoonOrbitAxis();
+		}
+		
+	}
+	
+	private void checkChargeTime() {
+		if (elapsedTimeSeconds > chargeTimeP1) {
+			playerCharge.put(dolphinNodeOne, false);
+		}
+		if (elapsedTimeSeconds > chargeTimeP2) {
+			playerCharge.put(dolphinNodeTwo, false);
+		}
+	}
+	
+	private void playerCollisionDetection() {
+		boolean playerOneCharge = playerCharge.get(dolphinNodeOne);
+		boolean playerTwoCharge = playerCharge.get(dolphinNodeTwo);
+		
+		Vector3f playerOnePosition = (Vector3f) dolphinNodeOne.getWorldPosition();
+		Vector3f playerTwoPosition = (Vector3f) dolphinNodeTwo.getWorldPosition();
+		if ((Math.pow((playerOnePosition.x() - playerTwoPosition.x()), 2) + Math.pow((playerOnePosition.y() - playerTwoPosition.y()), 2) + Math.pow((playerOnePosition.z() - playerTwoPosition.z()), 2)) < Math.pow((0.4f), 2.0f)) {
+			if (playerOneCharge && !playerTwoCharge && (playerTwoInvulnerable <= elapsedTimeSeconds)) { // P1 > P2
+				dolphinNodeTwo.setLocalPosition(0.5f, 0.0f, 0.0f);
+				double[] transformP2 = dolphinNodeTwo.getPhysicsObject().getTransform();
+				transformP2[12] = dolphinNodeTwo.getLocalPosition().x();
+				transformP2[13] = dolphinNodeTwo.getLocalPosition().y();
+				transformP2[14] = dolphinNodeTwo.getLocalPosition().z();
+				dolphinNodeTwo.getPhysicsObject().setTransform(transformP2);
+				decrementLives(dolphinNodeTwo.getName());
+				playerTwoInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
+				
+			} else if (playerTwoCharge && !playerOneCharge && (playerOneInvulnerable <= elapsedTimeSeconds)) { // P2 > P1
+				dolphinNodeOne.setLocalPosition(-0.5f, 0.0f, 0.0f);
+				double[] transformP1 = dolphinNodeOne.getPhysicsObject().getTransform();
+				transformP1[12] = dolphinNodeOne.getLocalPosition().x();
+				transformP1[13] = dolphinNodeOne.getLocalPosition().y();
+				transformP1[14] = dolphinNodeOne.getLocalPosition().z();
+				dolphinNodeOne.getPhysicsObject().setTransform(transformP1);
+				decrementLives(dolphinNodeOne.getName());
+				playerOneInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
+				
+			} else if ((playerOneCharge && playerTwoCharge) || (!playerOneCharge && !playerTwoCharge) && (playerOneInvulnerable <= elapsedTimeSeconds && playerTwoInvulnerable <= elapsedTimeSeconds)) {
+				dolphinNodeOne.setLocalPosition(-0.5f, 0.0f, 0.0f);
+				dolphinNodeTwo.setLocalPosition(0.5f, 0.0f, 0.0f);
+				
+				double[] transformP1 = dolphinNodeOne.getPhysicsObject().getTransform();
+				transformP1[12] = dolphinNodeOne.getLocalPosition().x();
+				transformP1[13] = dolphinNodeOne.getLocalPosition().y();
+				transformP1[14] = dolphinNodeOne.getLocalPosition().z();
+				dolphinNodeOne.getPhysicsObject().setTransform(transformP1);
+				playerOneLives--;
+				System.out.println("Player One took damage! ");
+				playerOneInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
+				
+				double[] transformP2 = dolphinNodeTwo.getPhysicsObject().getTransform();
+				transformP2[12] = dolphinNodeTwo.getLocalPosition().x();
+				transformP2[13] = dolphinNodeTwo.getLocalPosition().y();
+				transformP2[14] = dolphinNodeTwo.getLocalPosition().z();
+				dolphinNodeTwo.getPhysicsObject().setTransform(transformP2);
+				decrementLives(dolphinNodeTwo.getName());
+				playerTwoInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
+			}
+		}
+	}
+	
+	/**
+	 * Helper function for planetCollisionDetection and incrementScore. Replaces the planet
+	 * within the activePlanets HashMap with a new planet, while mindful of concurrently modifying
+	 * the activePlanets HashMap
+	 */
+	private void replacePlanet() {
+		HashMap<SceneNode, Boolean> currentlyActive = new HashMap<SceneNode, Boolean>();
+		activePlanets.forEach((k, v) -> {
+			if (!v) {
+				int planetIndex = planetNodes.indexOf(k);
+				// remove planet and moon from collection
+				planetNodes.remove(k);
+				SceneNode kMoon = cubeMoonNodes.remove(planetIndex); 
+				
+				// remove node controllers
+				galaxyOrbitController.remove(planetIndex);
+				planetOrbitController.remove(planetIndex);
+				planetRotationControllers.remove(planetIndex);
+				cubeMoonRotationControllers.remove(planetIndex);
+				this.getEngine().getSceneManager().destroySceneNode(k);
+				this.getEngine().getSceneManager().destroySceneNode(kMoon);
+				try {
+					currentlyActive.put(instantiateNewPlanet(this.getEngine(), this.getEngine().getSceneManager()), true);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			} else {
+				currentlyActive.put(k, v);
+			}
+			
+		});
+		activePlanets = currentlyActive;
+	}
+	
+	/**
+	 * Simulates a sinusodial axial tilt by multiplying the orbit controller's vertical distance by sin(x)
+	 */
+	private void incrementMoonOrbitAxis() {
+		Iterator<OrbitController> orbitControllerIterator = planetOrbitController.iterator();
+		orbitControllerIterator.forEachRemaining(controller -> {
+			controller.setVerticalDistance((float) Math.sin(orbitingAxis) * 10.0f);
+		});
+		orbitingAxis += 0.05f;
+		orbitingAxis %= 360;
 	}
 
 	public void synchronizeAvatarPhysics(SceneNode player) {
@@ -517,6 +721,283 @@ public class MyGame extends VariableFrameRateGame {
 		} else {
 			player.getPhysicsObject().setTransform(toDoubleArray(player.getWorldTransform().toFloatArray()));
 		}
+	}
+	
+	/**
+	 * Instantiates a planet with a random texture. Called by setupScene to initialize at least one planet
+	 * of every texture. Planets are instantiated in random locations some units away from the origin.
+	 * 
+	 * @param engine
+	 * @param sceneManager
+	 * @return
+	 * @throws IOException
+	 */
+	private SceneNode instantiateNewPlanet(Engine engine, SceneManager sceneManager) throws IOException {
+		Entity planetEntity = sceneManager.createEntity("planetEntity" + totalPlanetCount, "earth.obj");
+		ManualObject cubeEntity = ManualCubeObject.makeCubeObject(engine, sceneManager, Integer.toString(totalPlanetCount));
+		Texture planetTexture;
+		RenderSystem renderSystem = sceneManager.getRenderSystem();
+		
+		// initial planet instantiation
+		switch(totalPlanetCount) {
+			case 0:
+			case 1:
+			case 2: 
+			case 3:
+			case 4:
+			case 5:
+				planetTexture = planetTextures[totalPlanetCount];
+				break;
+			default:
+				planetTexture = planetTextures[RAND.nextInt(6)];
+		}
+		
+		float[] coordinates = randomFloatArray(79.0f);
+		
+		// initialize randomized parameters for the galaxy orbit controller
+		float[] galaxyOrbitParameters = { 
+				RAND.nextFloat() * 0.1f, 
+				(RAND.nextFloat() * 40.0f) + 15.0f,
+				(RAND.nextFloat() * 1.0f)
+		};
+		
+		// initialize randomized parameters for the planet-moon orbit controller
+		float[] planetOrbitParameters = { 
+				RAND.nextFloat() * 5.0f, 
+				(RAND.nextFloat() * 20.0f) + 5.0f,
+		};
+		
+		if (RAND.nextBoolean()) {
+			galaxyOrbitParameters[2] *= -1.0f;
+		}
+		
+		planetEntity.setPrimitive(Primitive.TRIANGLES);
+		cubeEntity.setPrimitive(Primitive.TRIANGLES);
+		
+		planetEntity.setRenderState(zState);
+		cubeEntity.setRenderState(zState);
+		
+		SceneNode planetNode = sceneManager.getRootSceneNode().createChildSceneNode(planetEntity.getName() + "Node");
+		SceneNode cubeNode = sceneManager.getRootSceneNode().createChildSceneNode(cubeEntity.getName() + "Node");
+		
+		TextureState planetTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		planetTextureState.setTexture(planetTexture);
+		planetEntity.setRenderState(planetTextureState);
+		
+		TextureState cubeTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		cubeTextureState.setTexture(moonTexture);
+		cubeEntity.setRenderState(cubeTextureState);
+		
+		// initialize planet and moon positions
+		planetNode.setLocalPosition(coordinates[0], coordinates[1], coordinates[2]);
+		cubeNode.setLocalPosition(planetNode.getLocalPosition());
+		
+		// attach entities to nodes
+		planetNode.attachObject(planetEntity);
+		cubeNode.attachObject(cubeEntity);
+		galaxyOrbitController.add(new OrbitController(originNode, galaxyOrbitParameters[0], galaxyOrbitParameters[1], galaxyOrbitParameters[2], RAND.nextBoolean()));
+		planetOrbitController.add(new OrbitController(planetNode, planetOrbitParameters[0], planetOrbitParameters[1], 0.0f, RAND.nextBoolean()));
+	
+		// add rotation controllers if node is NOT always facing target
+		if (!galaxyOrbitController.get(galaxyOrbitController.size() - 1).isAlwaysFacingTarget()) {
+			RotationController planetRotation = randomRotation();
+			planetRotationControllers.add(planetRotation);
+			planetRotation.addNode(planetNode);
+			sceneManager.addController(planetRotation);
+		} else {
+			planetRotationControllers.add(null); // maintain size integrity
+		}
+		
+		if (!planetOrbitController.get(planetOrbitController.size() - 1).isAlwaysFacingTarget()) {
+			RotationController moonRotation = randomRotation();
+			cubeMoonRotationControllers.add(moonRotation);
+			moonRotation.addNode(cubeNode);
+			sceneManager.addController(moonRotation);
+		} else {
+			cubeMoonRotationControllers.add(null); // maintain size integrity
+		}
+		
+		planetNodes.add(planetNode);
+		cubeMoonNodes.add(cubeNode);
+		
+		galaxyOrbitController.get(galaxyOrbitController.size() - 1).addNode(planetNode);
+		planetOrbitController.get(planetOrbitController.size() - 1).addNode(cubeNode);
+		
+		sceneManager.addController(galaxyOrbitController.get(galaxyOrbitController.size() - 1));
+		sceneManager.addController(planetOrbitController.get(planetOrbitController.size() - 1));
+		
+		totalPlanetCount++;
+		
+		return planetNode;
+	}
+	
+	/**
+	 * Uses the formula for the radius of a sphere and check's if the player's position intersects the
+	 * resulting value to calculate collision detection. If true, the player is given a score, and the planet is
+	 * removed from the game and replaced with a new planet.
+	 */
+	private void planetCollisionDetection(SceneNode player) {
+		activePlanets.forEach((k, v) -> {
+			if (v) {
+				Vector3f playerPosition = (Vector3f) player.getWorldPosition();
+				Vector3f planetPosition = (Vector3f) k.getLocalPosition();
+				if ((Math.pow((playerPosition.x() - planetPosition.x()), 2) + Math.pow((playerPosition.y() - planetPosition.y()), 2) + Math.pow((playerPosition.z() - planetPosition.z()), 2)) < Math.pow((2.15f), 2.0f)) {
+					try {
+						incrementScore(player.getName());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					activePlanets.put(k, false);
+				}
+			}
+		});
+	}
+	
+	/**
+	 * Checks to see if the player has collided with one of the moons, and decrements their lives accordingly
+	 */
+	private void moonCollisionDetection(SceneNode player) {
+		Iterator<SceneNode> activeMoonsIterator = cubeMoonNodes.iterator();
+		activeMoonsIterator.forEachRemaining(node -> {	
+			Vector3f dolphinPosition = (Vector3f) player.getLocalPosition();
+			if ((Math.pow((dolphinPosition.x() - node.getLocalPosition().x()), 2) + Math.pow((dolphinPosition.y() - node.getLocalPosition().y()), 2) + Math.pow((dolphinPosition.z() - node.getLocalPosition().z()), 2)) < Math.pow((2.15f), 2.0f)) {
+				if (player.getName() == "dolphinEntityOneNode")
+					player.setLocalPosition(-0.5f, 0.0f, 0.0f);
+				else 
+					player.setLocalPosition(0.5f, 0.0f, 0.0f);
+				double[] transform = player.getPhysicsObject().getTransform();
+				transform[12] = player.getLocalPosition().x();
+				transform[13] = player.getLocalPosition().y();
+				transform[14] = player.getLocalPosition().z();
+				player.getPhysicsObject().setTransform(transform);
+				decrementLives(player.getName());
+			}
+		});
+	}
+	
+	/**
+	 * Called by the collision detection methods. 
+	 * When the player has lost all their lives, the game will automatically close.
+	 */
+	private void decrementLives(String playerName) {
+		String currentPlayer;
+		//sfx[1].play(); death sfx
+		switch(playerName) {
+		case "dolphinEntityOneNode":
+			currentPlayer = "Player One";
+			if (playerOneLives >= 0) {
+				System.out.println(currentPlayer + " took damage!");
+				playerOneLives--;
+			}
+			break;
+		case "dolphinEntityTwoNode":
+			currentPlayer = "Player Two";
+			if (playerTwoLives >= 0) {
+				System.out.println(currentPlayer + " took damage!");
+				playerTwoLives--;
+			}
+			break;
+		}
+		
+		if (playerOneLives < 0 || playerTwoLives < 0) {
+			if (playerOneLives > playerTwoLives) {
+				System.out.println("Player Two has lost. ");
+			} else if (playerTwoLives > playerOneLives) {
+				System.out.println("Player One has lost. ");
+			} else {
+				System.out.println("Both players have lost.");
+			}
+			
+			if (playerOneScore > playerTwoScore) {
+				System.out.println("Player One took the score victory! ");
+			} else if (playerOneScore == playerTwoScore) {
+				System.out.println("Tied score! ");
+			} else if (playerTwoScore > playerOneScore){
+				System.out.println("Player Two took the score victory! ");
+			}
+			// audioManager.shutdown();
+			this.setState(Game.State.STOPPING);
+		}
+	}
+	
+	/**
+	 * Increments player score and gives them an orbiting star
+	 * @throws IOException
+	 */
+	private void incrementScore(String playerName) throws IOException {
+		String currentPlayer = "";
+		Entity starEntity = this.getEngine().getSceneManager().createEntity("starEntity" + starUID, "star.obj");
+		starUID++;
+		starEntity.setPrimitive(Primitive.TRIANGLES);
+		starEntity.setRenderState(zState);
+		
+		TextureState starTextureState = (TextureState) this.getEngine().getSceneManager().getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
+		starTextureState.setTexture(starTexture);
+		starEntity.setRenderState(starTextureState);
+		
+		SceneNode starNode = this.getEngine().getSceneManager().getRootSceneNode().createChildSceneNode(starEntity.getName() + "Node");
+		starNode.attachObject(starEntity);
+		starNode.scale(0.05f, 0.05f, 0.05f);
+		switch(playerName) {
+		case "dolphinEntityOneNode":
+			currentPlayer = "Player One";
+			playerOrbitController[0].addNode(starNode);
+			playerOrbitController[0].setDistanceFromTarget(playerOrbitController[0].getDistanceFromTarget() + 0.05f);
+			playerOneScore++;
+			break;
+		case "dolphinEntityTwoNode":
+			currentPlayer = "Player Two";
+			playerOrbitController[1].addNode(starNode);
+			playerOrbitController[1].setDistanceFromTarget(playerOrbitController[0].getDistanceFromTarget() + 0.05f);
+			playerTwoScore++;
+			break;
+		}
+		System.out.println(currentPlayer + " has scored a point!");
+		/* SFX
+		if (score % 10 == 0) {
+			sfx[2].play();
+			lives++;
+		} else
+			sfx[0].play();
+		*/
+	}
+	
+	/**
+	 * Returns a random rotation controller object
+	 * @return
+	 */
+	private RotationController randomRotation() {
+		int axisSwitch = RAND.nextInt(3);
+		RotationController rotationController;
+		switch (axisSwitch) {
+			case 1:
+				rotationController = new RotationController(Vector3f.createUnitVectorX(), RAND.nextFloat());
+				break;
+			case 2:
+				rotationController = new RotationController(Vector3f.createUnitVectorY(), RAND.nextFloat());
+				break;
+			default:
+				rotationController = new RotationController(Vector3f.createUnitVectorZ(), RAND.nextFloat());
+		}
+		return rotationController;
+	}
+	
+	/**
+	 * Returns a random float array of size 3
+	 * @param args
+	 */
+	private float[] randomFloatArray(float upperBound) {
+		float[] randomFloat = {
+				(RAND.nextFloat() * upperBound), Math.abs((RAND.nextFloat() * upperBound)), (RAND.nextFloat() * upperBound)
+		};
+		for (int i = 0; i < randomFloat.length; i++) {
+			if (RAND.nextBoolean()) {
+				randomFloat[i] += RAND.nextFloat();
+			} else {
+				randomFloat[i] -= RAND.nextFloat();
+			}
+		}
+		return randomFloat;
 	}
 	
 	@Override
