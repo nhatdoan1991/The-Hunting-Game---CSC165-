@@ -20,7 +20,7 @@ public class AvatarJumpAction extends AbstractInputAction {
 		switch (player) {
 		case "dolphinEntityOneNode":
 			game.jumpP1 = true;
-			game.dolphinOnePhysicsObject.applyForce(0.0f, 1000.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+			game.dolphinOnePhysicsObject.applyForce(0.0f, 400.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 			game.velocityP1 = 0.0f;
 			break;
 		case "dolphinEntityTwoNode":

@@ -372,9 +372,9 @@ public class Camera3PController {
 		public void performAction(float time, net.java.games.input.Event e) {
 			float rotation;
 			if (e.getValue() < -0.2) {
-				rotation = 0.02f;
-			} else if (e.getValue() > 0.2) {
 				rotation = -0.02f;
+			} else if (e.getValue() > 0.2) {
+				rotation = 0.02f;
 			} else 
 				rotation = 0.0f;
 			radius += rotation;

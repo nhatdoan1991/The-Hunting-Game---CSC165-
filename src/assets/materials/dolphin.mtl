@@ -1,19 +1,12 @@
-newmtl DefaultMaterial
-# shininess
-Ns 75
-# ambient
+# Blender MTL File: 'dolphin.blend'
+# Material Count: 1
+
+newmtl initialShadingGroup
+Ns 1.000000
 Ka 1.000000 1.000000 1.000000
-# diffuse
-Kd 1.00000 1.00000 1.00000
-# specular
-Ks 1.000000 1.000000 1.000000
-# emissive
+Kd 0.500000 0.500000 0.500000
+Ks 0.000000 0.000000 0.000000
 Ke 0.000000 0.000000 0.000000
-# refraction
 Ni 1.000000
-# fully opaque
 d 1.000000
-# illumination model
-illum 2
-# texture
-map_Kd Dolphin_HighPolyUV.png
+illum 1
