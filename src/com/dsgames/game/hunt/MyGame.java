@@ -27,7 +27,6 @@ import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
 import com.saechaol.game.myGameEngine.node.Controller.StretchController;
 import com.saechaol.game.myGameEngine.node.Controller.VerticalOrbitController;
 import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
-import com.saechaol.game.myGameEngine.object.manual.ManualCubeObject;
 import com.saechaol.game.myGameEngine.object.manual.ManualFloorObject;
 
 import net.java.games.input.Controller;
@@ -61,7 +60,6 @@ import ray.rage.scene.Light;
 import ray.rage.scene.ManualObject;
 import ray.rage.scene.Camera.Frustum.Projection;
 import ray.rage.scene.controllers.OrbitController;
-import ray.rage.scene.controllers.RotationController;
 import ray.rage.scene.Entity;
 import ray.rage.scene.SceneManager;
 import ray.rage.scene.SceneNode;
@@ -76,25 +74,23 @@ import ray.rml.Vector3f;
 
 public class MyGame extends VariableFrameRateGame {
 
-	public boolean running = true, jumpP1 = false, jumpP2 = false;
-	public float cooldownP1 = 0, cooldownP2 = 0;
-	public float velocityP1 = 0.0f, velocityP2 = 0.0f;
+	public boolean running = true, jumpP1 = false;
+	public float cooldownP1 = 0;
+	public float velocityP1 = 0.0f;
 	public HashMap<SceneNode, Boolean> playerCharge = new HashMap<SceneNode, Boolean>();
 	public IAudioManager audioManager;
-	public int chargeTimeP1 = 1000, chargeTimeP2 = 1000;
-	public SceneNode dolphinNodeOne, dolphinNodeTwo, originNode, tessellationNode;
+	public int chargeTimeP1 = 1000;
+	public SceneNode dolphinNodeOne, originNode, tessellationNode;
 	public PhysicsEngine physicsEngine;
-	public PhysicsObject ballOnePhysicsObject, ballTwoPhysicsObject, groundPlane, dolphinOnePhysicsObject,
-			dolphinTwoPhysicsObject;
-
-	private Action moveLeftActionP1, moveRightActionP1, moveForwardActionP1, moveBackwardActionP1, leftStickXActionP2,
-			leftStickYActionP2, exitGameAction, skipSongAction, avatarJumpActionP1, avatarJumpActionP2,
-			avatarChargeActionP1, avatarChargeActionP2;
-	private Camera3PController orbitCameraOne, orbitCameraTwo;
+	public PhysicsObject ballOnePhysicsObject, groundPlane, dolphinOnePhysicsObject;
+			
+	private Action moveLeftActionP1, moveRightActionP1, moveForwardActionP1, moveBackwardActionP1, 
+			 exitGameAction, skipSongAction, avatarJumpActionP1,
+			avatarChargeActionP1;
+	private Camera3PController orbitCameraOne;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
-	private float orbitingAxis = 0.0f;
 	private InputManager inputManager;
-	private int playerOneInvulnerable = 0, playerTwoInvulnerable = 0, starUID = 0;
+	private int starUID = 0;
 	private OrbitController playerOrbitController;
 	private SceneNode groundNode;
 	private Sound[] music = new Sound[3];
@@ -116,7 +112,7 @@ public class MyGame extends VariableFrameRateGame {
 	float elapsedTime = 0.0f;
 	GL4RenderSystem renderSystem;
 	HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
-	int elapsedTimeSeconds, playerOneLives = 2, playerTwoLives = 2, playerOneScore = 0, playerTwoScore = 0,
+	int elapsedTimeSeconds, playerOneLives = 2, playerOneScore = 0, 
 			currentSong = 0;
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString,
 			playerTwoScoreString;
@@ -170,22 +166,13 @@ public class MyGame extends VariableFrameRateGame {
 		SceneNode rootNode = sceneManager.getRootSceneNode();
 
 		Camera cameraOne = sceneManager.createCamera("cameraOne", Projection.PERSPECTIVE);
-		renderWindow.getViewport(1).setCamera(cameraOne);
+		renderWindow.getViewport(0).setCamera(cameraOne);
 
 		SceneNode cameraOneNode = rootNode.createChildSceneNode(cameraOne.getName() + "Node");
 
 		cameraOneNode.attachObject(cameraOne);
 		cameraOne.setMode('n');
 		cameraOne.getFrustum().setFarClipDistance(1000.0f);
-
-		Camera cameraTwo = sceneManager.createCamera("cameraTwo", Projection.PERSPECTIVE);
-		renderWindow.getViewport(0).setCamera(cameraTwo);
-
-		SceneNode cameraTwoNode = rootNode.createChildSceneNode(cameraTwo.getName() + "Node");
-
-		cameraTwoNode.attachObject(cameraTwo);
-		cameraTwo.setMode('n');
-		cameraTwo.getFrustum().setFarClipDistance(1000.0f);
 	}
 
 	/**
@@ -218,28 +205,20 @@ public class MyGame extends VariableFrameRateGame {
 
 
 		Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "dolphin.obj");
-		Entity dolphinEntityTwo = sceneManager.createEntity("dolphinEntityTwo", "dolphin.obj");
 
 		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
-		dolphinEntityTwo.setPrimitive(Primitive.TRIANGLES);
 
 		dolphinNodeOne = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityOne.getName() + "Node");
-		dolphinNodeTwo = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityTwo.getName() + "Node");
 
 		dolphinNodeOne.attachObject(dolphinEntityOne);
-		dolphinNodeTwo.attachObject(dolphinEntityTwo);
 
 		playerCharge.put(dolphinNodeOne, false);
-		playerCharge.put(dolphinNodeTwo, false);
 
 		playerStretchController = new StretchController();
 		sceneManager.addController(playerStretchController);
 
 		playerOrbitController = new OrbitController(dolphinNodeOne, 1.0f, 0.5f, 0.0f, false);
 		sceneManager.addController(playerOrbitController);
-
-		playerOrbitControllerVertical = new VerticalOrbitController(dolphinNodeTwo, 1.0f, 0.5f, 0.0f, false);
-		sceneManager.addController(playerOrbitControllerVertical);
 
 		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
 
@@ -276,27 +255,18 @@ public class MyGame extends VariableFrameRateGame {
 		pointLightFlashTwo.setQuadraticAttenuation(0.001f);
 		pointLightFlashTwo.setFalloffExponent(40.0f);
 		pointLightFlashTwo.setRange(20.0f);
-		SceneNode flashNodeTwo = dolphinNodeTwo.createChildSceneNode(pointLightFlashTwo.getName() + "Node");
-		flashNodeTwo.attachObject(pointLightFlashTwo);
 
 		dolphinNodeOne.moveLeft(3.0f);
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
 
-		dolphinNodeTwo.moveRight(3.0f);
-		dolphinNodeTwo.scale(0.04f, 0.04f, 0.04f);
-
 		Texture dolphinOneTexture = textureManager.getAssetByPath("leggedDolphinRed.png");
-		Texture dolphinTwoTexture = textureManager.getAssetByPath("leggedDolphinBlue.png");
 
 		TextureState dolphinOneTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		TextureState dolphinTwoTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 
 		dolphinOneTextureState.setTexture(dolphinOneTexture);
-		dolphinTwoTextureState.setTexture(dolphinTwoTexture);
 
 		dolphinEntityOne.setRenderState(dolphinOneTextureState);
-		dolphinEntityTwo.setRenderState(dolphinTwoTextureState);
-
+		
 		setupInputs(sceneManager);
 
 		ManualObject groundEntity = ManualFloorObject.manualFloorObject(engine, sceneManager);
@@ -405,15 +375,7 @@ public class MyGame extends VariableFrameRateGame {
 		dolphinOnePhysicsObject.setSleepThresholds(0.0f, 0.0f);
 		dolphinNodeOne.setPhysicsObject(dolphinOnePhysicsObject);
 
-		transform = toDoubleArray(dolphinNodeTwo.getLocalTransform().toFloatArray());
-		dolphinTwoPhysicsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
-
-		dolphinTwoPhysicsObject.setBounciness(0.0f);
-		dolphinTwoPhysicsObject.setFriction(0.0f);
-		dolphinTwoPhysicsObject.setDamping(0.99f, 0.99f);
-		dolphinTwoPhysicsObject.setSleepThresholds(0.0f, 0.0f);
-		dolphinNodeTwo.setPhysicsObject(dolphinTwoPhysicsObject);
-
+		
 		transform = toDoubleArray(groundNode.getLocalTransform().toFloatArray());
 		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), transform, up, 0.0f);
 
@@ -437,11 +399,8 @@ public class MyGame extends VariableFrameRateGame {
 		renderWindow.addMouseWheelListener(this);
 
 		Viewport playerOneViewport = renderWindow.getViewport(0);
-		playerOneViewport.setDimensions(0.0f, 0.0f, 1.0f, 0.5f);
+		playerOneViewport.setDimensions(0.0f, 0.0f, 1.0f, 1.0f);
 		playerOneViewport.setClearColor(new Color(0.5f, 1.0f, 0.5f));
-
-		Viewport playerTwoViewport = renderWindow.createViewport(0.5f, 0.0f, 1.0f, 0.5f);
-		playerTwoViewport.setClearColor(new Color(0.5f, 1.0f, 0.5f));
 	}
 
 	protected void setupSkybox(Engine engine, SceneManager sceneManager) throws IOException {
@@ -488,33 +447,26 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	protected void setupOrbitCameras(Engine engine, SceneManager sceneManager) {
 		SceneNode cameraOneNode = sceneManager.getSceneNode("cameraOneNode");
-		SceneNode cameraTwoNode = sceneManager.getSceneNode("cameraTwoNode");
 
 		Camera cameraOne = sceneManager.getCamera("cameraOne");
-		Camera cameraTwo = sceneManager.getCamera("cameraTwo");
 
 		String keyboardName = inputManager.getKeyboardName();
-		String gamepadName = inputManager.getFirstGamepadName();
 
 		orbitCameraOne = new Camera3PController(cameraOne, cameraOneNode, dolphinNodeOne, keyboardName, inputManager);
-		orbitCameraTwo = new Camera3PController(cameraTwo, cameraTwoNode, dolphinNodeTwo, gamepadName, inputManager);
 	}
 
 	protected void setupInputs(SceneManager sceneManager) {
-		String gamepadName = inputManager.getFirstGamepadName();
+		
+		//String gamepadName = inputManager.getFirstGamepadName();
 
 		moveLeftActionP1 = new AvatarMoveLeftAction(this, dolphinNodeOne.getName());
 		moveRightActionP1 = new AvatarMoveRightAction(this, dolphinNodeOne.getName());
 		moveForwardActionP1 = new AvatarMoveForwardAction(this, dolphinNodeOne.getName());
 		moveBackwardActionP1 = new AvatarMoveBackwardAction(this, dolphinNodeOne.getName());
-		leftStickXActionP2 = new AvatarLeftStickXAction(this, dolphinNodeTwo.getName());
-		leftStickYActionP2 = new AvatarLeftStickYAction(this, dolphinNodeTwo.getName());
 		exitGameAction = new ExitGameAction(this);
 		skipSongAction = new SkipSongAction(this);
 		avatarJumpActionP1 = new AvatarJumpAction(this, dolphinNodeOne.getName());
-		avatarJumpActionP2 = new AvatarJumpAction(this, dolphinNodeTwo.getName());
 		avatarChargeActionP1 = new AvatarChargeAction(this, dolphinNodeOne.getName());
-		avatarChargeActionP2 = new AvatarChargeAction(this, dolphinNodeTwo.getName());
 		
 		/*
 		 * Player One - KB
@@ -571,7 +523,7 @@ public class MyGame extends VariableFrameRateGame {
 		 * - LT 		: Z+ 		: Zoom out 
 		 * - RT 		: Z- 		: Zoom in
 		 */
-		if (gamepadName == null) {
+		/*if (gamepadName == null) {
 			System.out.println("No gamepad detected!");
 		} else {
 			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Axis.X,
@@ -594,7 +546,7 @@ public class MyGame extends VariableFrameRateGame {
 
 			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Button._3,
 					skipSongAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		}
+		}*/
 
 	}
 
@@ -618,10 +570,8 @@ public class MyGame extends VariableFrameRateGame {
 		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
 		playerOneLivesString = Integer.toString(playerOneLives);
-		playerTwoLivesString = Integer.toString(playerTwoLives);
 		playerOneScoreString = Integer.toString(playerOneScore);
-		playerTwoScoreString = Integer.toString(playerTwoScore);
-
+	
 		displayString = "Player One Time: " + elapsedTimeString;
 		displayString += " | Lives = " + playerOneLivesString;
 		displayString += " | Score = " + playerOneScoreString;
@@ -648,37 +598,7 @@ public class MyGame extends VariableFrameRateGame {
 			displayString += "Claude Debussy - Reverie";
 			break;
 		}
-
-		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(1).getActualBottom()) + 15);
-
-		displayString = "Player Two Time: " + elapsedTimeString;
-		displayString += " | Lives = " + playerTwoLivesString;
-		displayString += " | Score = " + playerTwoScoreString;
-		displayString += " | Position: (" + formatFloat.format(dolphinNodeTwo.getWorldPosition().x()) + ", "
-				+ formatFloat.format(dolphinNodeTwo.getWorldPosition().y()) + ", "
-				+ formatFloat.format(dolphinNodeTwo.getWorldPosition().z()) + ")";
-		if (cooldownP2 - elapsedTimeSeconds < 0) {
-			displayString += " | Charge Ready!";
-			playerStretchController.removeNode(dolphinNodeTwo);
-		} else if (cooldownP2 - elapsedTimeSeconds > 10) {
-			displayString += " | Charge active!";
-		} else {
-			displayString += " | Charge cooldown: " + (cooldownP2 - elapsedTimeSeconds);
-		}
-		displayString += " | Current song: ";
-		switch (currentSong % 3) {
-		case 0:
-			displayString += "Claude Debussy - Suite bergamasque ~ Clair de lune";
-			break;
-		case 1:
-			displayString += "Claude Debussy - Arabesque No. 1";
-			break;
-		case 2:
-			displayString += "Claude Debussy - Reverie";
-			break;
-		}
-
-		renderSystem.setHUD2(displayString, 15, 15);
+		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(0).getActualBottom())+2);
 		updateVerticalPosition();
 		inputManager.update(elapsedTime);
 
@@ -686,7 +606,7 @@ public class MyGame extends VariableFrameRateGame {
 
 		if (jumpP1) {
 			velocityP1 -= 1.0f;
-			if (Math.abs(velocityP2) > TERMINAL_VELOCITY) {
+			if (Math.abs(velocityP1) > TERMINAL_VELOCITY) {
 				velocityP1 = TERMINAL_VELOCITY * -1;
 			}
 			dolphinNodeOne.getPhysicsObject().applyForce(0.0f, velocityP1, 0.0f, 0.0f, 0.0f, 0.0f);
@@ -695,27 +615,9 @@ public class MyGame extends VariableFrameRateGame {
 			jumpP1 = false;
 		}
 
-		if (dolphinNodeTwo.getWorldPosition().y() > 1.0f && jumpP2) {
-			velocityP2 -= 1.0f;
-			if (Math.abs(velocityP2) > TERMINAL_VELOCITY) {
-				velocityP2 = TERMINAL_VELOCITY * -1;
-			}
-			dolphinNodeTwo.getPhysicsObject().applyForce(0.0f, velocityP2, 0.0f, 0.0f, 0.0f, 0.0f);
-		} else if (dolphinNodeTwo.getWorldPosition().y() <= 0.5f && jumpP2) {
-			velocityP2 = 0.0f;
-			jumpP2 = false;
-		}
 
 		orbitCameraOne.updateCameraPosition();
-		orbitCameraTwo.updateCameraPosition();
-
-		
-		if (elapsedTime > 500.0) {
-			playerCollisionDetection();
-			
-		}
-		
-
+	
 	}
 	
 	
@@ -741,24 +643,6 @@ public class MyGame extends VariableFrameRateGame {
 			jumpP1 = true;
 		}
 
-		Vector3 avatarWorldPositionP2 = dolphinNodeTwo.getWorldPosition();
-		Vector3 avatarLocalPositionP2 = dolphinNodeTwo.getLocalPosition();
-		Vector3 terrainPositionP2 = (Vector3) Vector3f.createFrom(avatarLocalPositionP2.x(),
-				tessellationEntity.getWorldHeight(avatarWorldPositionP2.x(), avatarWorldPositionP2.z()) + 0.5f,
-				avatarLocalPositionP2.z());
-
-		if (avatarLocalPositionP2.y() <= terrainPositionP2.y() + 0.5f) {
-			Vector3 avatarPositionP2 = terrainPositionP2;
-			dolphinNodeTwo.setLocalPosition(avatarPositionP2);
-			synchronizeAvatarPhysics(dolphinNodeTwo);
-			if (jumpP2) {
-				dolphinNodeTwo.getPhysicsObject().applyForce(0.0f, 2000.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-				jumpP2 = false;
-			}
-		} else if (avatarLocalPositionP2.y() > terrainPositionP2.y() + 1.0f) {
-			jumpP2 = true;
-		}
-
 	}
 
 	/**
@@ -779,9 +663,6 @@ public class MyGame extends VariableFrameRateGame {
 		if (elapsedTimeSeconds > chargeTimeP1) {
 			playerCharge.put(dolphinNodeOne, false);
 		}
-		if (elapsedTimeSeconds > chargeTimeP2) {
-			playerCharge.put(dolphinNodeTwo, false);
-		}
 	}
 
 	/**
@@ -790,64 +671,6 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	public void addToStretchController(SceneNode player) {
 		playerStretchController.addNode(player);
-	}
-
-	/**
-	 * Checks player to player collision detection, as well as player charge
-	 */
-	private void playerCollisionDetection() {
-		boolean playerOneCharge = playerCharge.get(dolphinNodeOne);
-		boolean playerTwoCharge = playerCharge.get(dolphinNodeTwo);
-
-		Vector3f playerOnePosition = (Vector3f) dolphinNodeOne.getWorldPosition();
-		Vector3f playerTwoPosition = (Vector3f) dolphinNodeTwo.getWorldPosition();
-		if ((Math.pow((playerOnePosition.x() - playerTwoPosition.x()), 2)
-				+ Math.pow((playerOnePosition.y() - playerTwoPosition.y()), 2)
-				+ Math.pow((playerOnePosition.z() - playerTwoPosition.z()), 2)) < Math.pow((0.4f), 2.0f)) {
-			if (playerOneCharge && !playerTwoCharge && (playerTwoInvulnerable <= elapsedTimeSeconds)) { // P1 > P2
-				dolphinNodeTwo.setLocalPosition(3.0f, 0.0f, 0.0f);
-				double[] transformP2 = dolphinNodeTwo.getPhysicsObject().getTransform();
-				transformP2[12] = dolphinNodeTwo.getLocalPosition().x();
-				transformP2[13] = dolphinNodeTwo.getLocalPosition().y();
-				transformP2[14] = dolphinNodeTwo.getLocalPosition().z();
-				dolphinNodeTwo.getPhysicsObject().setTransform(transformP2);
-				decrementLives(dolphinNodeTwo.getName());
-				playerTwoInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
-
-			} else if (playerTwoCharge && !playerOneCharge && (playerOneInvulnerable <= elapsedTimeSeconds)) { // P2 >
-																												// P1
-				dolphinNodeOne.setLocalPosition(-3.0f, 0.0f, 0.0f);
-				double[] transformP1 = dolphinNodeOne.getPhysicsObject().getTransform();
-				transformP1[12] = dolphinNodeOne.getLocalPosition().x();
-				transformP1[13] = dolphinNodeOne.getLocalPosition().y();
-				transformP1[14] = dolphinNodeOne.getLocalPosition().z();
-				dolphinNodeOne.getPhysicsObject().setTransform(transformP1);
-				decrementLives(dolphinNodeOne.getName());
-				playerOneInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
-
-			} else if ((playerOneCharge && playerTwoCharge) || (!playerOneCharge && !playerTwoCharge)
-					&& (playerOneInvulnerable <= elapsedTimeSeconds && playerTwoInvulnerable <= elapsedTimeSeconds)) {
-				dolphinNodeOne.setLocalPosition(-3.0f, 0.0f, 0.0f);
-				dolphinNodeTwo.setLocalPosition(3.0f, 0.0f, 0.0f);
-
-				double[] transformP1 = dolphinNodeOne.getPhysicsObject().getTransform();
-				transformP1[12] = dolphinNodeOne.getLocalPosition().x();
-				transformP1[13] = dolphinNodeOne.getLocalPosition().y();
-				transformP1[14] = dolphinNodeOne.getLocalPosition().z();
-				dolphinNodeOne.getPhysicsObject().setTransform(transformP1);
-				playerOneLives--;
-				System.out.println("Player One took damage! ");
-				playerOneInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
-
-				double[] transformP2 = dolphinNodeTwo.getPhysicsObject().getTransform();
-				transformP2[12] = dolphinNodeTwo.getLocalPosition().x();
-				transformP2[13] = dolphinNodeTwo.getLocalPosition().y();
-				transformP2[14] = dolphinNodeTwo.getLocalPosition().z();
-				dolphinNodeTwo.getPhysicsObject().setTransform(transformP2);
-				decrementLives(dolphinNodeTwo.getName());
-				playerTwoInvulnerable = elapsedTimeSeconds + INVULNERABLE_SECONDS;
-			}
-		}
 	}
 	
 	public void synchronizeAvatarPhysics(SceneNode player) {
@@ -861,99 +684,7 @@ public class MyGame extends VariableFrameRateGame {
 			player.getPhysicsObject().setTransform(toDoubleArray(player.getWorldTransform().toFloatArray()));
 		}
 	}
-	
-	/**
-	 * Called by the collision detection methods. When the player has lost all their
-	 * lives, the game will automatically close.
-	 */
-	private void decrementLives(String playerName) {
-		String currentPlayer;
-		sfx[1].play();
-		switch (playerName) {
-		case "dolphinEntityOneNode":
-			currentPlayer = "Player One";
-			if (playerOneLives >= 0) {
-				System.out.println(currentPlayer + " took damage!");
-				playerOneLives--;
-			}
-			break;
-		case "dolphinEntityTwoNode":
-			currentPlayer = "Player Two";
-			if (playerTwoLives >= 0) {
-				System.out.println(currentPlayer + " took damage!");
-				playerTwoLives--;
-			}
-			break;
-		}
 
-		if (playerOneLives < 0 || playerTwoLives < 0) {
-			if (playerOneLives > playerTwoLives) {
-				System.out.println("Player Two has lost. ");
-			} else if (playerTwoLives > playerOneLives) {
-				System.out.println("Player One has lost. ");
-			} else {
-				System.out.println("Both players have lost.");
-			}
-
-			if (playerOneScore > playerTwoScore) {
-				System.out.println("Player One took the score victory! ");
-			} else if (playerOneScore == playerTwoScore) {
-				System.out.println("Tied score! ");
-			} else if (playerTwoScore > playerOneScore) {
-				System.out.println("Player Two took the score victory! ");
-			}
-			audioManager.shutdown();
-			this.setState(Game.State.STOPPING);
-		}
-	}
-
-	/**
-	 * Increments player score and gives them an orbiting star
-	 * 
-	 * @throws IOException
-	 */
-	public void incrementScore(String playerName) throws IOException {
-		String currentPlayer = "";
-		Entity starEntity = this.getEngine().getSceneManager().createEntity("starEntity" + starUID, "star.obj");
-		starUID++;
-		starEntity.setPrimitive(Primitive.TRIANGLES);
-		starEntity.setRenderState(zState);
-
-		TextureState starTextureState = (TextureState) this.getEngine().getSceneManager().getRenderSystem()
-				.createRenderState(RenderState.Type.TEXTURE);
-		starTextureState.setTexture(starTexture);
-		starEntity.setRenderState(starTextureState);
-
-		SceneNode starNode = this.getEngine().getSceneManager().getRootSceneNode()
-				.createChildSceneNode(starEntity.getName() + "Node");
-		starNode.attachObject(starEntity);
-		starNode.scale(0.05f, 0.05f, 0.05f);
-		switch (playerName) {
-		case "dolphinEntityOneNode":
-			currentPlayer = "Player One";
-			playerOrbitController.addNode(starNode);
-			playerOrbitController.setDistanceFromTarget(playerOrbitController.getDistanceFromTarget() + 0.05f);
-			playerOneScore++;
-			if (playerOneScore % 10 == 0) {
-				sfx[2].play();
-				playerOneLives++;
-			} else
-				sfx[0].play();
-			break;
-		case "dolphinEntityTwoNode":
-			currentPlayer = "Player Two";
-			playerOrbitControllerVertical.addNode(starNode);
-			playerOrbitControllerVertical.setDistance(playerOrbitControllerVertical.getDistance() + 0.05f);
-			playerTwoScore++;
-			if (playerTwoScore % 10 == 0) {
-				sfx[2].play();
-				playerTwoLives++;
-			} else
-				sfx[0].play();
-			break;
-		}
-		System.out.println(currentPlayer + " has scored a point!");
-	}
 	/**
 	 * Returns a random float array of size 3
 	 * 

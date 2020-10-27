@@ -31,18 +31,6 @@ public class AvatarChargeAction extends AbstractInputAction {
 				System.out.println("In cooldown!");
 			}
 			break;
-		case "dolphinEntityTwoNode":
-			if (game.playerCharge.get(game.dolphinNodeTwo)) {
-				System.out.println("Player two already charged!");
-			} else if (game.cooldownP2 < timeSeconds && !game.playerCharge.get(game.dolphinNodeTwo)) {
-				game.chargeTimeP2 = timeSeconds + 3;
-				game.playerCharge.put(game.dolphinNodeTwo, true);
-				game.addToStretchController(game.dolphinNodeTwo);
-				game.cooldownP2 = timeSeconds + 13;
-			} else {
-				System.out.println("In cooldown!");
-			}
-			break;
 		}
 	}
 

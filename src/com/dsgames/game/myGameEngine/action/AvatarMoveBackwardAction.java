@@ -26,13 +26,6 @@ public class AvatarMoveBackwardAction extends AbstractInputAction {
 				game.dolphinNodeOne.moveBackward(speed * 1.5f);
 			game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 			break;
-		case "dolphinEntityTwoNode":
-			if (game.playerCharge.get(game.dolphinNodeTwo))
-				game.dolphinNodeTwo.moveBackward(speed * 3.0f);
-			else
-				game.dolphinNodeTwo.moveBackward(speed * 1.5f);
-			game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
-			break;
 		}
 	}
 

@@ -26,13 +26,6 @@ public class AvatarMoveRightAction extends AbstractInputAction {
 				game.dolphinNodeOne.moveRight(-speed * 1.5f);
 			game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 			break;
-		case "dolphinEntityTwoNode":
-			if (game.playerCharge.get(game.dolphinNodeTwo))
-				game.dolphinNodeTwo.moveRight(-speed * 3.0f);
-			else
-				game.dolphinNodeTwo.moveRight(-speed * 1.5f);
-			game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
-			break;
 		}
 	}
 

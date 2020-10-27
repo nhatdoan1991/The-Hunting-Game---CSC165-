@@ -30,12 +30,6 @@ public class AvatarLeftStickXAction extends AbstractInputAction {
 					game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 					break;
 				case "dolphinEntityTwoNode":
-					if (game.playerCharge.get(game.dolphinNodeTwo))
-						game.dolphinNodeTwo.moveRight(-speed * 3.0f);
-					else
-						game.dolphinNodeTwo.moveRight(-speed * 1.5f);
-					game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
-					break;
 				}
 			} else if (speed < 0) {
 				switch (player) {
@@ -47,12 +41,6 @@ public class AvatarLeftStickXAction extends AbstractInputAction {
 					game.synchronizeAvatarPhysics(game.dolphinNodeOne);
 					break;
 				case "dolphinEntityTwoNode":
-					if (game.playerCharge.get(game.dolphinNodeTwo))
-						game.dolphinNodeTwo.moveLeft(speed * 3.0f);
-					else
-						game.dolphinNodeTwo.moveLeft(speed * 1.5f);
-					game.synchronizeAvatarPhysics(game.dolphinNodeTwo);
-					break;
 				}
 			}
 		}

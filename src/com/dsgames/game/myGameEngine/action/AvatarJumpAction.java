@@ -23,11 +23,6 @@ public class AvatarJumpAction extends AbstractInputAction {
 			game.dolphinOnePhysicsObject.applyForce(0.0f, 400.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 			game.velocityP1 = 0.0f;
 			break;
-		case "dolphinEntityTwoNode":
-			game.jumpP2 = true;
-			game.dolphinTwoPhysicsObject.applyForce(0.0f, 400.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-			game.velocityP2 = 0.0f;
-			break;
 		}
 	}
 
