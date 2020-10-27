@@ -20,8 +20,8 @@ import com.dsgames.game.myGameEngine.action.AvatarMoveLeftAction;
 import com.dsgames.game.myGameEngine.action.AvatarMoveRightAction;
 import com.dsgames.game.myGameEngine.action.ExitGameAction;
 import com.dsgames.game.myGameEngine.action.SkipSongAction;
-import com.dsgames.game.myGameEngine.action.a2.AvatarChargeAction;
-import com.dsgames.game.myGameEngine.action.a2.AvatarJumpAction;
+import com.dsgames.game.myGameEngine.action.AvatarChargeAction;
+import com.dsgames.game.myGameEngine.action.AvatarJumpAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
 import com.saechaol.game.myGameEngine.node.Controller.StretchController;
@@ -94,7 +94,7 @@ public class MyGame extends VariableFrameRateGame {
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private float orbitingAxis = 0.0f;
 	private InputManager inputManager;
-	private int playerOneInvulnerable = 0, playerTwoInvulnerable = 0, starUID = 0, totalPlanetCount = 0;
+	private int playerOneInvulnerable = 0, playerTwoInvulnerable = 0, starUID = 0;
 	private OrbitController playerOrbitController;
 	private SceneNode groundNode;
 	private Sound[] music = new Sound[3];
@@ -102,8 +102,7 @@ public class MyGame extends VariableFrameRateGame {
 	private StretchController playerStretchController;
 	private Tessellation tessellationEntity;
 	private TextureManager textureManager;
-	private Texture moonTexture, starTexture;
-	private Texture[] planetTextures;
+	private Texture starTexture;
 	private VerticalOrbitController playerOrbitControllerVertical;
 	private ZBufferState zState;
 
@@ -114,12 +113,6 @@ public class MyGame extends VariableFrameRateGame {
 	private final static String GROUND_NODE = "GroundNode";
 	private static final String SKYBOX = "OceanSkybox";
 
-	ArrayList<SceneNode> cubeMoonNodes = new ArrayList<SceneNode>();
-	ArrayList<SceneNode> planetNodes = new ArrayList<SceneNode>();
-	ArrayList<OrbitController> galaxyOrbitController = new ArrayList<OrbitController>();
-	ArrayList<OrbitController> planetOrbitController = new ArrayList<OrbitController>();
-	ArrayList<RotationController> cubeMoonRotationControllers = new ArrayList<RotationController>();
-	ArrayList<RotationController> planetRotationControllers = new ArrayList<RotationController>();
 	float elapsedTime = 0.0f;
 	GL4RenderSystem renderSystem;
 	HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
@@ -215,15 +208,6 @@ public class MyGame extends VariableFrameRateGame {
 		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
 		zState.setEnabled(true);
 
-		planetTextures = new Texture[6];
-		planetTextures[0] = textureManager.getAssetByPath("earth-day.jpeg");
-		planetTextures[1] = textureManager.getAssetByPath("blue.jpeg");
-		planetTextures[2] = textureManager.getAssetByPath("hexagons.jpeg");
-		planetTextures[3] = textureManager.getAssetByPath("earth-night.jpeg");
-		planetTextures[4] = textureManager.getAssetByPath("red.jpeg");
-		planetTextures[5] = textureManager.getAssetByPath("chain-fence.jpeg");
-		moonTexture = textureManager.getAssetByPath("moon.jpeg");
-		starTexture = textureManager.getAssetByPath("star.png");
 
 		// initialize world axes
 		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
@@ -232,10 +216,6 @@ public class MyGame extends VariableFrameRateGame {
 		originNode = sceneManager.getRootSceneNode().createChildSceneNode("originNode");
 		originNode.setLocalPosition(0.0f, 5.0f, 0.0f);
 
-		// initialize planets
-		for (int i = 0; i < 6; i++) {
-			activePlanets.put(instantiateNewPlanet(engine, sceneManager), true);
-		}
 
 		Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "dolphin.obj");
 		Entity dolphinEntityTwo = sceneManager.createEntity("dolphinEntityTwo", "dolphin.obj");
@@ -523,7 +503,7 @@ public class MyGame extends VariableFrameRateGame {
 	protected void setupInputs(SceneManager sceneManager) {
 		String gamepadName = inputManager.getFirstGamepadName();
 
-		/*moveLeftActionP1 = new AvatarMoveLeftAction(this, dolphinNodeOne.getName());
+		moveLeftActionP1 = new AvatarMoveLeftAction(this, dolphinNodeOne.getName());
 		moveRightActionP1 = new AvatarMoveRightAction(this, dolphinNodeOne.getName());
 		moveForwardActionP1 = new AvatarMoveForwardAction(this, dolphinNodeOne.getName());
 		moveBackwardActionP1 = new AvatarMoveBackwardAction(this, dolphinNodeOne.getName());
@@ -535,7 +515,7 @@ public class MyGame extends VariableFrameRateGame {
 		avatarJumpActionP2 = new AvatarJumpAction(this, dolphinNodeTwo.getName());
 		avatarChargeActionP1 = new AvatarChargeAction(this, dolphinNodeOne.getName());
 		avatarChargeActionP2 = new AvatarChargeAction(this, dolphinNodeTwo.getName());
-		*/
+		
 		/*
 		 * Player One - KB
 		 * - WASD 		: Move 
@@ -729,18 +709,12 @@ public class MyGame extends VariableFrameRateGame {
 		orbitCameraOne.updateCameraPosition();
 		orbitCameraTwo.updateCameraPosition();
 
+		
 		if (elapsedTime > 500.0) {
-			moonCollisionDetection(dolphinNodeOne);
-			moonCollisionDetection(dolphinNodeTwo);
-
-			planetCollisionDetection(dolphinNodeOne);
-			planetCollisionDetection(dolphinNodeTwo);
-
 			playerCollisionDetection();
-
-			replacePlanet();
-			incrementMoonOrbitAxis();
+			
 		}
+		
 
 	}
 	
@@ -875,56 +849,7 @@ public class MyGame extends VariableFrameRateGame {
 			}
 		}
 	}
-
-	/**
-	 * Helper function for planetCollisionDetection and incrementScore. Replaces the
-	 * planet within the activePlanets HashMap with a new planet, while mindful of
-	 * concurrently modifying the activePlanets HashMap
-	 */
-	private void replacePlanet() {
-		HashMap<SceneNode, Boolean> currentlyActive = new HashMap<SceneNode, Boolean>();
-		activePlanets.forEach((k, v) -> {
-			if (!v) {
-				int planetIndex = planetNodes.indexOf(k);
-				// remove planet and moon from collection
-				planetNodes.remove(k);
-				SceneNode kMoon = cubeMoonNodes.remove(planetIndex);
-
-				// remove node controllers
-				galaxyOrbitController.remove(planetIndex);
-				planetOrbitController.remove(planetIndex);
-				planetRotationControllers.remove(planetIndex);
-				cubeMoonRotationControllers.remove(planetIndex);
-				this.getEngine().getSceneManager().destroySceneNode(k);
-				this.getEngine().getSceneManager().destroySceneNode(kMoon);
-
-				try {
-					currentlyActive.put(instantiateNewPlanet(this.getEngine(), this.getEngine().getSceneManager()),
-							true);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			} else {
-				currentlyActive.put(k, v);
-			}
-
-		});
-		activePlanets = currentlyActive;
-	}
-
-	/**
-	 * Simulates a sinusodial axial tilt by multiplying the orbit controller's
-	 * vertical distance by sin(x)
-	 */
-	private void incrementMoonOrbitAxis() {
-		Iterator<OrbitController> orbitControllerIterator = planetOrbitController.iterator();
-		orbitControllerIterator.forEachRemaining(controller -> {
-			controller.setVerticalDistance((float) Math.sin(orbitingAxis) * 10.0f);
-		});
-		orbitingAxis += 0.05f;
-		orbitingAxis %= 360;
-	}
-
+	
 	public void synchronizeAvatarPhysics(SceneNode player) {
 		if (running) {
 			double[] transform = player.getPhysicsObject().getTransform();
@@ -936,163 +861,7 @@ public class MyGame extends VariableFrameRateGame {
 			player.getPhysicsObject().setTransform(toDoubleArray(player.getWorldTransform().toFloatArray()));
 		}
 	}
-
-	/**
-	 * Instantiates a planet with a random texture. Called by setupScene to
-	 * initialize at least one planet of every texture. Planets are instantiated in
-	 * random locations some units away from the origin.
-	 * 
-	 * @param engine
-	 * @param sceneManager
-	 * @return
-	 * @throws IOException
-	 */
-	private SceneNode instantiateNewPlanet(Engine engine, SceneManager sceneManager) throws IOException {
-		Entity planetEntity = sceneManager.createEntity("planetEntity" + totalPlanetCount, "earth.obj");
-		ManualObject cubeEntity = ManualCubeObject.makeCubeObject(engine, sceneManager,
-				Integer.toString(totalPlanetCount));
-		Texture planetTexture;
-		RenderSystem renderSystem = sceneManager.getRenderSystem();
-
-		// initial planet instantiation
-		switch (totalPlanetCount) {
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-			planetTexture = planetTextures[totalPlanetCount];
-			break;
-		default:
-			planetTexture = planetTextures[RAND.nextInt(6)];
-		}
-
-		float[] coordinates = randomFloatArray(79.0f);
-
-		// initialize randomized parameters for the galaxy orbit controller
-		float[] galaxyOrbitParameters = { RAND.nextFloat() * 0.1f, (RAND.nextFloat() * 65.0f) + 25.0f,
-				(RAND.nextFloat() * 1.0f) };
-
-		// initialize randomized parameters for the planet-moon orbit controller
-		float[] planetOrbitParameters = { RAND.nextFloat() * 5.0f, (RAND.nextFloat() * 20.0f) + 5.0f, };
-
-		if (RAND.nextBoolean()) {
-			galaxyOrbitParameters[2] *= -1.0f;
-		}
-
-		planetEntity.setPrimitive(Primitive.TRIANGLES);
-		cubeEntity.setPrimitive(Primitive.TRIANGLES);
-
-		planetEntity.setRenderState(zState);
-		cubeEntity.setRenderState(zState);
-
-		SceneNode planetNode = originNode.createChildSceneNode(planetEntity.getName() + "Node");
-		SceneNode cubeNode = originNode.createChildSceneNode(cubeEntity.getName() + "Node");
-
-		TextureState planetTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		planetTextureState.setTexture(planetTexture);
-		planetEntity.setRenderState(planetTextureState);
-
-		TextureState cubeTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-		cubeTextureState.setTexture(moonTexture);
-		cubeEntity.setRenderState(cubeTextureState);
-
-		// initialize planet and moon positions
-		planetNode.setLocalPosition(coordinates[0], coordinates[1], coordinates[2]);
-		cubeNode.setLocalPosition(planetNode.getLocalPosition());
-
-		// attach entities to nodes
-		planetNode.attachObject(planetEntity);
-		cubeNode.attachObject(cubeEntity);
-		galaxyOrbitController.add(new OrbitController(originNode, galaxyOrbitParameters[0], galaxyOrbitParameters[1],
-				galaxyOrbitParameters[2] + 8.0f, RAND.nextBoolean()));
-		planetOrbitController.add(new OrbitController(planetNode, planetOrbitParameters[0], planetOrbitParameters[1],
-				0.0f, RAND.nextBoolean()));
-
-		// add rotation controllers if node is NOT always facing target
-		if (!galaxyOrbitController.get(galaxyOrbitController.size() - 1).isAlwaysFacingTarget()) {
-			RotationController planetRotation = randomRotation();
-			planetRotationControllers.add(planetRotation);
-			planetRotation.addNode(planetNode);
-			sceneManager.addController(planetRotation);
-		} else {
-			planetRotationControllers.add(null); // maintain size integrity
-		}
-
-		if (!planetOrbitController.get(planetOrbitController.size() - 1).isAlwaysFacingTarget()) {
-			RotationController moonRotation = randomRotation();
-			cubeMoonRotationControllers.add(moonRotation);
-			moonRotation.addNode(cubeNode);
-			sceneManager.addController(moonRotation);
-		} else {
-			cubeMoonRotationControllers.add(null); // maintain size integrity
-		}
-
-		planetNodes.add(planetNode);
-		cubeMoonNodes.add(cubeNode);
-
-		galaxyOrbitController.get(galaxyOrbitController.size() - 1).addNode(planetNode);
-		planetOrbitController.get(planetOrbitController.size() - 1).addNode(cubeNode);
-
-		sceneManager.addController(galaxyOrbitController.get(galaxyOrbitController.size() - 1));
-		sceneManager.addController(planetOrbitController.get(planetOrbitController.size() - 1));
-
-		totalPlanetCount++;
-
-		return planetNode;
-	}
-
-	/**
-	 * Uses the formula for the radius of a sphere and check's if the player's
-	 * position intersects the resulting value to calculate collision detection. If
-	 * true, the player is given a score, and the planet is removed from the game
-	 * and replaced with a new planet.
-	 */
-	private void planetCollisionDetection(SceneNode player) {
-		activePlanets.forEach((k, v) -> {
-			if (v) {
-				Vector3f playerPosition = (Vector3f) player.getWorldPosition();
-				Vector3f planetPosition = (Vector3f) k.getWorldPosition();
-				if ((Math.pow((playerPosition.x() - planetPosition.x()), 2)
-						+ Math.pow((playerPosition.y() - planetPosition.y()), 2)
-						+ Math.pow((playerPosition.z() - planetPosition.z()), 2)) < Math.pow((2.15f), 2.0f)) {
-					try {
-						incrementScore(player.getName());
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					activePlanets.put(k, false);
-				}
-			}
-		});
-	}
-
-	/**
-	 * Checks to see if the player has collided with one of the moons, and
-	 * decrements their lives accordingly
-	 */
-	private void moonCollisionDetection(SceneNode player) {
-		Iterator<SceneNode> activeMoonsIterator = cubeMoonNodes.iterator();
-		activeMoonsIterator.forEachRemaining(node -> {
-			Vector3f dolphinPosition = (Vector3f) player.getLocalPosition();
-			if ((Math.pow((dolphinPosition.x() - node.getLocalPosition().x()), 2)
-					+ Math.pow((dolphinPosition.y() - node.getLocalPosition().y()), 2)
-					+ Math.pow((dolphinPosition.z() - node.getLocalPosition().z()), 2)) < Math.pow((2.15f), 2.0f)) {
-				if (player.getName() == "dolphinEntityOneNode")
-					player.setLocalPosition(-3.0f, 0.0f, 0.0f);
-				else
-					player.setLocalPosition(3.0f, 0.0f, 0.0f);
-				double[] transform = player.getPhysicsObject().getTransform();
-				transform[12] = player.getLocalPosition().x();
-				transform[13] = player.getLocalPosition().y();
-				transform[14] = player.getLocalPosition().z();
-				player.getPhysicsObject().setTransform(transform);
-				decrementLives(player.getName());
-			}
-		});
-	}
-
+	
 	/**
 	 * Called by the collision detection methods. When the player has lost all their
 	 * lives, the game will automatically close.
@@ -1185,28 +954,6 @@ public class MyGame extends VariableFrameRateGame {
 		}
 		System.out.println(currentPlayer + " has scored a point!");
 	}
-
-	/**
-	 * Returns a random rotation controller object
-	 * 
-	 * @return
-	 */
-	private RotationController randomRotation() {
-		int axisSwitch = RAND.nextInt(3);
-		RotationController rotationController;
-		switch (axisSwitch) {
-		case 1:
-			rotationController = new RotationController(Vector3f.createUnitVectorX(), RAND.nextFloat());
-			break;
-		case 2:
-			rotationController = new RotationController(Vector3f.createUnitVectorY(), RAND.nextFloat());
-			break;
-		default:
-			rotationController = new RotationController(Vector3f.createUnitVectorZ(), RAND.nextFloat());
-		}
-		return rotationController;
-	}
-
 	/**
 	 * Returns a random float array of size 3
 	 * 
@@ -1263,7 +1010,7 @@ public class MyGame extends VariableFrameRateGame {
 
 	@Override
 	protected void loadConfiguration(Configuration config) throws IOException {
-		config.load("src/assets/config/a2.properties");
+		config.load("assets/config/a2.properties");
 	}
 
 	public static void main(String[] args) {

@@ -20,8 +20,8 @@ import com.dsgames.game.myGameEngine.action.AvatarMoveLeftAction;
 import com.dsgames.game.myGameEngine.action.AvatarMoveRightAction;
 import com.dsgames.game.myGameEngine.action.ExitGameAction;
 import com.dsgames.game.myGameEngine.action.SkipSongAction;
-import com.dsgames.game.myGameEngine.action.a2.AvatarChargeAction;
-import com.dsgames.game.myGameEngine.action.a2.AvatarJumpAction;
+import com.dsgames.game.myGameEngine.action.AvatarChargeAction;
+import com.dsgames.game.myGameEngine.action.AvatarJumpAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
 import com.saechaol.game.myGameEngine.node.Controller.StretchController;
@@ -523,7 +523,7 @@ public class MyGame extends VariableFrameRateGame {
 	protected void setupInputs(SceneManager sceneManager) {
 		String gamepadName = inputManager.getFirstGamepadName();
 
-		moveLeftActionP1 = new AvatarMoveLeftAction(this, dolphinNodeOne.getName());
+		/*moveLeftActionP1 = new AvatarMoveLeftAction(this, dolphinNodeOne.getName());
 		moveRightActionP1 = new AvatarMoveRightAction(this, dolphinNodeOne.getName());
 		moveForwardActionP1 = new AvatarMoveForwardAction(this, dolphinNodeOne.getName());
 		moveBackwardActionP1 = new AvatarMoveBackwardAction(this, dolphinNodeOne.getName());
@@ -535,7 +535,7 @@ public class MyGame extends VariableFrameRateGame {
 		avatarJumpActionP2 = new AvatarJumpAction(this, dolphinNodeTwo.getName());
 		avatarChargeActionP1 = new AvatarChargeAction(this, dolphinNodeOne.getName());
 		avatarChargeActionP2 = new AvatarChargeAction(this, dolphinNodeTwo.getName());
-		
+		*/
 		/*
 		 * Player One - KB
 		 * - WASD 		: Move 

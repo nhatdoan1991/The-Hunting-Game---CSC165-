@@ -1,6 +1,6 @@
 package com.dsgames.game.myGameEngine.action.a2;
 
-import com.saechaol.game.a2.MyGame;
+import com.dsgames.game.hunt.MyGame;
 
 import net.java.games.input.Event;
 import ray.input.action.AbstractInputAction;

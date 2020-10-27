@@ -1,5 +1,7 @@
 package com.dsgames.game.myGameEngine.action;
 
+import com.dsgames.game.hunt.MyGame;
+
 import ray.input.action.AbstractInputAction;
 import ray.rage.game.*;
 import net.java.games.input.Event;
