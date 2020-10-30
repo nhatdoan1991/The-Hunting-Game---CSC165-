@@ -4,13 +4,19 @@ import java.awt.Color;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import java.awt.geom.AffineTransform;
-import java.io.IOException;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+import java.io.*;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineFactory;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
+import javax.script.Invocable;
 
 import com.dsgames.game.myGameEngine.action.AvatarLeftStickXAction;
 import com.dsgames.game.myGameEngine.action.AvatarLeftStickYAction;
@@ -101,6 +107,9 @@ public class MyGame extends VariableFrameRateGame {
 	private Texture starTexture;
 	private VerticalOrbitController playerOrbitControllerVertical;
 	private ZBufferState zState;
+	
+	protected ScriptEngine jsEngine;
+	protected File test,addLight,setupSkybox;
 
 	private static final int INVULNERABLE_SECONDS = 3;
 	private static final int TERMINAL_VELOCITY = 1000;
@@ -189,8 +198,32 @@ public class MyGame extends VariableFrameRateGame {
 		if (renderSystem == null)
 			renderSystem = (GL4RenderSystem) engine.getRenderSystem();
 
-		setupSkybox(engine, sceneManager);
-
+		//setupSkybox(engine, sceneManager);
+		
+		ScriptEngineManager factory = new ScriptEngineManager();
+		java.util.List<ScriptEngineFactory> list = factory.getEngineFactories();
+		jsEngine = factory.getEngineByName("js");
+		
+		test = new File("test.js");
+		this.runScript(jsEngine, test);
+		Invocable invocableEngine = (Invocable) jsEngine ;
+		setupSkybox = new File("setupSkybox.js");
+		//jsEngine.put("sceneManager",sceneManager);
+		//jsEngine.put("engine",engine);
+		this.runScript(jsEngine,setupSkybox);
+		
+		try {
+			invocableEngine.invokeFunction("setupSkybox", sceneManager,engine,textureManager); 
+		}catch(ScriptException e1) {
+			System.out.println("ScriptException in " + setupSkybox + e1); 
+		}catch (NoSuchMethodException e2)
+		{   
+			System.out.println("No such method in " + setupSkybox + e2); 
+		}catch (NullPointerException e3)
+		{ 
+			System.out.println ("Null ptr exception reading " + setupSkybox + e3);
+		}
+		
 		// initialize zState
 		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
 		zState.setEnabled(true);
@@ -222,39 +255,30 @@ public class MyGame extends VariableFrameRateGame {
 
 		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
 
+		addLight = new File("addLight.js");
+		this.runScript(jsEngine,addLight);
+		
 		Light keyLight = sceneManager.createLight("keyLightOne", Light.Type.POINT);
-		keyLight.setAmbient(new Color(0.5f, 0.5f, 0.5f));
-		keyLight.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
-		keyLight.setSpecular(new Color(0.5f, 0.5f, 0.5f));
-		keyLight.setRange(500.0f);
-
 		SceneNode keyLightNode = sceneManager.getRootSceneNode().createChildSceneNode(keyLight.getName() + "Node");
-		keyLightNode.moveUp(500.0f);
-		keyLightNode.attachObject(keyLight);
-
+		
+		
 		Light pointLightFlashOne = sceneManager.createLight("pointLightFlashOne", Light.Type.SPOT);
-		pointLightFlashOne.setAmbient(new Color(0.25f, 0.25f, 0.25f));
-		pointLightFlashOne.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
-		pointLightFlashOne.setSpecular(new Color(0.5f, 0.5f, 0.5f));
-		pointLightFlashOne.setConeCutoffAngle(Degreef.createFrom(20.0f));
-		pointLightFlashOne.setConstantAttenuation(0.3f);
-		pointLightFlashOne.setLinearAttenuation(0.06f);
-		pointLightFlashOne.setQuadraticAttenuation(0.001f);
-		pointLightFlashOne.setFalloffExponent(40.0f);
-		pointLightFlashOne.setRange(30.0f);
 		SceneNode flashNodeOne = dolphinNodeOne.createChildSceneNode(pointLightFlashOne.getName() + "Node");
-		flashNodeOne.attachObject(pointLightFlashOne);
+		
+		//Invocable invocableEngine = (Invocable) jsEngine ;
+		try {
+			invocableEngine.invokeFunction("addKeyLight", keyLight,keyLightNode); 
+			invocableEngine.invokeFunction("addLightFlashOne", pointLightFlashOne,flashNodeOne);
+		}catch(ScriptException e1) {
+			System.out.println("ScriptException in " + addLight + e1); 
+		}catch (NoSuchMethodException e2)
+		{   
+			System.out.println("No such method in " + addLight + e2); 
+		}catch (NullPointerException e3)
+		{ 
+			System.out.println ("Null ptr exception reading " + addLight + e3);
+		}
 
-		Light pointLightFlashTwo = sceneManager.createLight("pointLightFlashTwo", Light.Type.SPOT);
-		pointLightFlashTwo.setAmbient(new Color(0.25f, 0.25f, 0.25f));
-		pointLightFlashTwo.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
-		pointLightFlashTwo.setSpecular(new Color(0.5f, 0.5f, 0.5f));
-		pointLightFlashTwo.setConeCutoffAngle(Degreef.createFrom(20.0f));
-		pointLightFlashTwo.setConstantAttenuation(0.3f);
-		pointLightFlashTwo.setLinearAttenuation(0.06f);
-		pointLightFlashTwo.setQuadraticAttenuation(0.001f);
-		pointLightFlashTwo.setFalloffExponent(40.0f);
-		pointLightFlashTwo.setRange(20.0f);
 
 		dolphinNodeOne.moveLeft(3.0f);
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
@@ -757,5 +781,27 @@ public class MyGame extends VariableFrameRateGame {
 			game.exit();
 		}
 	}
-
+	
+	private void runScript(ScriptEngine engine,File scriptFile) {
+		try    
+		{ 
+			FileReader fileReader = new FileReader(scriptFile);
+			engine.eval(fileReader);
+			fileReader.close();    
+		}
+		catch(FileNotFoundException e1) {
+			System.out.println(scriptFile + " not found " + e1); 
+		} catch (IOException e2)     
+		{ 
+			System.out.println("IO problem with " + scriptFile + e2); 
+		}catch (ScriptException e3)      
+		{ 
+			System.out.println("ScriptException in " + scriptFile + e3); 
+		}catch (NullPointerException e4)   
+		{ 
+			System.out.println ("Null ptr exception in " + scriptFile + e4); 
+		}
+	}
 }
+
+
