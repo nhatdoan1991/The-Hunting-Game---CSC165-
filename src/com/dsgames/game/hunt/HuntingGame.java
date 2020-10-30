@@ -72,7 +72,7 @@ import ray.rml.Matrix4f;
 import ray.rml.Vector3;
 import ray.rml.Vector3f;
 
-public class MyGame extends VariableFrameRateGame {
+public class HuntingGame extends VariableFrameRateGame {
 
 	public boolean running = true, jumpP1 = false;
 	public float cooldownP1 = 0;
@@ -117,7 +117,7 @@ public class MyGame extends VariableFrameRateGame {
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString,
 			playerTwoScoreString;
 
-	public MyGame() {
+	public HuntingGame() {
 		super();
 		System.out.println("Press 'W/A/S/D' or control the left stick to MOVE");
 		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ROTATE CAMERA");
@@ -741,12 +741,12 @@ public class MyGame extends VariableFrameRateGame {
 
 	@Override
 	protected void loadConfiguration(Configuration config) throws IOException {
-		config.load("assets/config/a2.properties");
+		config.load("assets/config/hunt.properties");
 	}
 
 	public static void main(String[] args) {
-		System.out.println("a2.MyGame.main() running!");
-		Game game = new MyGame();
+		System.out.println("dsgames.HuntingGame.main() running!");
+		Game game = new HuntingGame();
 		try {
 			game.startup();
 			game.run();

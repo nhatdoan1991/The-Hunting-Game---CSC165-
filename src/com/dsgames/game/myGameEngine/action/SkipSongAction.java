@@ -2,7 +2,7 @@ package com.dsgames.game.myGameEngine.action;
 
 import ray.input.action.AbstractInputAction;
 import net.java.games.input.Event;
-import com.dsgames.game.hunt.MyGame;
+import com.dsgames.game.hunt.HuntingGame;
 
 /**
  * An action handler that will play and pause the current song
@@ -12,9 +12,9 @@ import com.dsgames.game.hunt.MyGame;
 
 public class SkipSongAction extends AbstractInputAction {
 
-	private MyGame game;
+	private HuntingGame game;
 	
-	public SkipSongAction(MyGame g) {
+	public SkipSongAction(HuntingGame g) {
 		game = g;
 	}
 	

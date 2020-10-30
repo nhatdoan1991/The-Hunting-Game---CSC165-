@@ -1,6 +1,6 @@
 package com.dsgames.game.myGameEngine.action;
 
-import com.dsgames.game.hunt.MyGame;
+import com.dsgames.game.hunt.HuntingGame;
 
 import ray.input.action.AbstractInputAction;
 import ray.rage.game.*;
