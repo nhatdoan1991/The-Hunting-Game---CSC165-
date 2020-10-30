@@ -309,7 +309,7 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	protected void setupAudio(SceneManager sceneManager) {
 		Configuration configuration = sceneManager.getConfiguration();
-		String sfxPath = configuration.valueOf("assets.sounds.path.a2.sfx");
+		String sfxPath = configuration.valueOf("assets.sounds.path.a1.sfx");
 		String musicPath = configuration.valueOf("assets.sounds.path.a2.music");
 		AudioResource clairDeLune, arabesqueNoOne, reverie, scoreSfx, destroySfx, lifeUpSfx;
 		audioManager = AudioManagerFactory.createAudioManager("ray.audio.joal.JOALAudioManager");
@@ -408,13 +408,13 @@ public class MyGame extends VariableFrameRateGame {
 		Configuration configuration = engine.getConfiguration();
 
 		// initialize skybox textures
-		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.a2"));
-		Texture skyboxFrontTexture = textureManager.getAssetByPath("oceanFront.jpg");
-		Texture skyboxBackTexture = textureManager.getAssetByPath("oceanBack.jpg");
-		Texture skyboxLeftTexture = textureManager.getAssetByPath("oceanLeft.jpg");
-		Texture skyboxRightTexture = textureManager.getAssetByPath("oceanRight.jpg");
-		Texture skyboxTopTexture = textureManager.getAssetByPath("oceanTop.jpg");
-		Texture skyboxBottomTexture = textureManager.getAssetByPath("oceanBottom.jpg");
+		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.test"));
+		Texture skyboxFrontTexture = textureManager.getAssetByPath("front.jpg");
+		Texture skyboxBackTexture = textureManager.getAssetByPath("back.jpg");
+		Texture skyboxLeftTexture = textureManager.getAssetByPath("left.jpg");
+		Texture skyboxRightTexture = textureManager.getAssetByPath("right.jpg");
+		Texture skyboxTopTexture = textureManager.getAssetByPath("top.jpg");
+		Texture skyboxBottomTexture = textureManager.getAssetByPath("bottom.jpg");
 
 		// transform skybox textures
 		AffineTransform skyboxAffineTransform = new AffineTransform();
