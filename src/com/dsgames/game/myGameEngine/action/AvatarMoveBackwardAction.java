@@ -1,16 +1,16 @@
 package com.dsgames.game.myGameEngine.action;
 
-import com.dsgames.game.hunt.MyGame;
+import com.dsgames.game.hunt.HuntingGame;
 
 import net.java.games.input.Event;
 import ray.input.action.AbstractInputAction;
 
 public class AvatarMoveBackwardAction extends AbstractInputAction {
 
-	private MyGame game;
+	private HuntingGame game;
 	private String player;
 	
-	public AvatarMoveBackwardAction(MyGame g, String p) {
+	public AvatarMoveBackwardAction(HuntingGame g, String p) {
 		game = g;
 		player = p;
 	}

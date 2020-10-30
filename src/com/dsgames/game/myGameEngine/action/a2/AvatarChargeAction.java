@@ -1,16 +1,16 @@
 package com.dsgames.game.myGameEngine.action.a2;
 
-import com.dsgames.game.hunt.MyGame;
+import com.dsgames.game.hunt.HuntingGame;
 
 import net.java.games.input.Event;
 import ray.input.action.AbstractInputAction;
 
 public class AvatarChargeAction extends AbstractInputAction {
 
-	private MyGame game;
+	private HuntingGame game;
 	private String player;
 	
-	public AvatarChargeAction(MyGame myGame, String p) {
+	public AvatarChargeAction(HuntingGame myGame, String p) {
 		game = myGame;
 		player = p;
 	}

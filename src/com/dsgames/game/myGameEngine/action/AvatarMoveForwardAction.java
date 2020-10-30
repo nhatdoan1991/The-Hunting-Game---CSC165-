@@ -1,6 +1,6 @@
 package com.dsgames.game.myGameEngine.action;
 
-import com.dsgames.game.hunt.MyGame;
+import com.dsgames.game.hunt.HuntingGame;
 
 import net.java.games.input.Event;
 import ray.input.action.AbstractInputAction;
@@ -9,10 +9,10 @@ import ray.rage.scene.SceneNode;
 
 public class AvatarMoveForwardAction extends AbstractInputAction {
 
-	private MyGame game;
+	private HuntingGame game;
 	private String player;
 	
-	public AvatarMoveForwardAction(MyGame g, String p) {
+	public AvatarMoveForwardAction(HuntingGame g, String p) {
 		game = g;
 		player = p;
 	}

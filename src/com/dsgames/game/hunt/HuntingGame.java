@@ -78,7 +78,7 @@ import ray.rml.Matrix4f;
 import ray.rml.Vector3;
 import ray.rml.Vector3f;
 
-public class MyGame extends VariableFrameRateGame {
+public class HuntingGame extends VariableFrameRateGame {
 
 	public boolean running = true, jumpP1 = false;
 	public float cooldownP1 = 0;
@@ -126,7 +126,7 @@ public class MyGame extends VariableFrameRateGame {
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString,
 			playerTwoScoreString;
 
-	public MyGame() {
+	public HuntingGame() {
 		super();
 		System.out.println("Press 'W/A/S/D' or control the left stick to MOVE");
 		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ROTATE CAMERA");
@@ -333,7 +333,7 @@ public class MyGame extends VariableFrameRateGame {
 	 */
 	protected void setupAudio(SceneManager sceneManager) {
 		Configuration configuration = sceneManager.getConfiguration();
-		String sfxPath = configuration.valueOf("assets.sounds.path.a2.sfx");
+		String sfxPath = configuration.valueOf("assets.sounds.path.a1.sfx");
 		String musicPath = configuration.valueOf("assets.sounds.path.a2.music");
 		AudioResource clairDeLune, arabesqueNoOne, reverie, scoreSfx, destroySfx, lifeUpSfx;
 		audioManager = AudioManagerFactory.createAudioManager("ray.audio.joal.JOALAudioManager");
@@ -432,13 +432,13 @@ public class MyGame extends VariableFrameRateGame {
 		Configuration configuration = engine.getConfiguration();
 
 		// initialize skybox textures
-		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.a2"));
-		Texture skyboxFrontTexture = textureManager.getAssetByPath("oceanFront.jpg");
-		Texture skyboxBackTexture = textureManager.getAssetByPath("oceanBack.jpg");
-		Texture skyboxLeftTexture = textureManager.getAssetByPath("oceanLeft.jpg");
-		Texture skyboxRightTexture = textureManager.getAssetByPath("oceanRight.jpg");
-		Texture skyboxTopTexture = textureManager.getAssetByPath("oceanTop.jpg");
-		Texture skyboxBottomTexture = textureManager.getAssetByPath("oceanBottom.jpg");
+		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.test"));
+		Texture skyboxFrontTexture = textureManager.getAssetByPath("front.jpg");
+		Texture skyboxBackTexture = textureManager.getAssetByPath("back.jpg");
+		Texture skyboxLeftTexture = textureManager.getAssetByPath("left.jpg");
+		Texture skyboxRightTexture = textureManager.getAssetByPath("right.jpg");
+		Texture skyboxTopTexture = textureManager.getAssetByPath("top.jpg");
+		Texture skyboxBottomTexture = textureManager.getAssetByPath("bottom.jpg");
 
 		// transform skybox textures
 		AffineTransform skyboxAffineTransform = new AffineTransform();
@@ -765,12 +765,12 @@ public class MyGame extends VariableFrameRateGame {
 
 	@Override
 	protected void loadConfiguration(Configuration config) throws IOException {
-		config.load("assets/config/a2.properties");
+		config.load("assets/config/hunt.properties");
 	}
 
 	public static void main(String[] args) {
-		System.out.println("a2.MyGame.main() running!");
-		Game game = new MyGame();
+		System.out.println("dsgames.HuntingGame.main() running!");
+		Game game = new HuntingGame();
 		try {
 			game.startup();
 			game.run();
