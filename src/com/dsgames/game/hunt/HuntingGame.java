@@ -109,7 +109,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private ZBufferState zState;
 	
 	protected ScriptEngine jsEngine;
-	protected File test,addLight,setupSkybox;
+	protected File test,addLight,setupSkybox,setupTerrain, setupAudio;
 
 	private static final int INVULNERABLE_SECONDS = 3;
 	private static final int TERMINAL_VELOCITY = 1000;
@@ -204,8 +204,6 @@ public class HuntingGame extends VariableFrameRateGame {
 		java.util.List<ScriptEngineFactory> list = factory.getEngineFactories();
 		jsEngine = factory.getEngineByName("js");
 		
-		test = new File("test.js");
-		this.runScript(jsEngine, test);
 		Invocable invocableEngine = (Invocable) jsEngine ;
 		setupSkybox = new File("setupSkybox.js");
 		//jsEngine.put("sceneManager",sceneManager);
@@ -257,15 +255,11 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		addLight = new File("addLight.js");
 		this.runScript(jsEngine,addLight);
-		
 		Light keyLight = sceneManager.createLight("keyLightOne", Light.Type.POINT);
 		SceneNode keyLightNode = sceneManager.getRootSceneNode().createChildSceneNode(keyLight.getName() + "Node");
-		
-		
 		Light pointLightFlashOne = sceneManager.createLight("pointLightFlashOne", Light.Type.SPOT);
 		SceneNode flashNodeOne = dolphinNodeOne.createChildSceneNode(pointLightFlashOne.getName() + "Node");
-		
-		//Invocable invocableEngine = (Invocable) jsEngine ;
+	
 		try {
 			invocableEngine.invokeFunction("addKeyLight", keyLight,keyLightNode); 
 			invocableEngine.invokeFunction("addLightFlashOne", pointLightFlashOne,flashNodeOne);
@@ -278,6 +272,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		{ 
 			System.out.println ("Null ptr exception reading " + addLight + e3);
 		}
+
 
 
 		dolphinNodeOne.moveLeft(3.0f);
@@ -301,8 +296,43 @@ public class HuntingGame extends VariableFrameRateGame {
 		setupPhysics();
 		setupPhysicsWorld();
 		setupOrbitCameras(engine, sceneManager);
-		setupTessellation(sceneManager);
-		setupAudio(sceneManager);
+		setupTerrain = new File("setupTerrain.js");
+		this.runScript(jsEngine, setupTerrain);
+		try {
+			invocableEngine.invokeFunction("setupTessellation", this);
+			
+		}catch(ScriptException e1) {
+			System.out.println("ScriptException in " + setupTerrain + e1); 
+		}catch (NoSuchMethodException e2)
+		{   
+			System.out.println("No such method in " + setupTerrain + e2); 
+		}catch (NullPointerException e3)
+		{ 
+			System.out.println ("Null ptr exception reading " + setupTerrain + e3);
+		}
+		tessellationEntity=(Tessellation) jsEngine.get("tessellationEntity");
+		tessellationNode =  (SceneNode) jsEngine.get("tessellationNode");
+		//setupTessellation(sceneManager);
+		setupAudio = new File("setupAudio.js");
+		jsEngine.put("currentSong", currentSong);
+		jsEngine.put("music", music);
+		jsEngine.put("sfx", sfx);
+		this.runScript(jsEngine, setupAudio);
+		try {
+			invocableEngine.invokeFunction("setupAudio",this);
+			
+		}catch(ScriptException e1) {
+			System.out.println("ScriptException in " + setupAudio + e1); 
+		}catch (NoSuchMethodException e2)
+		{   
+			System.out.println("No such method in " + setupAudio + e2); 
+		}catch (NullPointerException e3)
+		{ 
+			System.out.println ("Null ptr exception reading " + setupAudio + e3);
+		}
+		music = (Sound[]) jsEngine.get("music");
+		sfx=(Sound[]) jsEngine.get("sfx");
+		//setupAudio(sceneManager);
 	}
 
 	/**
@@ -310,7 +340,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	 * A normal map is then applied to the original noise map to give the terrain surface some semblance of texture.
 	 * @param sceneManager
 	 */
-	protected void setupTessellation(SceneManager sceneManager) {
+	/*protected void setupTessellation(SceneManager sceneManager) {
 		tessellationEntity = sceneManager.createTessellation("tessellationEntity", 8);
 		tessellationEntity.setSubdivisions(32.0f);
 
@@ -323,7 +353,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		tessellationEntity.setNormalMap(this.getEngine(), "noisemapnormal.png");
 		tessellationEntity.setTexture(this.getEngine(), "grass.jpg");
 		tessellationEntity.setQuality(8);
-	}
+	}*/
 
 	/**
 	 * Initializes and loads audio resources from the asset folder, and sets music[]
@@ -331,7 +361,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	 * 
 	 * @param sceneManager
 	 */
-	protected void setupAudio(SceneManager sceneManager) {
+	/*protected void setupAudio(SceneManager sceneManager) {
 		Configuration configuration = sceneManager.getConfiguration();
 		String sfxPath = configuration.valueOf("assets.sounds.path.a1.sfx");
 		String musicPath = configuration.valueOf("assets.sounds.path.a2.music");
@@ -367,7 +397,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 
 		music[currentSong].play();
-	}
+	}*/
 
 	
 	/**
@@ -427,7 +457,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		playerOneViewport.setClearColor(new Color(0.5f, 1.0f, 0.5f));
 	}
 
-	protected void setupSkybox(Engine engine, SceneManager sceneManager) throws IOException {
+	/*protected void setupSkybox(Engine engine, SceneManager sceneManager) throws IOException {
 		SkyBox worldSkybox = sceneManager.createSkyBox(SKYBOX);
 		Configuration configuration = engine.getConfiguration();
 
@@ -462,7 +492,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		// assign skybox to sceneManager
 		sceneManager.setActiveSkyBox(worldSkybox);
 		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.textures.path"));
-	}
+	}*/
 
 	/**
 	 * Initializes 3P Camera controls for both players as well as their controls.

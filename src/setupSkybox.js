@@ -1,12 +1,7 @@
 var JavaPackages = new JavaImporter( 
 	Packages.ray.rage.scene.SceneManager, 
 	Packages.ray.rage.scene.SceneNode, 
-	Packages.ray.rage.scene.Light, 
- 	Packages.ray.rage.scene.Light.Type, 
- 	Packages.ray.rage.scene.Light.Type.POINT, 
- 	Packages.java.awt.Color,
 	Packages.ray.rage.scene.SkyBox,
-	Packages.ray.rage.scene.Tessellation,
 	Packages.ray.rage.util.Configuration,
 	Packages.ray.rage.asset.texture.Texture,
 	Packages.java.awt.geom.AffineTransform
