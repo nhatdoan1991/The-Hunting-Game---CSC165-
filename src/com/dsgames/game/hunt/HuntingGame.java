@@ -759,7 +759,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	
 	public void addGhostAvatarToGameWorld(GhostAvatar avatar) throws IOException {
 		SceneManager sceneManager = this.getEngine().getSceneManager();
-		if (avatar != null) {
+		if (avatar != null && (!sceneManager.hasEntity("ghostEntity" + avatar.getId().toString()))) {
 			Entity ghostEntity = sceneManager.createEntity("ghostEntity" + avatar.getId().toString(), "dolphin.obj");
 			ghostEntity.setPrimitive(Primitive.TRIANGLES);
 			SceneNode ghostNode = sceneManager.getRootSceneNode().createChildSceneNode(avatar.getId().toString());

@@ -57,6 +57,7 @@ public class ProtocolClient extends GameConnectionClient {
 			// server-details-for, clientId, x, y, z
 			// server-create, clientId, x, y, z
 			case "server-details-for":
+				
 			case "server-create":
 				ghostId = UUID.fromString(messageTokens[1]);
 				position = Vector3f.createFrom(
@@ -102,6 +103,9 @@ public class ProtocolClient extends GameConnectionClient {
 	}
 
 	public void updateGhostAvatarPosition(UUID ghostId, Vector3 position) {
+		if (!ghostAvatars.containsKey(ghostId)) {
+			ghostAvatars.put(ghostId, new GhostAvatar(ghostId, position));
+		}
 		GhostAvatar ghost = ghostAvatars.get(ghostId);
 		ghost.setPosition(position);
 		ghostAvatars.replace(ghostId, ghost);
@@ -188,11 +192,12 @@ public class ProtocolClient extends GameConnectionClient {
 	}
 
 	/**
-	 * client-wants-details, localId
+	 * client-wants-details, localId, x, y, z
 	 */
-	public void sendWantsDetailsMessages() {
+	public void sendWantsDetailsMessages(Vector3 position) {
 		try {
 			String message = new String("client-wants-details," + id.toString());
+			message += "," + position.x() + "," + position.y() + "," + position.z();
 			sendPacket(message);
 		} catch (IOException e) {
 			e.printStackTrace();

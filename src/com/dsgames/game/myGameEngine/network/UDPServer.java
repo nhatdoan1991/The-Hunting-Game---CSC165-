@@ -77,6 +77,10 @@ public class UDPServer extends GameConnectionServer<UUID> {
 			// client-wants-details, localId
 			case "client-wants-details":
 				clientId = UUID.fromString(messageTokens[1]);
+				position[0] = messageTokens[2];
+				position[1] = messageTokens[3];
+				position[2] = messageTokens[4];
+				
 				break;
 				
 			// client-move, localID, locX, locY, locZ
@@ -158,7 +162,7 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	public void sendDetailsForMessage(UUID clientId, UUID remoteId, String[] position) {
 		try {
 			String p = processPosition(position);
-			forwardPacketToAll("server-details-for," + remoteId.toString() + p, clientId);
+			sendPacket("server-details-for," + clientId.toString() + p, remoteId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
