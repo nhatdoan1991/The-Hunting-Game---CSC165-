@@ -87,7 +87,8 @@ public class ProtocolClient extends GameConnectionClient {
 						Float.parseFloat(messageTokens[3]),
 						Float.parseFloat(messageTokens[4])
 						);
-				updateGhostAvatarPosition(ghostId, position);
+				game.moveGhostAvatar(ghostId, position);
+				//	updateGhostAvatarPosition(ghostId, position);
 				break;
 
 			default:
@@ -108,6 +109,7 @@ public class ProtocolClient extends GameConnectionClient {
 		}
 		GhostAvatar ghost = ghostAvatars.get(ghostId);
 		ghost.setPosition(position);
+		game.moveGhostAvatar(ghostId, position);
 		ghostAvatars.replace(ghostId, ghost);
 	}
 
@@ -129,7 +131,7 @@ public class ProtocolClient extends GameConnectionClient {
 	 */
 	private void sendCreateMessage(Vector3 playerPosition) {
 		try {
-			String message = new String("client-create," + id.toString());
+			String message = new String("client-create," + this.id.toString());
 			message += "," + playerPosition.x() + "," + playerPosition.y() + "," + playerPosition.z();
 			sendPacket(message);
 		} catch (IOException e) {
@@ -142,7 +144,7 @@ public class ProtocolClient extends GameConnectionClient {
 	 */
 	public void sendJoinMessage() {
 		try {
-			String message = new String("client-join," + id.toString());
+			String message = new String("client-join," + this.id.toString());
 			sendPacket(message);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -154,7 +156,7 @@ public class ProtocolClient extends GameConnectionClient {
 	 */
 	public void sendByeMessage() {
 		try {
-			String message = new String("client-goodbye," + id.toString());
+			String message = new String("client-goodbye," + this.id.toString());
 			sendPacket(message);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -167,7 +169,7 @@ public class ProtocolClient extends GameConnectionClient {
 	 */
 	public void sendMoveMessage(Vector3 worldPosition) {
 		try {
-			String message = new String("client-move," + id.toString());
+			String message = new String("client-move," + this.id.toString());
 			message += "," + worldPosition.x() + "," + worldPosition.y() + "," + worldPosition.z();
 			sendPacket(message);
 		} catch (IOException e) {
@@ -183,7 +185,7 @@ public class ProtocolClient extends GameConnectionClient {
 	 */
 	public void sendDetailsForMessage(UUID remoteId, Vector3 position) {
 		try {
-			String message = new String("client-details-for," + id.toString() + "," + remoteId.toString());
+			String message = new String("client-details-for," + this.id.toString() + "," + remoteId.toString());
 			message += "," + position.x() + "," + position.y() + "," + position.z();
 			sendPacket(message);
 		} catch (IOException e) {
@@ -196,7 +198,7 @@ public class ProtocolClient extends GameConnectionClient {
 	 */
 	public void sendWantsDetailsMessages(Vector3 position) {
 		try {
-			String message = new String("client-wants-details," + id.toString());
+			String message = new String("client-wants-details," + this.id.toString());
 			message += "," + position.x() + "," + position.y() + "," + position.z();
 			sendPacket(message);
 		} catch (IOException e) {

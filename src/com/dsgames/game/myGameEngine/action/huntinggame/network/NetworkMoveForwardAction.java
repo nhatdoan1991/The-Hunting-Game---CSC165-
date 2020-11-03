@@ -23,7 +23,7 @@ public class NetworkMoveForwardAction extends AbstractInputAction {
 	public void performAction(float time, Event evt) {
 		float speed = game.getEngine().getElapsedTimeMillis() * 0.003f;
 		avatarNode.moveForward(speed * 3.0f);
+		protocolClient.sendMoveMessage(avatarNode.getLocalPosition());
 		game.synchronizeAvatarPhysics(avatarNode);
-		protocolClient.sendMoveMessage(avatarNode.getWorldPosition());
 	}
 }

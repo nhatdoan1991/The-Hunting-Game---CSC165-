@@ -114,7 +114,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private InputManager inputManager;
 	private int starUID = 0, serverPort, ghostEntityCount = 0;
 	private OrbitController playerOrbitController;
-	private ProtocolClient protocolClient;
+	private static ProtocolClient protocolClient;
 	private ProtocolType serverProtocol;
 	private SceneNode groundNode;
 	private Sound[] music = new Sound[3];
@@ -728,6 +728,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(0).getActualBottom())+2);
 		updateVerticalPosition();
+		processNetworking(elapsedTime);
 		inputManager.update(elapsedTime);
 		checkChargeTime();
 
@@ -744,7 +745,6 @@ public class HuntingGame extends VariableFrameRateGame {
 
 
 		orbitCameraOne.updateCameraPosition();
-		processNetworking(elapsedTime);
 		if (!ghostAvatars.isEmpty()) {
 			ghostAvatars.forEach((k, v)->{
 				synchronizeAvatarPhysics(v.getNode());
@@ -794,6 +794,12 @@ public class HuntingGame extends VariableFrameRateGame {
 		if (avatar != null) {
 			objectsToRemove.add(avatar.getId());
 			ghostAvatars.remove(avatar.getId());		
+		}
+	}
+	
+	public void moveGhostAvatar(UUID id, Vector3 position) {
+		if (ghostAvatars.get(id) != null) {
+			ghostAvatars.get(id).setPosition(position);
 		}
 	}
 	
@@ -979,6 +985,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		} catch (Exception e) {
 			e.printStackTrace(System.err);
 		} finally {
+			protocolClient.sendByeMessage();
 			game.shutdown();
 			game.exit();
 		}
