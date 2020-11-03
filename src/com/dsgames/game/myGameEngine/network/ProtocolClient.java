@@ -36,8 +36,9 @@ public class ProtocolClient extends GameConnectionClient {
 		if (messageTokens.length > 0) {
 
 			switch (messageTokens[0]) {
-			case "join":
-				// format: [join, success] or [join, X]
+			
+			// server-join, success/fail, clientCount
+			case "server-join":
 				// we only care about successful connections
 				if (messageTokens[1].compareTo("success") == 0) {
 					game.setIsConnected(true);
@@ -46,40 +47,46 @@ public class ProtocolClient extends GameConnectionClient {
 					game.setIsConnected(false);
 				}
 				break;
-
-			case "goodbye":
-				// goodbye, remoteId
+				
+			// server-goodbye, clientId
+			case "server-goodbye":
 				ghostId = UUID.fromString(messageTokens[1]);
 				removeGhostAvatar(ghostId);
 				break;
-
-			case "details-for":
-			case "create":
-				// details-for, remoteId, x, y, z
+				
+			// server-details-for, clientId, x, y, z
+			// server-create, clientId, x, y, z
+			case "server-details-for":
+			case "server-create":
 				ghostId = UUID.fromString(messageTokens[1]);
 				position = Vector3f.createFrom(
 						Float.parseFloat(messageTokens[2]),
 						Float.parseFloat(messageTokens[3]),
 						Float.parseFloat(messageTokens[4])
 						);
-				createGhostAvatar(ghostId, position);
+				try {
+					createGhostAvatar(ghostId, position);
+				} catch (IOException e) {
+					System.out.println("Ghost avatar for player " + messageTokens[1] + "already exists");
+				}
 				break;
-
-			case "wants-details":
-				// wants, remoteId
+				
+			// server-wants-details, clientId
+			case "server-wants-details":
 				ghostId = UUID.fromString(messageTokens[1]);
 				position = ghostAvatars.get(ghostId).getPosition();
 				sendDetailsForMessage(ghostId, position);
 				break;
 
-			case "move":
-				// move, x, y, z
+			// server-move, clientId, x, y, z
+			case "server-move":
+				ghostId = UUID.fromString(messageTokens[1]);
 				position = Vector3f.createFrom(
-						Float.parseFloat(messageTokens[1]),
 						Float.parseFloat(messageTokens[2]),
-						Float.parseFloat(messageTokens[3])
+						Float.parseFloat(messageTokens[3]),
+						Float.parseFloat(messageTokens[4])
 						);
-				updateGhostAvatarPosition(id, position);
+				updateGhostAvatarPosition(ghostId, position);
 				break;
 
 			default:
@@ -100,7 +107,7 @@ public class ProtocolClient extends GameConnectionClient {
 		ghostAvatars.replace(ghostId, ghost);
 	}
 
-	public void createGhostAvatar(UUID id, Vector3 position) {
+	public void createGhostAvatar(UUID id, Vector3 position) throws IOException {
 		GhostAvatar ghost = new GhostAvatar(id, position);
 		game.addGhostAvatarToGameWorld(ghost);
 		ghostAvatars.put(id, ghost);
@@ -112,9 +119,13 @@ public class ProtocolClient extends GameConnectionClient {
 		return ghost;
 	}
 	
+	/**
+	 * client-create, localId, locX, locY, locZ
+	 * @param playerPosition
+	 */
 	private void sendCreateMessage(Vector3 playerPosition) {
 		try {
-			String message = new String("create," + id.toString());
+			String message = new String("client-create," + id.toString());
 			message += "," + playerPosition.x() + "," + playerPosition.y() + "," + playerPosition.z();
 			sendPacket(message);
 		} catch (IOException e) {
@@ -122,27 +133,37 @@ public class ProtocolClient extends GameConnectionClient {
 		}
 	}
 
+	/**
+	 * client-join, localId
+	 */
 	public void sendJoinMessage() {
 		try {
-			String message = new String("join," + id.toString());
+			String message = new String("client-join," + id.toString());
 			sendPacket(message);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * client-goodbye, localId
+	 */
 	public void sendByeMessage() {
 		try {
-			String message = new String("goodbye," + id.toString());
+			String message = new String("client-goodbye," + id.toString());
 			sendPacket(message);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
+	/**
+	 * client-move, localID, locX, locY, locZ
+	 * @param worldPosition
+	 */
 	public void sendMoveMessage(Vector3 worldPosition) {
 		try {
-			String message = new String("move," + id.toString());
+			String message = new String("client-move," + id.toString());
 			message += "," + worldPosition.x() + "," + worldPosition.y() + "," + worldPosition.z();
 			sendPacket(message);
 		} catch (IOException e) {
@@ -151,9 +172,14 @@ public class ProtocolClient extends GameConnectionClient {
 
 	}
 
+	/**
+	 * client-details-for, localId, remoteId, locX, locY, locZ
+	 * @param remoteId
+	 * @param position
+	 */
 	public void sendDetailsForMessage(UUID remoteId, Vector3 position) {
 		try {
-			String message = new String("details-for," + id + "," + remoteId.toString());
+			String message = new String("client-details-for," + id.toString() + "," + remoteId.toString());
 			message += "," + position.x() + "," + position.y() + "," + position.z();
 			sendPacket(message);
 		} catch (IOException e) {
@@ -161,9 +187,12 @@ public class ProtocolClient extends GameConnectionClient {
 		}
 	}
 
+	/**
+	 * client-wants-details, localId
+	 */
 	public void sendWantsDetailsMessages() {
 		try {
-			String message = new String("wants-details," + id.toString());
+			String message = new String("client-wants-details," + id.toString());
 			sendPacket(message);
 		} catch (IOException e) {
 			e.printStackTrace();

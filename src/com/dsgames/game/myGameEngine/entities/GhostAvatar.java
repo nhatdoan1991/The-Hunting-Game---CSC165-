@@ -3,6 +3,7 @@ package com.dsgames.game.myGameEngine.entities;
 import java.util.UUID;
 
 import ray.rage.scene.Entity;
+import ray.rage.scene.Node;
 import ray.rage.scene.SceneNode;
 import ray.rml.*;
 
@@ -38,6 +39,10 @@ public class GhostAvatar {
 	
 	public UUID getId() {
 		return this.id;
+	}
+
+	public Node getNode() {
+		return node;
 	}
 	
 }

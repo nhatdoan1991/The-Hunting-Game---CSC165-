@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.UUID;
 import java.io.*;
 
@@ -109,6 +110,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private boolean isClientConnected;
 	private Camera3PController orbitCameraOne;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
+	private ConcurrentHashMap<UUID, GhostAvatar> ghostAvatars = new ConcurrentHashMap<UUID, GhostAvatar>();
 	private InputManager inputManager;
 	private int starUID = 0, serverPort, ghostEntityCount = 0;
 	private OrbitController playerOrbitController;
@@ -743,6 +745,11 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		orbitCameraOne.updateCameraPosition();
 		processNetworking(elapsedTime);
+		if (!ghostAvatars.isEmpty()) {
+			ghostAvatars.forEach((k, v)->{
+				synchronizeAvatarPhysics(v.getNode());
+			});
+		}
 	}
 	
 	public Vector3 getPlayerPosition() {
@@ -750,18 +757,20 @@ public class HuntingGame extends VariableFrameRateGame {
 		return player.getWorldPosition();
 	}
 	
-	public void addGhostAvatarToGameWorld(GhostAvatar avatar) {
+	public void addGhostAvatarToGameWorld(GhostAvatar avatar) throws IOException {
 		SceneManager sceneManager = this.getEngine().getSceneManager();
 		if (avatar != null) {
-			Entity ghostEntity = null;
-			try {
-				ghostEntity = sceneManager.createEntity("ghostEntity" + avatar.getId().toString(), "dolphinHighPoly.obj");
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			Entity ghostEntity = sceneManager.createEntity("ghostEntity" + avatar.getId().toString(), "dolphin.obj");
+			ghostEntity.setPrimitive(Primitive.TRIANGLES);
 			SceneNode ghostNode = sceneManager.getRootSceneNode().createChildSceneNode(avatar.getId().toString());
 			ghostNode.attachObject(ghostEntity);
-			ghostNode.setLocalPosition(0.0f, 0.0f, 0.0f);
+			ghostNode.scale(0.04f, 0.04f, 0.04f);
+			ghostNode.moveLeft(3.0f);
+			
+			Texture dolphinTexture = textureManager.getAssetByPath("leggedDolphinBlue.png");
+			TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+			dolphinTextureState.setTexture(dolphinTexture);
+			ghostEntity.setRenderState(dolphinTextureState);
 			
 			float mass = 1.0f;
 			double[] transform;
@@ -777,14 +786,15 @@ public class HuntingGame extends VariableFrameRateGame {
 			
 			avatar.setNode(ghostNode);
 			avatar.setEntity(ghostEntity);
-		//	avatar.setPosition(ghostNode.getLocalPosition());
-			
+			ghostAvatars.put(avatar.getId(), avatar);
 		}
 	}
 	
 	public void removeGhostAvatarFromGameWorld(GhostAvatar avatar) {
-		if (avatar != null) 
+		if (avatar != null) {
 			objectsToRemove.add(avatar.getId());
+			ghostAvatars.remove(avatar.getId());		
+		}
 	}
 	
 	/**
@@ -874,7 +884,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println("ScriptException in " + scriptFile + e3); 
 		}catch (NullPointerException e4)   
 		{ 
-			System.out.println ("Null ptr exception in " + scriptFile + e4); 
+			System.out.println ("Null pointer exception in " + scriptFile + e4); 
 		}
 	}
 	

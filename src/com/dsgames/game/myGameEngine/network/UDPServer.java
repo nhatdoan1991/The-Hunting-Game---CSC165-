@@ -23,10 +23,14 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	public void processPacket(Object o, InetAddress senderIP, int sendPort) {
 		String message = (String) o;
 		String[] messageTokens = message.split(",");
+		String[] position = new String[3];
 		UUID clientId = null;
 		if (messageTokens.length > 0) {
-			// join message: (join, localId)
-			if (messageTokens[0].compareTo("join") == 0) {
+			
+			switch(messageTokens[0]) {
+			
+			// client-join, localId
+			case "client-join":
 				try {
 					IClientInfo clientInfo;
 					clientInfo = getServerSocket().createClientInfo(senderIP, sendPort);
@@ -38,50 +42,54 @@ public class UDPServer extends GameConnectionServer<UUID> {
 				} finally {
 					System.out.println(clientId + " has joined the server as client " + connectedClients + ".");
 				}
-			}
-			
-			// create message: (create, localId, x, y, z)
-			if (messageTokens[0].compareTo("create") == 0) {
-				clientId = UUID.fromString(messageTokens[1]);
-				String[] position = {
-						messageTokens[2], 
-						messageTokens[3], 
-						messageTokens[4]
-				};
-				sendCreateMessage(clientId, position);
-				sendWantsDetailsForMessage(clientId);
-			}
-			
-			// goodbye message: (goodbye, localId)
-			if (messageTokens[0].compareTo("goodbye") == 0) {
+				break;
+
+			// client-goodbye, localId	
+			case "client-goodbye":
 				clientId = UUID.fromString(messageTokens[1]);
 				System.out.println(clientId + " has left the server.");
 				removeClient(clientId);
 				sendByeMessage(clientId);
 				connectedClients--;
-			}
-			
-			// details-for message: (details-for, remoteId, localId, x, y, z)
-			if (messageTokens[0].compareTo("details-for") == 0) {
+				break;
+
+			// client-details-for, localId, remoteId, locX, locY, locZ
+			case "client-details-for":
 				clientId = UUID.fromString(messageTokens[1]);
 				UUID remoteId = UUID.fromString(messageTokens[2]);
-				String[] position = {
-						messageTokens[3], 
-						messageTokens[4], 
-						messageTokens[5]
-				};
+				position[0] = messageTokens[3];
+				position[1] = messageTokens[4];
+				position[2] = messageTokens[5];
 				sendDetailsForMessage(clientId, remoteId, position);
-			}
-			
-			// move message: (move, localId, x, y, z)
-			if (messageTokens[0].compareTo("move") == 0) {
+				break;
+				
+			// client-create, localId, locX, locY, locZ
+			case "client-create":
 				clientId = UUID.fromString(messageTokens[1]);
-				String[] position = {
-						messageTokens[2], 
-						messageTokens[3], 
-						messageTokens[4]
-				};
+				position[0] = messageTokens[2];
+				position[1] = messageTokens[3];
+				position[2] = messageTokens[4];
+				sendCreateMessage(clientId, position);
+				sendWantsDetailsForMessage(clientId);
+				break;
+
+			
+			// client-wants-details, localId
+			case "client-wants-details":
+				clientId = UUID.fromString(messageTokens[1]);
+				break;
+				
+			// client-move, localID, locX, locY, locZ
+			case "client-move":
+				clientId = UUID.fromString(messageTokens[1]);
+				position[0] = messageTokens[2];
+				position[1] = messageTokens[3];
+				position[2] = messageTokens[4];
 				sendMoveMessage(clientId, position);
+				break;
+
+			default:
+				System.out.println("Invalid packet processed. Packet: " + message);
 			}
 		}
 	}
@@ -92,13 +100,18 @@ public class UDPServer extends GameConnectionServer<UUID> {
 		for(int i = 0; i < 3; i++) {
 			p += "," + position[i];
 		}
-		p += ",";
 		return p;
 	}
 
+	/**
+	 * server-join, success/fail, clientCount
+	 * @param clientId
+	 * @param success
+	 * @param clients
+	 */
 	public void sendJoinedMessage(UUID clientId, boolean success, int clients) {
 		try {
-			String message = "join,";
+			String message = "server-join,";
 			if (success) {
 				message += "success," + clients;
 			} else {
@@ -110,46 +123,69 @@ public class UDPServer extends GameConnectionServer<UUID> {
 		}
 	}
 	
+	/**
+	 * server-create, clientId, x, y, z
+	 * @param clientId
+	 * @param position
+	 */
 	public void sendCreateMessage(UUID clientId, String[] position) {
 		try {
 			String p = processPosition(position);
-			forwardPacketToAll("create," + clientId.toString() + p, clientId);
+			forwardPacketToAll("server-create," + clientId.toString() + p, clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	/**
+	 * server-wants-details, clientId
+	 * @param clientId
+	 */
 	public void sendWantsDetailsForMessage(UUID clientId) {
 		try {
-			forwardPacketToAll("wants-details," + clientId.toString(), clientId);
+			forwardPacketToAll("server-wants-details," + clientId.toString(), clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	
+	/**
+	 * server-details-for, clientId, x, y, z
+	 * @param clientId
+	 * @param remoteId
+	 * @param position
+	 */
 	public void sendDetailsForMessage(UUID clientId, UUID remoteId, String[] position) {
 		try {
 			String p = processPosition(position);
-			sendPacket("details-for," + clientId.toString() + p, remoteId);
+			forwardPacketToAll("server-details-for," + remoteId.toString() + p, clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 	
+	/**
+	 * server-move, clientId, x, y, z
+	 * @param clientId
+	 * @param position
+	 */
 	private void sendMoveMessage(UUID clientId, String[] position) {
 		try {
 			String p = processPosition(position);
-			forwardPacketToAll("details-for," + clientId.toString() + p, clientId);
+			forwardPacketToAll("server-move," + clientId.toString() + p, clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		
 	}
 	
+	/**
+	 * server-goodbye, clientId
+	 * @param clientId
+	 */
 	public void sendByeMessage(UUID clientId) {
 		try {
-			forwardPacketToAll("goodbye," + clientId.toString(), clientId);
+			forwardPacketToAll("server-goodbye," + clientId.toString(), clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
