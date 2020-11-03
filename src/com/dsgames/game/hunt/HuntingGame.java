@@ -5,11 +5,15 @@ import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import java.awt.geom.AffineTransform;
 import java.math.RoundingMode;
+import java.net.InetAddress;
+import java.rmi.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.Vector;
+import java.util.UUID;
 import java.io.*;
 
 import javax.script.ScriptEngine;
@@ -26,12 +30,19 @@ import com.dsgames.game.myGameEngine.action.AvatarMoveLeftAction;
 import com.dsgames.game.myGameEngine.action.AvatarMoveRightAction;
 import com.dsgames.game.myGameEngine.action.ExitGameAction;
 import com.dsgames.game.myGameEngine.action.SkipSongAction;
+import com.dsgames.game.myGameEngine.action.huntinggame.CloseConnectionAction;
+import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveBackwardAction;
+import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveForwardAction;
+import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveLeftAction;
+import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveRightAction;
+import com.dsgames.game.myGameEngine.entities.GhostAvatar;
+import com.dsgames.game.myGameEngine.network.ProtocolClient;
 import com.dsgames.game.myGameEngine.action.AvatarChargeAction;
 import com.dsgames.game.myGameEngine.action.AvatarJumpAction;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
-import com.saechaol.game.myGameEngine.node.Controller.StretchController;
-import com.saechaol.game.myGameEngine.node.Controller.VerticalOrbitController;
+import com.saechaol.game.myGameEngine.node.controller.StretchController;
+import com.saechaol.game.myGameEngine.node.controller.VerticalOrbitController;
 import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
 import com.saechaol.game.myGameEngine.object.manual.ManualFloorObject;
 
@@ -45,6 +56,7 @@ import ray.audio.SoundType;
 import ray.input.GenericInputManager;
 import ray.input.InputManager;
 import ray.input.action.Action;
+import ray.networking.IGameConnection.ProtocolType;
 import ray.physics.PhysicsEngine;
 import ray.physics.PhysicsEngineFactory;
 import ray.physics.PhysicsObject;
@@ -64,6 +76,7 @@ import ray.rage.rendersystem.states.ZBufferState;
 import ray.rage.scene.Camera;
 import ray.rage.scene.Light;
 import ray.rage.scene.ManualObject;
+import ray.rage.scene.Node;
 import ray.rage.scene.Camera.Frustum.Projection;
 import ray.rage.scene.controllers.OrbitController;
 import ray.rage.scene.Entity;
@@ -90,21 +103,26 @@ public class HuntingGame extends VariableFrameRateGame {
 	public PhysicsEngine physicsEngine;
 	public PhysicsObject ballOnePhysicsObject, groundPlane, dolphinOnePhysicsObject;
 			
-	private Action moveLeftActionP1, moveRightActionP1, moveForwardActionP1, moveBackwardActionP1, 
-			 exitGameAction, skipSongAction, avatarJumpActionP1,
-			avatarChargeActionP1;
+	private Action moveLeftAction, moveRightAction, moveForwardAction, moveBackwardAction, 
+			 exitGameAction, skipSongAction, avatarJumpAction, avatarChargeAction,
+			 closeConnectionAction;
+	private boolean isClientConnected;
 	private Camera3PController orbitCameraOne;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private InputManager inputManager;
-	private int starUID = 0;
+	private int starUID = 0, serverPort, ghostEntityCount = 0;
 	private OrbitController playerOrbitController;
+	private ProtocolClient protocolClient;
+	private ProtocolType serverProtocol;
 	private SceneNode groundNode;
 	private Sound[] music = new Sound[3];
 	private Sound[] sfx = new Sound[3];
 	private StretchController playerStretchController;
+	private String serverAddress;
 	private Tessellation tessellationEntity;
 	private TextureManager textureManager;
 	private Texture starTexture;
+	private Vector<UUID> objectsToRemove;
 	private VerticalOrbitController playerOrbitControllerVertical;
 	private ZBufferState zState;
 	
@@ -114,9 +132,10 @@ public class HuntingGame extends VariableFrameRateGame {
 	private static final int INVULNERABLE_SECONDS = 3;
 	private static final int TERMINAL_VELOCITY = 1000;
 	private static final Random RAND = new Random();
-	private static final String BUILD_STATE = "test"; // test for debugging, release for submission
+	private static final String BUILD_STATE = "test"; // "test" for debugging, "release" for submission
 	private final static String GROUND_NODE = "GroundNode";
 	private static final String SKYBOX = "OceanSkybox";
+	private static final String SEPARATOR = "----------------------------------------------------";
 
 	float elapsedTime = 0.0f;
 	GL4RenderSystem renderSystem;
@@ -126,16 +145,31 @@ public class HuntingGame extends VariableFrameRateGame {
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString,
 			playerTwoScoreString;
 
-	public HuntingGame() {
+	public HuntingGame(String serverAddress, int serverPort) {
 		super();
+		System.out.println("Initializing...!");
+		this.serverAddress = serverAddress;
+		this.serverPort = serverPort;
+		this.serverProtocol = ProtocolType.UDP;
+		if (BUILD_STATE.equalsIgnoreCase("test"))
+			System.out.println("Server address set to " + serverAddress + ":" + serverPort + "!");
+		System.out.println(SEPARATOR);
 		System.out.println("Press 'W/A/S/D' or control the left stick to MOVE");
 		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ROTATE CAMERA");
 		System.out.println("Press 'Q/E' or the left and right bumpers to YAW DOLPHIN");
 		System.out.println("Press 'P' or 'Y' to PLAY NEXT SONG");
 		System.out.println("Press 'Space' or 'A' to JUMP");
 		System.out.println("Press 'ESC' or 'Menu' to EXIT");
-		System.out.println("----------------------------------------------------");
+		System.out.println(SEPARATOR);
 		formatFloat.setRoundingMode(RoundingMode.DOWN);
+	}
+	
+	public String getAddress() {
+		return this.serverAddress;
+	}
+	
+	public int getPort() {
+		return this.serverPort;
 	}
 
 	/**
@@ -219,7 +253,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println("No such method in " + setupSkybox + e2); 
 		}catch (NullPointerException e3)
 		{ 
-			System.out.println ("Null ptr exception reading " + setupSkybox + e3);
+			System.out.println ("Null pointer exception reading " + setupSkybox + e3);
 		}
 		
 		// initialize zState
@@ -270,7 +304,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println("No such method in " + addLight + e2); 
 		}catch (NullPointerException e3)
 		{ 
-			System.out.println ("Null ptr exception reading " + addLight + e3);
+			System.out.println ("Null pointer exception reading " + addLight + e3);
 		}
 
 
@@ -285,7 +319,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		dolphinOneTextureState.setTexture(dolphinOneTexture);
 
 		dolphinEntityOne.setRenderState(dolphinOneTextureState);
-		
+		setupNetwork();
 		setupInputs(sceneManager);
 
 		ManualObject groundEntity = ManualFloorObject.manualFloorObject(engine, sceneManager);
@@ -296,6 +330,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		setupPhysics();
 		setupPhysicsWorld();
 		setupOrbitCameras(engine, sceneManager);
+
 		setupTerrain = new File("setupTerrain.js");
 		this.runScript(jsEngine, setupTerrain);
 		try {
@@ -308,7 +343,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println("No such method in " + setupTerrain + e2); 
 		}catch (NullPointerException e3)
 		{ 
-			System.out.println ("Null ptr exception reading " + setupTerrain + e3);
+			System.out.println ("Null pointer exception reading " + setupTerrain + e3);
 		}
 		tessellationEntity=(Tessellation) jsEngine.get("tessellationEntity");
 		tessellationNode =  (SceneNode) jsEngine.get("tessellationNode");
@@ -328,7 +363,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println("No such method in " + setupAudio + e2); 
 		}catch (NullPointerException e3)
 		{ 
-			System.out.println ("Null ptr exception reading " + setupAudio + e3);
+			System.out.println ("Null pointer exception reading " + setupAudio + e3);
 		}
 		music = (Sound[]) jsEngine.get("music");
 		sfx=(Sound[]) jsEngine.get("sfx");
@@ -444,6 +479,26 @@ public class HuntingGame extends VariableFrameRateGame {
 		groundNode.setPhysicsObject(groundPlane);
 
 	}
+	
+	private void setupNetwork() {
+		objectsToRemove = new Vector<UUID>();
+		isClientConnected = false;
+		try {
+			protocolClient = new ProtocolClient(InetAddress.getByName(serverAddress), serverPort, serverProtocol, this);
+			
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		if (protocolClient == null)
+			System.out.println("Missing protocol host");
+		else {
+			protocolClient.sendJoinMessage();
+			isClientConnected = true;
+		}
+	}
 
 	@Override
 	protected void setupWindowViewports(RenderWindow renderWindow) {
@@ -513,14 +568,15 @@ public class HuntingGame extends VariableFrameRateGame {
 		
 		//String gamepadName = inputManager.getFirstGamepadName();
 
-		moveLeftActionP1 = new AvatarMoveLeftAction(this, dolphinNodeOne.getName());
-		moveRightActionP1 = new AvatarMoveRightAction(this, dolphinNodeOne.getName());
-		moveForwardActionP1 = new AvatarMoveForwardAction(this, dolphinNodeOne.getName());
-		moveBackwardActionP1 = new AvatarMoveBackwardAction(this, dolphinNodeOne.getName());
+		moveLeftAction = new NetworkMoveLeftAction(this, dolphinNodeOne, protocolClient);
+		moveRightAction = new NetworkMoveRightAction(this, dolphinNodeOne, protocolClient);
+		moveForwardAction = new NetworkMoveForwardAction(this, dolphinNodeOne, protocolClient);
+		moveBackwardAction = new NetworkMoveBackwardAction(this, dolphinNodeOne, protocolClient);
 		exitGameAction = new ExitGameAction(this);
 		skipSongAction = new SkipSongAction(this);
-		avatarJumpActionP1 = new AvatarJumpAction(this, dolphinNodeOne.getName());
-		avatarChargeActionP1 = new AvatarChargeAction(this, dolphinNodeOne.getName());
+		avatarJumpAction = new AvatarJumpAction(this, dolphinNodeOne.getName());
+		avatarChargeAction = new AvatarChargeAction(this, dolphinNodeOne.getName());
+		closeConnectionAction = new CloseConnectionAction(protocolClient, this, isClientConnected);
 		
 		/*
 		 * Player One - KB
@@ -538,16 +594,16 @@ public class HuntingGame extends VariableFrameRateGame {
 		for (Controller keyboards : controllersArrayList) {
 			if (keyboards.getType() == Controller.Type.KEYBOARD) {
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.A,
-						moveLeftActionP1, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+						moveLeftAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.D,
-						moveRightActionP1, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+						moveRightAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.W,
-						moveForwardActionP1, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+						moveForwardAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.S,
-						moveBackwardActionP1, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+						moveBackwardAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.P, skipSongAction,
 						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
@@ -556,10 +612,13 @@ public class HuntingGame extends VariableFrameRateGame {
 						exitGameAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.SPACE,
-						avatarJumpActionP1, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+						avatarJumpAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.LSHIFT,
-						avatarChargeActionP1, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+						avatarChargeAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
+				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.K,
+						closeConnectionAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
 			}
 		}
@@ -602,6 +661,19 @@ public class HuntingGame extends VariableFrameRateGame {
 					skipSongAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 		}*/
 
+	}
+	
+	protected void processNetworking(float elapsedTime) {
+		if (protocolClient != null) {
+			protocolClient.processPackets();
+		}
+		
+		// remove ghost avatars of players who have left the game
+		Iterator<UUID> i = objectsToRemove.iterator();
+		while (i.hasNext()) {
+			this.getEngine().getSceneManager().destroySceneNode(i.next().toString());
+		}
+		objectsToRemove.clear();
 	}
 
 	@Override
@@ -655,7 +727,6 @@ public class HuntingGame extends VariableFrameRateGame {
 		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(0).getActualBottom())+2);
 		updateVerticalPosition();
 		inputManager.update(elapsedTime);
-
 		checkChargeTime();
 
 		if (jumpP1) {
@@ -671,9 +742,50 @@ public class HuntingGame extends VariableFrameRateGame {
 
 
 		orbitCameraOne.updateCameraPosition();
-	
+		processNetworking(elapsedTime);
 	}
 	
+	public Vector3 getPlayerPosition() {
+		SceneNode player = this.getEngine().getSceneManager().getSceneNode("dolphinEntityOneNode");
+		return player.getWorldPosition();
+	}
+	
+	public void addGhostAvatarToGameWorld(GhostAvatar avatar) {
+		SceneManager sceneManager = this.getEngine().getSceneManager();
+		if (avatar != null) {
+			Entity ghostEntity = null;
+			try {
+				ghostEntity = sceneManager.createEntity("ghostEntity" + avatar.getId().toString(), "dolphinHighPoly.obj");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			SceneNode ghostNode = sceneManager.getRootSceneNode().createChildSceneNode(avatar.getId().toString());
+			ghostNode.attachObject(ghostEntity);
+			ghostNode.setLocalPosition(0.0f, 0.0f, 0.0f);
+			
+			float mass = 1.0f;
+			double[] transform;
+
+			transform = toDoubleArray(ghostNode.getLocalTransform().toFloatArray());
+			PhysicsObject ghostNodePhyiscsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
+
+			ghostNodePhyiscsObject.setBounciness(0.0f);
+			ghostNodePhyiscsObject.setFriction(0.0f);
+			ghostNodePhyiscsObject.setDamping(0.99f, 0.99f);
+			ghostNodePhyiscsObject.setSleepThresholds(0.0f, 0.0f);
+			ghostNode.setPhysicsObject(ghostNodePhyiscsObject);
+			
+			avatar.setNode(ghostNode);
+			avatar.setEntity(ghostEntity);
+		//	avatar.setPosition(ghostNode.getLocalPosition());
+			
+		}
+	}
+	
+	public void removeGhostAvatarFromGameWorld(GhostAvatar avatar) {
+		if (avatar != null) 
+			objectsToRemove.add(avatar.getId());
+	}
 	
 	/**
 	 * Ensures that the player's vertical position traverses along the terrain
@@ -718,6 +830,12 @@ public class HuntingGame extends VariableFrameRateGame {
 			playerCharge.put(dolphinNodeOne, false);
 		}
 	}
+	
+	public void setIsConnected(boolean b) {
+		isClientConnected = b;
+		
+	}
+	
 
 	/**
 	 * Adds the scene node the the stretch controller
@@ -727,18 +845,42 @@ public class HuntingGame extends VariableFrameRateGame {
 		playerStretchController.addNode(player);
 	}
 	
-	public void synchronizeAvatarPhysics(SceneNode player) {
+	public void synchronizeAvatarPhysics(Node avatarNode) {
 		if (running) {
-			double[] transform = player.getPhysicsObject().getTransform();
-			transform[12] = player.getLocalPosition().x();
-			transform[13] = player.getLocalPosition().y();
-			transform[14] = player.getLocalPosition().z();
-			player.getPhysicsObject().setTransform(transform);
+			double[] transform = avatarNode.getPhysicsObject().getTransform();
+			transform[12] = avatarNode.getLocalPosition().x();
+			transform[13] = avatarNode.getLocalPosition().y();
+			transform[14] = avatarNode.getLocalPosition().z();
+			avatarNode.getPhysicsObject().setTransform(transform);
 		} else {
-			player.getPhysicsObject().setTransform(toDoubleArray(player.getWorldTransform().toFloatArray()));
+			avatarNode.getPhysicsObject().setTransform(toDoubleArray(avatarNode.getWorldTransform().toFloatArray()));
 		}
 	}
 
+	private void runScript(ScriptEngine engine,File scriptFile) {
+		try    
+		{ 
+			FileReader fileReader = new FileReader(scriptFile);
+			engine.eval(fileReader);
+			fileReader.close();    
+		}
+		catch(FileNotFoundException e1) {
+			System.out.println(scriptFile + " not found " + e1); 
+		} catch (IOException e2)     
+		{ 
+			System.out.println("IO problem with " + scriptFile + e2); 
+		}catch (ScriptException e3)      
+		{ 
+			System.out.println("ScriptException in " + scriptFile + e3); 
+		}catch (NullPointerException e4)   
+		{ 
+			System.out.println ("Null ptr exception in " + scriptFile + e4); 
+		}
+	}
+	
+	
+	
+	
 	/**
 	 * Returns a random float array of size 3
 	 * 
@@ -799,8 +941,28 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 
 	public static void main(String[] args) {
+		Game game = null;
 		System.out.println("dsgames.HuntingGame.main() running!");
-		Game game = new HuntingGame();
+		if (BUILD_STATE.equalsIgnoreCase("test")) {
+			// "192.168.1.9", "1234"
+			game = new HuntingGame(args[0], Integer.parseInt(args[1]));
+		} else {
+			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+			try {
+				System.out.print("Please enter the server's IP address: ");
+				String ip = reader.readLine();
+				System.out.println("Please enter the port to connect to: ");
+				String port = reader.readLine();
+				game = new HuntingGame(ip, Integer.parseInt(port));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		System.out.println("NetworkServer instantiated!");
+		System.out.println("Using IP: " + ((HuntingGame) game).getAddress());
+		System.out.println("Serving over port: " + ((HuntingGame) game).getPort());
+		
 		try {
 			game.startup();
 			game.run();
@@ -811,27 +973,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			game.exit();
 		}
 	}
-	
-	private void runScript(ScriptEngine engine,File scriptFile) {
-		try    
-		{ 
-			FileReader fileReader = new FileReader(scriptFile);
-			engine.eval(fileReader);
-			fileReader.close();    
-		}
-		catch(FileNotFoundException e1) {
-			System.out.println(scriptFile + " not found " + e1); 
-		} catch (IOException e2)     
-		{ 
-			System.out.println("IO problem with " + scriptFile + e2); 
-		}catch (ScriptException e3)      
-		{ 
-			System.out.println("ScriptException in " + scriptFile + e3); 
-		}catch (NullPointerException e4)   
-		{ 
-			System.out.println ("Null ptr exception in " + scriptFile + e4); 
-		}
-	}
+
 }
 
 

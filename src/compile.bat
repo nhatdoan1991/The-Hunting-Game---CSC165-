@@ -1,1 +1,1 @@
-javac .\com\saechaol\game\a2\*.java -verbose
+javac .\com\dsgames\game\hunt\*.java -verbose
