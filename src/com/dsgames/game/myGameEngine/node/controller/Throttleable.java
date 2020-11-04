@@ -1,4 +1,4 @@
-package com.saechaol.game.myGameEngine.node.controller;
+package com.dsgames.game.myGameEngine.node.controller;
 
 /**
  * Allows node controllers implementing this interface to have its speed mutable
