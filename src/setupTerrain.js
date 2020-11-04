@@ -14,7 +14,7 @@ with(JavaPackages)
 		tessellationNode = mygame.getEngine().getSceneManager().getRootSceneNode().createChildSceneNode(tessellationEntity.getName() + "Node");
 		tessellationNode.attachObject(tessellationEntity);
 
-		tessellationNode.translate(0.0, -10000, 0.0);
+		tessellationNode.translate(0.0, -10, 0.0);
 		tessellationNode.scale(1000.0, 1000.0, 1000.0);
 		tessellationEntity.setHeightMap(mygame.getEngine(), "noisemap.jpg");
 		tessellationEntity.setNormalMap(mygame.getEngine(), "noisemapnormal.png");
