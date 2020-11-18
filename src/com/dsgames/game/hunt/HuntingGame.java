@@ -427,7 +427,7 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		music[0] = new Sound(clairDeLune, SoundType.SOUND_MUSIC, 100, false);
 		music[1] = new Sound(arabesqueNoOne, SoundType.SOUND_MUSIC, 100, false);
-		music[2] = new Sound(reverie, SoundType.SOUND_MUSIC, 100, false);
+		mus = new Sound(reverie, SoundType.SOUND_MUSIC, 100, false);
 		sfx[0] = new Sound(scoreSfx, SoundType.SOUND_EFFECT, 25, false);
 		sfx[1] = new Sound(destroySfx, SoundType.SOUND_EFFECT, 25, false);
 		sfx[2] = new Sound(lifeUpSfx, SoundType.SOUND_EFFECT, 25, false);
@@ -808,7 +808,8 @@ public class HuntingGame extends VariableFrameRateGame {
 	
 	public void moveGhostAvatar(UUID id, Vector3 position) {
 		if (ghostAvatars.get(id) != null) {
-			ghostAvatars.get(id).setPosition(position);
+			ghostAvatars.get(id).getNode().setLocalPosition(position);
+			synchronizeAvatarPhysics(ghostAvatars.get(id).getNode());
 		}
 	}
 	
