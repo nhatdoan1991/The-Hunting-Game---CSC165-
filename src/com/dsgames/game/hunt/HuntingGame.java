@@ -1,8 +1,11 @@
 package com.dsgames.game.hunt;
 
+import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
+import java.awt.Robot;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.math.RoundingMode;
 import java.net.InetAddress;
@@ -107,15 +110,19 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Action moveLeftAction, moveRightAction, moveForwardAction, moveBackwardAction, 
 			 exitGameAction, skipSongAction, avatarJumpAction, avatarChargeAction,
 			 closeConnectionAction;
-	private boolean isClientConnected;
+	private boolean isClientConnected, isRecentering, mouseInit = false;
 	private Camera3PController orbitCameraOne;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private ConcurrentHashMap<UUID, GhostAvatar> ghostAvatars = new ConcurrentHashMap<UUID, GhostAvatar>();
+	private double sensitivity = 0.5;
+	private float lastMouseX, lastMouseY, mouseX, mouseY;
 	private InputManager inputManager;
-	private int starUID = 0, serverPort, ghostEntityCount = 0;
+	private int starUID = 0, serverPort, ghostEntityCount = 0, centerX, centerY;
 	private OrbitController playerOrbitController;
 	private static ProtocolClient protocolClient;
 	private ProtocolType serverProtocol;
+	private RenderWindow renderWindow;
+	private Robot mouseRobot;
 	private SceneNode groundNode;
 	private Sound[] music = new Sound[3];
 	private Sound[] sfx = new Sound[3];
@@ -197,9 +204,9 @@ public class HuntingGame extends VariableFrameRateGame {
 			int displayWidth = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
 					.getDisplayMode().getWidth();
 			if (displayHeight > 1920 && displayWidth > 1080)
-				renderSystem.createRenderWindow(new DisplayMode(1920, 1080, 24, 60), false);
+				renderWindow = renderSystem.createRenderWindow(new DisplayMode(1920, 1080, 24, 60), false);
 			else
-				renderSystem.createRenderWindow(new DisplayMode(1280, 720, 24, 60), false);
+				renderWindow = renderSystem.createRenderWindow(new DisplayMode(1280, 720, 24, 60), false);
 		}
 	}
 
@@ -564,6 +571,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		String keyboardName = inputManager.getKeyboardName();
 
 		orbitCameraOne = new Camera3PController(cameraOne, cameraOneNode, dolphinNodeOne, keyboardName, inputManager);
+		initializeMouse(renderSystem, renderWindow);
 	}
 
 	protected void setupInputs(SceneManager sceneManager) {
@@ -730,6 +738,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		updateVerticalPosition();
 		processNetworking(elapsedTime);
 		inputManager.update(elapsedTime);
+		mouseInit = true;
 		checkChargeTime();
 
 		if (jumpP1) {
@@ -852,6 +861,63 @@ public class HuntingGame extends VariableFrameRateGame {
 		
 	}
 	
+	private void initializeMouse(RenderSystem renderSystem, RenderWindow render) {
+		Viewport view = renderWindow.getViewport(0);
+		int left = renderWindow.getLocationLeft();
+		int top = renderWindow.getLocationTop();
+		int height = view.getActualScissorHeight();
+		int width = view.getActualScissorWidth();
+		centerX = left + width / 2;
+		centerY = top + height / 2;
+		isRecentering = false;
+		
+		try {
+			mouseRobot = new Robot();
+		} catch (AWTException e) {
+			throw new RuntimeException("Couldn't initialize robot");
+		}
+		
+		recenterMouse();
+		lastMouseX = centerX;
+		lastMouseY = centerY;
+		
+		render.addMouseMotionListener(this);
+	}
+	
+	public void mouseMoveAction(MouseEvent e) {
+		if (mouseInit) {
+			if (isRecentering && centerX == e.getXOnScreen() && centerY == e.getYOnScreen()) {
+				isRecentering = false;
+			}
+			mouseX = e.getXOnScreen();
+			mouseY = e.getYOnScreen();
+			
+			float dx = lastMouseX - mouseX;
+			float dy = lastMouseY - mouseY;
+			
+			dolphinNodeOne.rotate(Degreef.createFrom((float) (dx * sensitivity)), Vector3f.createFrom(0.0f, 1.0f, 0.0f));
+			orbitCameraOne.updateCameraPosition();
+			
+			lastMouseX = mouseX;
+			lastMouseY = mouseY;
+			recenterMouse();
+			lastMouseX = centerX;
+			lastMouseY = centerY;
+		}
+	}
+	
+	private void recenterMouse() {
+		Viewport view = renderWindow.getViewport(0);
+		int left = renderWindow.getLocationLeft();
+		int top = renderWindow.getLocationTop();
+		int height = view.getActualScissorHeight();
+		int width = view.getActualScissorWidth();
+		centerX = left + width / 2;
+		centerY = top + height / 2;
+		isRecentering = true;
+		mouseRobot.mouseMove((int) centerX, (int) centerY);
+	}
+	
 
 	/**
 	 * Adds the scene node the the stretch controller
@@ -893,9 +959,6 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println ("Null pointer exception in " + scriptFile + e4); 
 		}
 	}
-	
-	
-	
 	
 	/**
 	 * Returns a random float array of size 3
