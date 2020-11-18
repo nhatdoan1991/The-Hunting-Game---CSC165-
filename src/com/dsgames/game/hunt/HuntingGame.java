@@ -197,7 +197,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			renderSystem
 					.createRenderWindow(displaySettingsDialogue.getSelectedDisplayMode(),
 							displaySettingsDialogue.isFullScreenModeSelected())
-					.setTitle("Competitive Planet Chaser | Saechao Lucas A2");
+					.setTitle("Hunting Game | Saechao Lucas/Nhat Doan A3");
 		} else if (BUILD_STATE.equalsIgnoreCase("test")) {
 			int displayHeight = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
 					.getDisplayMode().getHeight();
@@ -278,7 +278,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		originNode.setLocalPosition(0.0f, 5.0f, 0.0f);
 
 
-		Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "dolphin.obj");
+		Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "playerModel.obj");
 
 		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
 
@@ -321,7 +321,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		dolphinNodeOne.moveLeft(3.0f);
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
 
-		Texture dolphinOneTexture = textureManager.getAssetByPath("leggedDolphinRed.png");
+		Texture dolphinOneTexture = textureManager.getAssetByPath("playerModel.png");
 
 		TextureState dolphinOneTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 
@@ -769,14 +769,14 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void addGhostAvatarToGameWorld(GhostAvatar avatar) throws IOException {
 		SceneManager sceneManager = this.getEngine().getSceneManager();
 		if (avatar != null && (!sceneManager.hasEntity("ghostEntity" + avatar.getId().toString()))) {
-			Entity ghostEntity = sceneManager.createEntity("ghostEntity" + avatar.getId().toString(), "dolphin.obj");
+			Entity ghostEntity = sceneManager.createEntity("ghostEntity" + avatar.getId().toString(), "modelGame.obj");
 			ghostEntity.setPrimitive(Primitive.TRIANGLES);
 			SceneNode ghostNode = sceneManager.getRootSceneNode().createChildSceneNode(avatar.getId().toString());
 			ghostNode.attachObject(ghostEntity);
 			ghostNode.scale(0.04f, 0.04f, 0.04f);
 			ghostNode.moveLeft(3.0f);
 			
-			Texture dolphinTexture = textureManager.getAssetByPath("leggedDolphinBlue.png");
+			Texture dolphinTexture = textureManager.getAssetByPath("modelGame.jpg");
 			TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 			dolphinTextureState.setTexture(dolphinTexture);
 			ghostEntity.setRenderState(dolphinTextureState);
