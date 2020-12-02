@@ -45,6 +45,7 @@ import com.dsgames.game.myGameEngine.node.controller.StretchController;
 import com.dsgames.game.myGameEngine.node.controller.VerticalOrbitController;
 import com.dsgames.game.myGameEngine.action.AvatarChargeAction;
 import com.dsgames.game.myGameEngine.action.AvatarJumpAction;
+import com.saechaol.game.myGameEngine.ai.NPCController;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
 import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
@@ -117,13 +118,16 @@ public class HuntingGame extends VariableFrameRateGame {
 	private double sensitivity = 0.5;
 	private float lastMouseX, lastMouseY, mouseX, mouseY;
 	private InputManager inputManager;
-	private int starUID = 0, serverPort, ghostEntityCount = 0, centerX, centerY;
+	private int starUID = 0, serverPort, ghostEntityCount = 0, centerX, centerY, hostStatus = 0;
+	private NPCController npcController;
 	private OrbitController playerOrbitController;
 	private static ProtocolClient protocolClient;
 	private ProtocolType serverProtocol;
 	private RenderWindow renderWindow;
 	private Robot mouseRobot;
 	private SceneNode groundNode;
+	private SceneNode[] npcs;
+	private PhysicsObject[] npcPhysicsObjects;
 	private Sound[] music = new Sound[3];
 	private Sound[] sfx = new Sound[3];
 	private StretchController playerStretchController;
@@ -181,6 +185,10 @@ public class HuntingGame extends VariableFrameRateGame {
 		return this.serverPort;
 	}
 
+	public float getElapsedTime() {
+		return elapsedTime;
+	}
+	
 	/**
 	 * Implements a dialogue to allow the user to pick their preferred viewport size
 	 * settings
@@ -336,6 +344,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		groundNode.attachObject(groundEntity);
 		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
 
+		setupNpc(engine, sceneManager);
 		setupPhysics();
 		setupPhysicsWorld();
 		setupOrbitCameras(engine, sceneManager);
@@ -377,6 +386,53 @@ public class HuntingGame extends VariableFrameRateGame {
 		music = (Sound[]) jsEngine.get("music");
 		sfx=(Sound[]) jsEngine.get("sfx");
 		//setupAudio(sceneManager);
+		
+	}
+	
+	private void setupNpc(Engine engine, SceneManager sceneManager) throws IOException {
+		
+		npcs = new SceneNode[3];
+		npcPhysicsObjects = new PhysicsObject[3];
+		
+		Entity dolphinNpcEntityOne = sceneManager.createEntity("npcEntityOne", "dolphinLowPoly.obj");
+		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
+		
+		Entity dolphinNpcEntityTwo = sceneManager.createEntity("npcEntityTwo", "dolphinLowPoly.obj");
+		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
+		
+		Entity dolphinNpcEntityThree = sceneManager.createEntity("npcEntityThree", "dolphinLowPoly.obj");
+		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
+		
+		npcs[0] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityOne.getName() + "Node");
+		npcs[1] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityTwo.getName() + "Node");
+		npcs[2] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityThree.getName() + "Node");
+		
+		Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
+		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
+		textureStateOne.setTexture(textureOne);
+		dolphinNpcEntityOne.setRenderState(textureStateOne);
+		npcs[0].attachObject(dolphinNpcEntityOne);
+		
+		Texture textureTwo = textureManager.getAssetByPath("red.jpeg");
+		TextureState textureStateTwo = (TextureState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
+		textureStateTwo.setTexture(textureTwo);
+		dolphinNpcEntityTwo.setRenderState(textureStateTwo);
+		npcs[1].attachObject(dolphinNpcEntityTwo);
+		
+		Texture textureThree = textureManager.getAssetByPath("chain-fence.jpeg");
+		TextureState textureStateThree = (TextureState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
+		textureStateThree.setTexture(textureThree);
+		dolphinNpcEntityThree.setRenderState(textureStateThree);
+		npcs[2].attachObject(dolphinNpcEntityThree);
+		
+		for (SceneNode n : npcs) {
+			n.scale(1.0f, 1.0f, 1.0f);
+		}
+		
+		npcs[0].setLocalPosition(5.0f, 0.0f, 0.0f);
+		npcs[1].setLocalPosition(0.0f, 0.0f, 5.0f);
+		npcs[2].setLocalPosition(-5.0f, 0.0f, -5.0f);
+		
 	}
 
 	/**
@@ -486,6 +542,21 @@ public class HuntingGame extends VariableFrameRateGame {
 		planeTransform[14] = groundNode.getLocalPosition().z();
 		groundPlane.setTransform(planeTransform);
 		groundNode.setPhysicsObject(groundPlane);
+		
+		transform = toDoubleArray(npcs[0].getLocalTransform().toFloatArray());
+		npcPhysicsObjects[0] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
+		npcPhysicsObjects[0].setSleepThresholds(0.0f, 0.0f);
+		npcs[0].setPhysicsObject(npcPhysicsObjects[0]);
+		
+		transform = toDoubleArray(npcs[1].getLocalTransform().toFloatArray());
+		npcPhysicsObjects[1] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
+		npcPhysicsObjects[1].setSleepThresholds(0.0f, 0.0f);
+		npcs[1].setPhysicsObject(npcPhysicsObjects[1]);
+		
+		transform = toDoubleArray(npcs[2].getLocalTransform().toFloatArray());
+		npcPhysicsObjects[2] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
+		npcPhysicsObjects[2].setSleepThresholds(0.0f, 0.0f);
+		npcs[2].setPhysicsObject(npcPhysicsObjects[2]);
 
 	}
 	
@@ -673,6 +744,25 @@ public class HuntingGame extends VariableFrameRateGame {
 
 	}
 	
+	public Vector<SceneNode> getPlayers() {
+		Vector<SceneNode> players = new Vector<SceneNode>();
+		players.add(dolphinNodeOne);
+		if (!ghostAvatars.isEmpty()) {
+			ghostAvatars.forEach((key, val)->{
+				players.add((SceneNode) val.getNode());
+			});
+		}
+		return players;
+	}
+	
+	public static float distanceFrom(Vector3 p1, Vector3 p2) {
+		return (float) Math.sqrt(
+				Math.pow(p1.x() - p2.x(), 2) + 
+				Math.pow(p1.y() - p2.y(), 2) + 
+				Math.pow(p1.z() - p2.z(), 2)
+		);
+	}
+	
 	protected void processNetworking(float elapsedTime) {
 		if (protocolClient != null) {
 			protocolClient.processPackets();
@@ -738,6 +828,16 @@ public class HuntingGame extends VariableFrameRateGame {
 		updateVerticalPosition();
 		processNetworking(elapsedTime);
 		inputManager.update(elapsedTime);
+		
+		if (hostStatus == 0) {
+			npcController = new NPCController(this, protocolClient, npcs, npcPhysicsObjects, hostStatus);
+			hostStatus = -1;
+		}
+		
+		if (hostStatus == -1) {
+			npcController.runNpcLoop();
+		}
+		
 		mouseInit = true;
 		checkChargeTime();
 
@@ -919,7 +1019,34 @@ public class HuntingGame extends VariableFrameRateGame {
 		mouseRobot.mouseMove((int) centerX, (int) centerY);
 	}
 	
+	public void setIsConnected(boolean connected, int clientStatus) {
+		isClientConnected = connected;
+		if (clientStatus == 0)
+			hostStatus = clientStatus;
+		else {
+			hostStatus = clientStatus;
+			npcController = new NPCController(this, protocolClient, npcs, npcPhysicsObjects, hostStatus);
+		}
+	}
 
+	public void moveNpc(int npcId, float[] npcTransform, Vector3 vectorPosition) {
+		if (npcController != null) {
+			if (npcController.getNpc(npcId) != null) {
+				double[] transform = {
+						npcTransform[0], npcTransform[1], npcTransform[2],
+						npcTransform[3], npcTransform[4], npcTransform[5],
+						npcTransform[6], npcTransform[7], npcTransform[8],
+						npcTransform[9], npcTransform[10], npcTransform[11],
+						npcTransform[12], npcTransform[13], npcTransform[14],
+						npcTransform[15]
+				};
+				npcController.getNpc(npcId).setTransform(transform);
+				npcController.getNpc(npcId).getNpcSceneNode().lookAt(vectorPosition);
+			}
+		}
+		
+	}
+	
 	/**
 	 * Adds the scene node the the stretch controller
 	 * @param player
