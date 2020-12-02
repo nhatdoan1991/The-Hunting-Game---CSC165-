@@ -19,6 +19,7 @@ with(JavaPackages)
 		tessellationEntity.setHeightMap(mygame.getEngine(), "noisemap.jpg");
 		tessellationEntity.setNormalMap(mygame.getEngine(), "noisemapnormal.png");
 		tessellationEntity.setTexture(mygame.getEngine(), "grass.jpg");
-		tessellationEntity.setQuality(8); 
+		tessellationEntity.setQuality(8);
+
 	}
 }
