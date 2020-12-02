@@ -442,9 +442,9 @@ public class HuntingGame extends VariableFrameRateGame {
 			n.scale(1.0f, 1.0f, 1.0f);
 		}
 		
-		npcs[0].setLocalPosition(5.0f, 0.0f, 0.0f);
-		npcs[1].setLocalPosition(0.0f, 0.0f, 5.0f);
-		npcs[2].setLocalPosition(-5.0f, 0.0f, -5.0f);
+		npcs[0].setLocalPosition(5.0f, -2.5f, 0.0f);
+		npcs[1].setLocalPosition(0.0f, -2.5f, 5.0f);
+		npcs[2].setLocalPosition(-5.0f, -2.5f, -5.0f);
 		
 	}
 
@@ -954,6 +954,31 @@ public class HuntingGame extends VariableFrameRateGame {
 		} else if (avatarLocalPositionP1.y() > terrainPositionP1.y() + 1.0f) {
 			jumpP1 = true;
 		}
+		
+		for (int i = 0; i < 3; i++) {
+			Vector3 npcWorldPosition = npcs[i].getWorldPosition();
+			Vector3 npcLocalPosition = npcs[i].getLocalPosition();
+			Vector3 npcTerrainPosition = (Vector3) Vector3f.createFrom(
+					npcLocalPosition.x(),
+					tessellationEntity.getWorldHeight(npcWorldPosition.x(), npcWorldPosition.z() + 0.2f),
+					npcLocalPosition.z()
+					);
+			Vector3 npcGroundPlanePosition = (Vector3) Vector3f.createFrom(
+					npcLocalPosition.x(),
+					groundTessellation.getWorldHeight(npcWorldPosition.x(), npcWorldPosition.z() + 0.2f),
+					npcLocalPosition.z()
+					);
+			
+			if (npcLocalPosition.y() <= npcTerrainPosition.y() + 0.3f || npcLocalPosition.y() <= npcGroundPlanePosition.y()) {
+				Vector3 npcPosition = npcTerrainPosition;
+				if (npcLocalPosition.y() < npcGroundPlanePosition.y()) {
+					npcPosition = npcGroundPlanePosition;
+				}
+				npcs[i].setLocalPosition(npcPosition);
+				synchronizeAvatarPhysics(npcs[i]);
+			}
+			
+		}
 	}
 
 	/**
@@ -1224,5 +1249,3 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 
 }
-
-
