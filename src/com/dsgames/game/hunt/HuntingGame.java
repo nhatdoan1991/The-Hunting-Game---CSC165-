@@ -1025,7 +1025,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		System.out.println("dsgames.HuntingGame.main() running!");
 		if (BUILD_STATE.equalsIgnoreCase("test")) {
 			// "192.168.1.9", "1234"
-			game = new HuntingGame(args[0], Integer.parseInt(args[1]));
+			//game = new HuntingGame(args[0], Integer.parseInt(args[1]));
 		} else {
 			BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
 			try {
