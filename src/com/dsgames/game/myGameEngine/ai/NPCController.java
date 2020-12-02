@@ -1,4 +1,4 @@
-package com.saechaol.game.myGameEngine.ai;
+package com.dsgames.game.myGameEngine.ai;
 
 import java.util.Vector;
 

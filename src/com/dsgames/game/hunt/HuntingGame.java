@@ -40,13 +40,13 @@ import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveBackw
 import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveForwardAction;
 import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveLeftAction;
 import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveRightAction;
+import com.dsgames.game.myGameEngine.ai.NPCController;
 import com.dsgames.game.myGameEngine.entities.GhostAvatar;
 import com.dsgames.game.myGameEngine.network.ProtocolClient;
 import com.dsgames.game.myGameEngine.node.controller.StretchController;
 import com.dsgames.game.myGameEngine.node.controller.VerticalOrbitController;
 import com.dsgames.game.myGameEngine.action.AvatarChargeAction;
 import com.dsgames.game.myGameEngine.action.AvatarJumpAction;
-import com.saechaol.game.myGameEngine.ai.NPCController;
 import com.saechaol.game.myGameEngine.camera.Camera3PController;
 import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
 import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
