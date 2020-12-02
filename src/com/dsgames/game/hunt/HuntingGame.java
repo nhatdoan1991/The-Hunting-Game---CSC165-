@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.DisplayMode;
 import java.awt.GraphicsEnvironment;
 import java.awt.Robot;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.math.RoundingMode;
@@ -51,6 +52,7 @@ import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
 import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
 import com.saechaol.game.myGameEngine.object.manual.ManualFloorObject;
 
+import static ray.rage.scene.SkeletalEntity.EndType.*;
 import net.java.games.input.Controller;
 import ray.audio.AudioManagerFactory;
 import ray.audio.AudioResource;
@@ -87,6 +89,7 @@ import ray.rage.scene.controllers.OrbitController;
 import ray.rage.scene.Entity;
 import ray.rage.scene.SceneManager;
 import ray.rage.scene.SceneNode;
+import ray.rage.scene.SkeletalEntity;
 import ray.rage.scene.SkyBox;
 import ray.rage.scene.Tessellation;
 import ray.rage.util.Configuration;
@@ -132,7 +135,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Sound[] sfx = new Sound[3];
 	private StretchController playerStretchController;
 	private String serverAddress;
-	private Tessellation tessellationEntity;
+	private Tessellation tessellationEntity, groundTessellation;
 	private TextureManager textureManager;
 	private Texture starTexture;
 	private Vector<UUID> objectsToRemove;
@@ -286,10 +289,13 @@ public class HuntingGame extends VariableFrameRateGame {
 		originNode.setLocalPosition(0.0f, 5.0f, 0.0f);
 
 
-		Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "playerModel.obj");
+		//Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "playerModel.obj");
+		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("dolphinEntityOne", "test.rkm","test.rks");
 
 		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
-
+		dolphinEntityOne.loadAnimation("wave","wave.rka");
+		dolphinEntityOne.loadAnimation("walk","walk.rka");
+		
 		dolphinNodeOne = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityOne.getName() + "Node");
 
 		dolphinNodeOne.attachObject(dolphinEntityOne);
@@ -324,9 +330,9 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println ("Null pointer exception reading " + addLight + e3);
 		}
 
-
-
-		dolphinNodeOne.moveLeft(3.0f);
+		dolphinNodeOne.setLocalPosition(0.0f, -2.5f, 0.0f);
+	//	dolphinNodeOne.moveLeft(3.0f);
+	//	dolphinNodeOne.moveDown(-2.5f);
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
 
 		Texture dolphinOneTexture = textureManager.getAssetByPath("playerModel.png");
@@ -339,11 +345,17 @@ public class HuntingGame extends VariableFrameRateGame {
 		setupNetwork();
 		setupInputs(sceneManager);
 
-		ManualObject groundEntity = ManualFloorObject.manualFloorObject(engine, sceneManager);
-		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(GROUND_NODE);
-		groundNode.attachObject(groundEntity);
-		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
-
+		groundTessellation = sceneManager.createTessellation("groundTessellationEntity, 8");
+		groundTessellation.setSubdivisions(32.0f);
+		
+		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(groundTessellation.getName() + "Node");
+		groundNode.attachObject(groundTessellation);
+		groundNode.setLocalPosition(0.0f, -2.5f, 0.0f);
+		groundNode.scale(500.0f, 1.0f, 500.0f);
+		groundTessellation.setHeightMap(engine, "waterHeight.jpg");
+		groundTessellation.setTexture(engine, "waterTexture.jpg");
+		groundTessellation.setQuality(8);
+		
 		setupNpc(engine, sceneManager);
 		setupPhysics();
 		setupPhysicsWorld();
@@ -365,6 +377,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 		tessellationEntity=(Tessellation) jsEngine.get("tessellationEntity");
 		tessellationNode =  (SceneNode) jsEngine.get("tessellationNode");
+		
 		//setupTessellation(sceneManager);
 		setupAudio = new File("setupAudio.js");
 		jsEngine.put("currentSong", currentSong);
@@ -533,9 +546,9 @@ public class HuntingGame extends VariableFrameRateGame {
 		transform = toDoubleArray(groundNode.getLocalTransform().toFloatArray());
 		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), transform, up, 0.0f);
 
-		groundPlane.setBounciness(0.5f);
-		groundNode.scale(500.0f, 1.0f, 500.0f);
-		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
+		groundPlane.setBounciness(0.0f);
+//		groundNode.scale(500.0f, 1.0f, 500.0f);
+//		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
 		double[] planeTransform = groundPlane.getTransform();
 		planeTransform[12] = groundNode.getLocalPosition().x();
 		planeTransform[13] = groundNode.getLocalPosition().y();
@@ -852,7 +865,9 @@ public class HuntingGame extends VariableFrameRateGame {
 			jumpP1 = false;
 		}
 
-
+		SkeletalEntity x = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
+		x.update();
+		
 		orbitCameraOne.updateCameraPosition();
 		if (!ghostAvatars.isEmpty()) {
 			ghostAvatars.forEach((k, v)->{
@@ -920,11 +935,16 @@ public class HuntingGame extends VariableFrameRateGame {
 		Vector3 avatarWorldPositionP1 = dolphinNodeOne.getWorldPosition();
 		Vector3 avatarLocalPositionP1 = dolphinNodeOne.getLocalPosition();
 		Vector3 terrainPositionP1 = (Vector3) Vector3f.createFrom(avatarLocalPositionP1.x(),
-				tessellationEntity.getWorldHeight(avatarWorldPositionP1.x(), avatarWorldPositionP1.z()) + 0.5f,
+				tessellationEntity.getWorldHeight(avatarWorldPositionP1.x(), avatarWorldPositionP1.z()) + 0.3f,
 				avatarLocalPositionP1.z());
-
-		if (avatarLocalPositionP1.y() <= terrainPositionP1.y() + 0.5f) {
+		Vector3 groundPositionP1 = (Vector3) Vector3f.createFrom(avatarLocalPositionP1.x(),
+				groundTessellation.getWorldHeight(avatarWorldPositionP1.x(),  avatarWorldPositionP1.z() - 0.3f),
+				avatarLocalPositionP1.z());
+		if (avatarLocalPositionP1.y() <= terrainPositionP1.y() + 0.3f || avatarLocalPositionP1.y() <= groundPositionP1.y()) {
 			Vector3 avatarPositionP1 = terrainPositionP1;
+			if (avatarPositionP1.y() < groundPositionP1.y()) {
+				avatarPositionP1 = groundPositionP1;
+			}
 			dolphinNodeOne.setLocalPosition(avatarPositionP1);
 			synchronizeAvatarPhysics(dolphinNodeOne);
 			if (jumpP1) {
@@ -934,7 +954,6 @@ public class HuntingGame extends VariableFrameRateGame {
 		} else if (avatarLocalPositionP1.y() > terrainPositionP1.y() + 1.0f) {
 			jumpP1 = true;
 		}
-
 	}
 
 	/**
@@ -957,8 +976,8 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 	}
 	
-	public void setIsConnected(boolean b) {
-		isClientConnected = b;
+	public void setIsConnected(boolean connected) {
+		isClientConnected = connected;
 		
 	}
 	
@@ -1179,6 +1198,28 @@ public class HuntingGame extends VariableFrameRateGame {
 			protocolClient.sendByeMessage();
 			game.shutdown();
 			game.exit();
+		}
+	}
+	
+	@Override
+	public void keyPressed(KeyEvent e) {
+		switch(e.getKeyCode())
+		{
+		case KeyEvent.VK_V:
+			SkeletalEntity x = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
+			x.stopAnimation();
+			x.playAnimation("wave",0.5f, LOOP,0);
+			break;
+		case KeyEvent.VK_B:
+			SkeletalEntity z = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
+			z.stopAnimation();
+			z.playAnimation("walk",2f, LOOP,0);
+			break;
+			
+		case KeyEvent.VK_C:
+			SkeletalEntity y = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
+			y.stopAnimation();
+			break;
 		}
 	}
 
