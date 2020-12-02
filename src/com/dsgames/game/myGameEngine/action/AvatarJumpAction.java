@@ -22,6 +22,7 @@ public class AvatarJumpAction extends AbstractInputAction {
 			game.jumpP1 = true;
 			game.dolphinOnePhysicsObject.applyForce(0.0f, 400.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 			game.velocityP1 = 0.0f;
+			game.playJumpSound();
 			break;
 		}
 	}

@@ -991,6 +991,13 @@ public class HuntingGame extends VariableFrameRateGame {
 		currentSong %= music.length;
 		music[currentSong].play();
 	}
+	
+	public void playSoundEffect() {
+		sfx[1].play();
+	}
+	public void playJumpSound() {
+		sfx[2].play();
+	}
 
 	/**
 	 * Checks if the player can perform a charge or not

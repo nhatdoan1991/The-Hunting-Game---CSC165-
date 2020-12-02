@@ -55,6 +55,10 @@ public class NPCController {
 		for (int i = 0; i < npcs.length; i++) {
 			if (npcs[i] != null) {
 				npcs[i].updateLocation();
+				if(distanceBetween(game.getPlayerPosition(),npcs[i].getNpcLocation())< 1.0f)
+				{
+					game.playSoundEffect();
+				}
 				//setupBehaviorTree(npcs[i], behaviorTree[0]);
 			}
 		}
