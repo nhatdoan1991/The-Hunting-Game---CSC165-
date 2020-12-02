@@ -131,7 +131,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Sound[] sfx = new Sound[3];
 	private StretchController playerStretchController;
 	private String serverAddress;
-	private Tessellation tessellationEntity;
+	private Tessellation tessellationEntity, groundTessellation;
 	private TextureManager textureManager;
 	private Texture starTexture;
 	private Vector<UUID> objectsToRemove;
@@ -323,8 +323,9 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 
 
-
-		dolphinNodeOne.moveLeft(3.0f);
+		dolphinNodeOne.setLocalPosition(0.0f, -2.5f, 0.0f);
+	//	dolphinNodeOne.moveLeft(3.0f);
+	//	dolphinNodeOne.moveDown(-2.5f);
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
 
 		Texture dolphinOneTexture = textureManager.getAssetByPath("playerModel.png");
@@ -337,15 +338,39 @@ public class HuntingGame extends VariableFrameRateGame {
 		setupNetwork();
 		setupInputs(sceneManager);
 
-		ManualObject groundEntity = ManualFloorObject.manualFloorObject(engine, sceneManager);
-		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(GROUND_NODE);
-		groundNode.attachObject(groundEntity);
-		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
-
+		groundTessellation = sceneManager.createTessellation("groundTessellationEntity, 8");
+		groundTessellation.setSubdivisions(32.0f);
+		
+		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(groundTessellation.getName() + "Node");
+		groundNode.attachObject(groundTessellation);
+		groundNode.setLocalPosition(0.0f, -2.5f, 0.0f);
+		groundNode.scale(500.0f, 1.0f, 500.0f);
+		groundTessellation.setHeightMap(engine, "waterHeight.jpg");
+		groundTessellation.setTexture(engine, "waterTexture.jpg");
+		groundTessellation.setQuality(8);
+		
+		
 		setupPhysics();
 		setupPhysicsWorld();
 		setupOrbitCameras(engine, sceneManager);
 
+		/**
+		 * 		
+		ground = mygame.getEngine().getSceneManager().createTessellation("groundEntity", 8);
+		ground.setSubdivisions(32.0);
+
+		groundNode = mygame.getEngine().getSceneManager().getRootSceneNode().createChildSceneNode(ground.getName() + "Node");
+		groundNode.attachObject(ground);
+
+		groundNode.translate(0.0, -0.6, 0.0);
+		groundNode.scale(1000.0, 1.0, 1000.0);
+		ground.setHeightMap(myGame.getEngine(), "waterHeight.jpg");
+		gruond.setNormalMap(mygame.getEngine(), "waterTexture.jpg");
+		ground.setTexture(myGame.getEngine(), "waterTexture.jpg");
+		ground.setQuality(8);
+		 */
+		
+		
 		setupTerrain = new File("setupTerrain.js");
 		this.runScript(jsEngine, setupTerrain);
 		try {
@@ -484,9 +509,9 @@ public class HuntingGame extends VariableFrameRateGame {
 		transform = toDoubleArray(groundNode.getLocalTransform().toFloatArray());
 		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), transform, up, 0.0f);
 
-		groundPlane.setBounciness(0.5f);
-		groundNode.scale(500.0f, 1.0f, 500.0f);
-		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
+		groundPlane.setBounciness(0.0f);
+//		groundNode.scale(500.0f, 1.0f, 500.0f);
+//		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
 		double[] planeTransform = groundPlane.getTransform();
 		planeTransform[12] = groundNode.getLocalPosition().x();
 		planeTransform[13] = groundNode.getLocalPosition().y();
@@ -828,10 +853,16 @@ public class HuntingGame extends VariableFrameRateGame {
 		Vector3 avatarWorldPositionP1 = dolphinNodeOne.getWorldPosition();
 		Vector3 avatarLocalPositionP1 = dolphinNodeOne.getLocalPosition();
 		Vector3 terrainPositionP1 = (Vector3) Vector3f.createFrom(avatarLocalPositionP1.x(),
-				tessellationEntity.getWorldHeight(avatarWorldPositionP1.x(), avatarWorldPositionP1.z()) + 0.5f,
+				tessellationEntity.getWorldHeight(avatarWorldPositionP1.x(), avatarWorldPositionP1.z()) + 0.3f,
 				avatarLocalPositionP1.z());
-		if (avatarLocalPositionP1.y() <= terrainPositionP1.y() + 0.5f) {
+		Vector3 groundPositionP1 = (Vector3) Vector3f.createFrom(avatarLocalPositionP1.x(),
+				groundTessellation.getWorldHeight(avatarWorldPositionP1.x(),  avatarWorldPositionP1.z() - 0.3f),
+				avatarLocalPositionP1.z());
+		if (avatarLocalPositionP1.y() <= terrainPositionP1.y() + 0.3f || avatarLocalPositionP1.y() <= groundPositionP1.y()) {
 			Vector3 avatarPositionP1 = terrainPositionP1;
+			if (avatarPositionP1.y() < groundPositionP1.y()) {
+				avatarPositionP1 = groundPositionP1;
+			}
 			dolphinNodeOne.setLocalPosition(avatarPositionP1);
 			synchronizeAvatarPhysics(dolphinNodeOne);
 			if (jumpP1) {
