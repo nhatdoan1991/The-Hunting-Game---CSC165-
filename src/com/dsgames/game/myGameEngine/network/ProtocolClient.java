@@ -91,6 +91,33 @@ public class ProtocolClient extends GameConnectionClient {
 				//	updateGhostAvatarPosition(ghostId, position);
 				break;
 
+			case "server-npc-position-message":
+				ghostId = UUID.fromString(messageTokens[1]);
+				int npcId = Integer.parseInt(messageTokens[2]);
+				
+				for (int i = 3; i <= 18; i++) {
+					if (messageTokens[i] == "") {
+						messageTokens[i] = "0.0";
+					}
+				}
+				
+				float[] npcTransform = {
+						Float.parseFloat(messageTokens[3]), Float.parseFloat(messageTokens[4]), Float.parseFloat(messageTokens[5]), 
+						Float.parseFloat(messageTokens[6]), Float.parseFloat(messageTokens[7]), Float.parseFloat(messageTokens[8]), 
+						Float.parseFloat(messageTokens[9]), Float.parseFloat(messageTokens[10]), Float.parseFloat(messageTokens[11]), 
+						Float.parseFloat(messageTokens[12]), Float.parseFloat(messageTokens[13]), Float.parseFloat(messageTokens[14]), 
+						Float.parseFloat(messageTokens[15]), Float.parseFloat(messageTokens[16]), Float.parseFloat(messageTokens[17]), 
+						Float.parseFloat(messageTokens[18])
+				};
+				
+				Vector3 vectorPosition = Vector3f.createFrom(
+						Float.parseFloat(messageTokens[19]),
+						Float.parseFloat(messageTokens[20]),
+						Float.parseFloat(messageTokens[21])
+						);
+				game.moveNpc(npcId, npcTransform, vectorPosition);
+				break;
+				
 			default:
 				System.out.println("Invalid packet processed. Packet: " + stringMessage);
 			}
@@ -204,6 +231,22 @@ public class ProtocolClient extends GameConnectionClient {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void sendNpcPositionMessage(double[] npcTransform, int npcId, Vector3 origin) {
+ 		try {
+			String message = new String("client-npc-position-message," + this.id.toString() + "," + npcId);
+			message += "," + npcTransform[0] + "," + npcTransform[1] + "," + npcTransform[2];
+			message += "," + npcTransform[3] + "," + npcTransform[4] + "," + npcTransform[5];
+			message += "," + npcTransform[6] + "," + npcTransform[7] + "," + npcTransform[8];
+			message += "," + npcTransform[9] + "," + npcTransform[10] + "," + npcTransform[11];
+			message += "," + npcTransform[12] + "," + npcTransform[13] + "," + npcTransform[14];
+			message += "," + npcTransform[15] + "," + origin.x() + "," + origin.y() + "," + origin.z();
+			sendPacket(message);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
 
 }

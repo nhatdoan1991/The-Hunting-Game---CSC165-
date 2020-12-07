@@ -91,6 +91,23 @@ public class UDPServer extends GameConnectionServer<UUID> {
 				position[2] = messageTokens[4];
 				sendMoveMessage(clientId, position);
 				break;
+				
+			case "client-npc-position-message":
+				clientId = UUID.fromString(messageTokens[1]);
+				int npcId = Integer.parseInt(messageTokens[2]);
+				String[] transform = {
+						messageTokens[3], messageTokens[4], messageTokens[5], 
+						messageTokens[6], messageTokens[7], messageTokens[8],
+						messageTokens[9], messageTokens[10], messageTokens[11], 
+						messageTokens[12], messageTokens[13], messageTokens[14],
+						messageTokens[15], messageTokens[16], messageTokens[17], 
+						messageTokens[18]
+				};
+				String[] vectorPosition = {
+						messageTokens[19], messageTokens[20], messageTokens[21]
+				};
+				sendNpcPositionMessage(clientId, npcId, transform, vectorPosition);
+				break;
 
 			default:
 				System.out.println("Invalid packet processed. Packet: " + message);
@@ -101,7 +118,7 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	
 	private String processPosition(String[] position) {
 		String p = "";
-		for(int i = 0; i < 3; i++) {
+		for(int i = 0; i < position.length; i++) {
 			p += "," + position[i];
 		}
 		return p;
@@ -190,6 +207,15 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	public void sendByeMessage(UUID clientId) {
 		try {
 			forwardPacketToAll("server-goodbye," + clientId.toString(), clientId);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void sendNpcPositionMessage(UUID clientId, int npcId, String[] npcTransform, String[] position) {
+		try {
+			String p = "," + npcId + processPosition(npcTransform) + processPosition(position);
+			forwardPacketToAll("server-npc-position-message," + clientId.toString() + p, clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
