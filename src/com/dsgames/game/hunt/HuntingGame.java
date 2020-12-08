@@ -1,5 +1,7 @@
 package com.dsgames.game.hunt;
 
+import static ray.rage.scene.SkeletalEntity.EndType.LOOP;
+
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.DisplayMode;
@@ -7,7 +9,12 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.awt.geom.AffineTransform;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.RoundingMode;
 import java.net.InetAddress;
 import java.rmi.UnknownHostException;
@@ -16,26 +23,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
+import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.UUID;
-import java.io.*;
 
+import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import javax.script.Invocable;
 
-import com.dsgames.game.myGameEngine.action.AvatarLeftStickXAction;
-import com.dsgames.game.myGameEngine.action.AvatarLeftStickYAction;
-import com.dsgames.game.myGameEngine.action.AvatarMoveBackwardAction;
-import com.dsgames.game.myGameEngine.action.AvatarMoveForwardAction;
-import com.dsgames.game.myGameEngine.action.AvatarMoveLeftAction;
-import com.dsgames.game.myGameEngine.action.AvatarMoveRightAction;
+import com.dsgames.game.myGameEngine.action.AvatarChargeAction;
+import com.dsgames.game.myGameEngine.action.AvatarJumpAction;
 import com.dsgames.game.myGameEngine.action.ExitGameAction;
 import com.dsgames.game.myGameEngine.action.SkipSongAction;
 import com.dsgames.game.myGameEngine.action.huntinggame.CloseConnectionAction;
+import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkFireAction;
 import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveBackwardAction;
 import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveForwardAction;
 import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveLeftAction;
@@ -45,21 +48,12 @@ import com.dsgames.game.myGameEngine.entities.GhostAvatar;
 import com.dsgames.game.myGameEngine.network.ProtocolClient;
 import com.dsgames.game.myGameEngine.node.controller.StretchController;
 import com.dsgames.game.myGameEngine.node.controller.VerticalOrbitController;
-import com.dsgames.game.myGameEngine.action.AvatarChargeAction;
-import com.dsgames.game.myGameEngine.action.AvatarJumpAction;
-import com.saechaol.game.myGameEngine.camera.Camera3PController;
-import com.saechaol.game.myGameEngine.display.DisplaySettingsDialog;
-import com.saechaol.game.myGameEngine.object.manual.ManualAxisLineObject;
-import com.saechaol.game.myGameEngine.object.manual.ManualFloorObject;
+import com.dsgames.game.myGameEngine.camera.Camera3PController;
+import com.dsgames.game.myGameEngine.display.DisplaySettingsDialog;
 
-import static ray.rage.scene.SkeletalEntity.EndType.*;
 import net.java.games.input.Controller;
-import ray.audio.AudioManagerFactory;
-import ray.audio.AudioResource;
-import ray.audio.AudioResourceType;
 import ray.audio.IAudioManager;
 import ray.audio.Sound;
-import ray.audio.SoundType;
 import ray.input.GenericInputManager;
 import ray.input.InputManager;
 import ray.input.action.Action;
@@ -81,17 +75,15 @@ import ray.rage.rendersystem.states.RenderState;
 import ray.rage.rendersystem.states.TextureState;
 import ray.rage.rendersystem.states.ZBufferState;
 import ray.rage.scene.Camera;
-import ray.rage.scene.Light;
-import ray.rage.scene.ManualObject;
-import ray.rage.scene.Node;
 import ray.rage.scene.Camera.Frustum.Projection;
-import ray.rage.scene.controllers.OrbitController;
 import ray.rage.scene.Entity;
+import ray.rage.scene.Light;
+import ray.rage.scene.Node;
 import ray.rage.scene.SceneManager;
 import ray.rage.scene.SceneNode;
 import ray.rage.scene.SkeletalEntity;
-import ray.rage.scene.SkyBox;
 import ray.rage.scene.Tessellation;
+import ray.rage.scene.controllers.OrbitController;
 import ray.rage.util.Configuration;
 import ray.rml.Degreef;
 import ray.rml.Matrix4;
@@ -110,10 +102,9 @@ public class HuntingGame extends VariableFrameRateGame {
 	public SceneNode dolphinNodeOne, originNode, tessellationNode;
 	public PhysicsEngine physicsEngine;
 	public PhysicsObject ballOnePhysicsObject, groundPlane, dolphinOnePhysicsObject;
-			
-	private Action moveLeftAction, moveRightAction, moveForwardAction, moveBackwardAction, 
-			 exitGameAction, skipSongAction, avatarJumpAction, avatarChargeAction,
-			 closeConnectionAction;
+
+	private Action moveLeftAction, moveRightAction, moveForwardAction, moveBackwardAction, exitGameAction,
+			skipSongAction, avatarJumpAction, avatarChargeAction, closeConnectionAction, fireAction;
 	private boolean isClientConnected, isRecentering, mouseInit = false;
 	private Camera3PController orbitCameraOne;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
@@ -128,7 +119,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private ProtocolType serverProtocol;
 	private RenderWindow renderWindow;
 	private Robot mouseRobot;
-	private SceneNode groundNode;
+	private SceneNode groundNode, targetNode;
 	private SceneNode[] npcs;
 	private PhysicsObject[] npcPhysicsObjects;
 	private Sound[] music = new Sound[3];
@@ -141,9 +132,9 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Vector<UUID> objectsToRemove;
 	private VerticalOrbitController playerOrbitControllerVertical;
 	private ZBufferState zState;
-	
+
 	protected ScriptEngine jsEngine;
-	protected File test,addLight,setupSkybox,setupTerrain, setupAudio;
+	protected File test, addLight, setupSkybox, setupTerrain, setupAudio;
 
 	private static final int INVULNERABLE_SECONDS = 3;
 	private static final int TERMINAL_VELOCITY = 1000;
@@ -156,8 +147,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	float elapsedTime = 0.0f;
 	GL4RenderSystem renderSystem;
 	HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
-	int elapsedTimeSeconds, playerOneLives = 2, playerOneScore = 0, 
-			currentSong = 0;
+	int elapsedTimeSeconds, playerOneLives = 2, playerOneScore = 0, currentSong = 0;
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString,
 			playerTwoScoreString;
 
@@ -179,11 +169,11 @@ public class HuntingGame extends VariableFrameRateGame {
 		System.out.println(SEPARATOR);
 		formatFloat.setRoundingMode(RoundingMode.DOWN);
 	}
-	
+
 	public String getAddress() {
 		return this.serverAddress;
 	}
-	
+
 	public int getPort() {
 		return this.serverPort;
 	}
@@ -191,7 +181,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	public float getElapsedTime() {
 		return elapsedTime;
 	}
-	
+
 	/**
 	 * Implements a dialogue to allow the user to pick their preferred viewport size
 	 * settings
@@ -222,7 +212,8 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 
 	/**
-	 * Initializes two viewports and instantiates camera projection matrices for each.
+	 * Initializes two viewports and instantiates camera projection matrices for
+	 * each.
 	 */
 	@Override
 	protected void setupCameras(SceneManager sceneManager, RenderWindow renderWindow) {
@@ -252,269 +243,219 @@ public class HuntingGame extends VariableFrameRateGame {
 		if (renderSystem == null)
 			renderSystem = (GL4RenderSystem) engine.getRenderSystem();
 
-		//setupSkybox(engine, sceneManager);
-		
-		ScriptEngineManager factory = new ScriptEngineManager();
-		java.util.List<ScriptEngineFactory> list = factory.getEngineFactories();
-		jsEngine = factory.getEngineByName("js");
-		
-		Invocable invocableEngine = (Invocable) jsEngine ;
-		setupSkybox = new File("setupSkybox.js");
-		//jsEngine.put("sceneManager",sceneManager);
-		//jsEngine.put("engine",engine);
-		this.runScript(jsEngine,setupSkybox);
-		
-		try {
-			invocableEngine.invokeFunction("setupSkybox", sceneManager,engine,textureManager); 
-		}catch(ScriptException e1) {
-			System.out.println("ScriptException in " + setupSkybox + e1); 
-		}catch (NoSuchMethodException e2)
-		{   
-			System.out.println("No such method in " + setupSkybox + e2); 
-		}catch (NullPointerException e3)
-		{ 
-			System.out.println ("Null pointer exception reading " + setupSkybox + e3);
-		}
-		
 		// initialize zState
 		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
 		zState.setEnabled(true);
-
-
-		// initialize world axes
-		ManualAxisLineObject.renderWorldAxes(engine, sceneManager);
-
-		// origin node for orbit controller
-		originNode = sceneManager.getRootSceneNode().createChildSceneNode("originNode");
-		originNode.setLocalPosition(0.0f, 5.0f, 0.0f);
-
-
-		//Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "playerModel.obj");
-		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("dolphinEntityOne", "test.rkm","test.rks");
-
-		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
-		dolphinEntityOne.loadAnimation("wave","wave.rka");
-		dolphinEntityOne.loadAnimation("walk","walk.rka");
 		
-		dolphinNodeOne = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityOne.getName() + "Node");
-
-		dolphinNodeOne.attachObject(dolphinEntityOne);
-
-		playerCharge.put(dolphinNodeOne, false);
-
-		playerStretchController = new StretchController();
-		sceneManager.addController(playerStretchController);
-
-		playerOrbitController = new OrbitController(dolphinNodeOne, 1.0f, 0.5f, 0.0f, false);
-		sceneManager.addController(playerOrbitController);
-
-		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
-
-		addLight = new File("addLight.js");
-		this.runScript(jsEngine,addLight);
-		Light keyLight = sceneManager.createLight("keyLightOne", Light.Type.POINT);
-		SceneNode keyLightNode = sceneManager.getRootSceneNode().createChildSceneNode(keyLight.getName() + "Node");
-		Light pointLightFlashOne = sceneManager.createLight("pointLightFlashOne", Light.Type.SPOT);
-		SceneNode flashNodeOne = dolphinNodeOne.createChildSceneNode(pointLightFlashOne.getName() + "Node");
+		// initialize script engine
+		ScriptEngineManager factory = new ScriptEngineManager();
+		java.util.List<ScriptEngineFactory> list = factory.getEngineFactories();
+		jsEngine = factory.getEngineByName("js");
+		Invocable invocableEngine = (Invocable) jsEngine;
 	
-		try {
-			invocableEngine.invokeFunction("addKeyLight", keyLight,keyLightNode); 
-			invocableEngine.invokeFunction("addLightFlashOne", pointLightFlashOne,flashNodeOne);
-		}catch(ScriptException e1) {
-			System.out.println("ScriptException in " + addLight + e1); 
-		}catch (NoSuchMethodException e2)
-		{   
-			System.out.println("No such method in " + addLight + e2); 
-		}catch (NullPointerException e3)
-		{ 
-			System.out.println ("Null pointer exception reading " + addLight + e3);
-		}
-
-		dolphinNodeOne.setLocalPosition(0.0f, -2.5f, 0.0f);
-	//	dolphinNodeOne.moveLeft(3.0f);
-	//	dolphinNodeOne.moveDown(-2.5f);
-		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
-
-		Texture dolphinOneTexture = textureManager.getAssetByPath("playerModel.png");
-
-		TextureState dolphinOneTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
-
-		dolphinOneTextureState.setTexture(dolphinOneTexture);
-
-		dolphinEntityOne.setRenderState(dolphinOneTextureState);
+		// initialize game
+		setupTerrain(engine, sceneManager, invocableEngine);
+		setupSkybox(engine, sceneManager, invocableEngine);
+		setupPlayer(engine, sceneManager);
+		setupLights(engine, sceneManager, invocableEngine);
 		setupNetwork();
 		setupInputs(sceneManager);
-
-		groundTessellation = sceneManager.createTessellation("groundTessellationEntity, 8");
-		groundTessellation.setSubdivisions(32.0f);
-		
-		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(groundTessellation.getName() + "Node");
-		groundNode.attachObject(groundTessellation);
-		groundNode.setLocalPosition(0.0f, -2.5f, 0.0f);
-		groundNode.scale(500.0f, 1.0f, 500.0f);
-		groundTessellation.setHeightMap(engine, "waterHeight.jpg");
-		groundTessellation.setTexture(engine, "waterTexture.jpg");
-		groundTessellation.setQuality(8);
-		
 		setupNpc(engine, sceneManager);
 		setupPhysics();
 		setupPhysicsWorld();
 		setupOrbitCameras(engine, sceneManager);
+		setupAudio(engine, sceneManager, invocableEngine);
+	}
+	
+	/**
+	 * Initializes the player entity and node objects
+	 * 
+	 * @param engine
+	 * @param sceneManager
+	 * @throws IOException
+	 */
+	private void setupPlayer(Engine engine, SceneManager sceneManager) throws IOException {
+		//Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "playerModel.obj");
+		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("dolphinEntityOne", "test.rkm","test.rks");
+		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
+		
+		// load animations
+		dolphinEntityOne.loadAnimation("wave","wave.rka");
+		dolphinEntityOne.loadAnimation("walk","walk.rka");
 
+		dolphinNodeOne = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityOne.getName() + "Node");
+		dolphinNodeOne.attachObject(dolphinEntityOne);
+		
+		// initialize 'charge' state
+		playerCharge.put(dolphinNodeOne, false);
+		playerStretchController = new StretchController();
+		sceneManager.addController(playerStretchController);
+		playerOrbitController = new OrbitController(dolphinNodeOne, 1.0f, 0.5f, 0.0f, false);
+		sceneManager.addController(playerOrbitController);
+
+		// initialize position and scale
+		dolphinNodeOne.setLocalPosition(0.0f, -2.5f, 0.0f);
+		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
+		
+		targetNode = dolphinNodeOne.createChildSceneNode("targetNode");
+		targetNode.setLocalPosition(0.0f, 0.0f, 50.0f);
+
+		// initialize textures
+		Texture dolphinOneTexture = textureManager.getAssetByPath("playerModel.png");
+		TextureState dolphinOneTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		dolphinOneTextureState.setTexture(dolphinOneTexture);
+		
+		dolphinEntityOne.setRenderState(dolphinOneTextureState);
+	}
+	
+	/**
+	 * Imports and generates a height map from a noise map image, and scales it to
+	 * the size of the ground plane. A normal map is then applied to the original
+	 * noise map to give the terrain surface some semblance of texture.
+	 * 
+	 * @param sceneManager
+	 */
+	protected void setupTerrain(Engine engine, SceneManager sceneManager, Invocable invocableEngine) {
+		groundTessellation = sceneManager.createTessellation("groundTessellationEntity, 8");
+		groundTessellation.setSubdivisions(32.0f);
+
+		groundNode = sceneManager.getRootSceneNode().createChildSceneNode(groundTessellation.getName() + "Node");
+		groundNode.attachObject(groundTessellation);
+		groundNode.setLocalPosition(0.0f, 0.0f, 0.0f);
+		groundNode.scale(10000.0f, 1.0f, 10000.0f);
+		groundTessellation.setHeightMap(engine, "waterHeight.jpg");
+		groundTessellation.setTexture(engine, "waterTexture.jpg");
+		groundTessellation.setQuality(8);
+		
 		setupTerrain = new File("setupTerrain.js");
 		this.runScript(jsEngine, setupTerrain);
 		try {
 			invocableEngine.invokeFunction("setupTessellation", this);
-			
-		}catch(ScriptException e1) {
-			System.out.println("ScriptException in " + setupTerrain + e1); 
-		}catch (NoSuchMethodException e2)
-		{   
-			System.out.println("No such method in " + setupTerrain + e2); 
-		}catch (NullPointerException e3)
-		{ 
-			System.out.println ("Null pointer exception reading " + setupTerrain + e3);
+		} catch (ScriptException e1) {
+			System.out.println("ScriptException in " + setupTerrain + e1);
+		} catch (NoSuchMethodException e2) {
+			System.out.println("No such method in " + setupTerrain + e2);
+		} catch (NullPointerException e3) {
+			System.out.println("Null pointer exception reading " + setupTerrain + e3);
 		}
-		tessellationEntity=(Tessellation) jsEngine.get("tessellationEntity");
-		tessellationNode =  (SceneNode) jsEngine.get("tessellationNode");
-		
-		//setupTessellation(sceneManager);
-		setupAudio = new File("setupAudio.js");
-		jsEngine.put("currentSong", currentSong);
-		jsEngine.put("music", music);
-		jsEngine.put("sfx", sfx);
-		this.runScript(jsEngine, setupAudio);
+		tessellationEntity = (Tessellation) jsEngine.get("tessellationEntity");
+		tessellationNode = (SceneNode) jsEngine.get("tessellationNode");
+	}
+
+	protected void setupSkybox(Engine engine, SceneManager sceneManager, Invocable invocableEngine) {
+		sceneManager.getAmbientLight().setIntensity(new Color(0.1f, 0.1f, 0.1f));
+		setupSkybox = new File("setupSkybox.js");
+		this.runScript(jsEngine, setupSkybox);
+
 		try {
-			invocableEngine.invokeFunction("setupAudio",this);
-			
-		}catch(ScriptException e1) {
-			System.out.println("ScriptException in " + setupAudio + e1); 
-		}catch (NoSuchMethodException e2)
-		{   
-			System.out.println("No such method in " + setupAudio + e2); 
-		}catch (NullPointerException e3)
-		{ 
-			System.out.println ("Null pointer exception reading " + setupAudio + e3);
+			invocableEngine.invokeFunction("setupSkybox", sceneManager, engine, textureManager);
+		} catch (ScriptException e1) {
+			System.out.println("ScriptException in " + setupSkybox + e1);
+		} catch (NoSuchMethodException e2) {
+			System.out.println("No such method in " + setupSkybox + e2);
+		} catch (NullPointerException e3) {
+			System.out.println("Null pointer exception reading " + setupSkybox + e3);
 		}
-		music = (Sound[]) jsEngine.get("music");
-		sfx=(Sound[]) jsEngine.get("sfx");
-		//setupAudio(sceneManager);
-		
 	}
 	
-	private void setupNpc(Engine engine, SceneManager sceneManager) throws IOException {
-		
-		npcs = new SceneNode[3];
-		npcPhysicsObjects = new PhysicsObject[3];
-		
-		Entity dolphinNpcEntityOne = sceneManager.createEntity("npcEntityOne", "dolphinLowPoly.obj");
-		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
-		
-		Entity dolphinNpcEntityTwo = sceneManager.createEntity("npcEntityTwo", "dolphinLowPoly.obj");
-		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
-		
-		Entity dolphinNpcEntityThree = sceneManager.createEntity("npcEntityThree", "dolphinLowPoly.obj");
-		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
-		
-		npcs[0] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityOne.getName() + "Node");
-		npcs[1] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityTwo.getName() + "Node");
-		npcs[2] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityThree.getName() + "Node");
-		
-		Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
-		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
-		textureStateOne.setTexture(textureOne);
-		dolphinNpcEntityOne.setRenderState(textureStateOne);
-		npcs[0].attachObject(dolphinNpcEntityOne);
-		
-		Texture textureTwo = textureManager.getAssetByPath("red.jpeg");
-		TextureState textureStateTwo = (TextureState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
-		textureStateTwo.setTexture(textureTwo);
-		dolphinNpcEntityTwo.setRenderState(textureStateTwo);
-		npcs[1].attachObject(dolphinNpcEntityTwo);
-		
-		Texture textureThree = textureManager.getAssetByPath("chain-fence.jpeg");
-		TextureState textureStateThree = (TextureState) sceneManager.getRenderSystem().createRenderState(RenderState.Type.TEXTURE);
-		textureStateThree.setTexture(textureThree);
-		dolphinNpcEntityThree.setRenderState(textureStateThree);
-		npcs[2].attachObject(dolphinNpcEntityThree);
-		
-		for (SceneNode n : npcs) {
-			n.scale(1.0f, 1.0f, 1.0f);
+	protected void setupLights(Engine engine, SceneManager sceneManager, Invocable invocableEngine) {
+		addLight = new File("addLight.js");
+		this.runScript(jsEngine, addLight);
+		Light keyLight = sceneManager.createLight("keyLightOne", Light.Type.POINT);
+		SceneNode keyLightNode = sceneManager.getRootSceneNode().createChildSceneNode(keyLight.getName() + "Node");
+		Light pointLightFlashOne = sceneManager.createLight("pointLightFlashOne", Light.Type.SPOT);
+		SceneNode flashNodeOne = dolphinNodeOne.createChildSceneNode(pointLightFlashOne.getName() + "Node");
+
+		try {
+			invocableEngine.invokeFunction("addKeyLight", keyLight, keyLightNode);
+			invocableEngine.invokeFunction("addLightFlashOne", pointLightFlashOne, flashNodeOne);
+		} catch (ScriptException e1) {
+			System.out.println("ScriptException in " + addLight + e1);
+		} catch (NoSuchMethodException e2) {
+			System.out.println("No such method in " + addLight + e2);
+		} catch (NullPointerException e3) {
+			System.out.println("Null pointer exception reading " + addLight + e3);
 		}
-		
-		npcs[0].setLocalPosition(5.0f, -2.5f, 0.0f);
-		npcs[1].setLocalPosition(0.0f, -2.5f, 5.0f);
-		npcs[2].setLocalPosition(-5.0f, -2.5f, -5.0f);
-		
 	}
-
-	/**
-	 * Imports and generates a height map from a noise map image, and scales it to the size of the ground plane. 
-	 * A normal map is then applied to the original noise map to give the terrain surface some semblance of texture.
-	 * @param sceneManager
-	 */
-	/*protected void setupTessellation(SceneManager sceneManager) {
-		tessellationEntity = sceneManager.createTessellation("tessellationEntity", 8);
-		tessellationEntity.setSubdivisions(32.0f);
-
-		tessellationNode = sceneManager.getRootSceneNode().createChildSceneNode(tessellationEntity.getName() + "Node");
-		tessellationNode.attachObject(tessellationEntity);
-
-		tessellationNode.translate(0.0f, -10.f, 0.0f);
-		tessellationNode.scale(1000.0f, 1000.0f, 1000.0f);
-		tessellationEntity.setHeightMap(this.getEngine(), "noisemap.jpg");
-		tessellationEntity.setNormalMap(this.getEngine(), "noisemapnormal.png");
-		tessellationEntity.setTexture(this.getEngine(), "grass.jpg");
-		tessellationEntity.setQuality(8);
-	}*/
-
+	
 	/**
 	 * Initializes and loads audio resources from the asset folder, and sets music[]
 	 * and sfx[] to their respective resources, and plays them.
 	 * 
 	 * @param sceneManager
 	 */
-	/*protected void setupAudio(SceneManager sceneManager) {
-		Configuration configuration = sceneManager.getConfiguration();
-		String sfxPath = configuration.valueOf("assets.sounds.path.a1.sfx");
-		String musicPath = configuration.valueOf("assets.sounds.path.a2.music");
-		AudioResource clairDeLune, arabesqueNoOne, reverie, scoreSfx, destroySfx, lifeUpSfx;
-		audioManager = AudioManagerFactory.createAudioManager("ray.audio.joal.JOALAudioManager");
+	protected void setupAudio(Engine engine, SceneManager sceneManager, Invocable invocableEngine) {
+		setupAudio = new File("setupAudio.js");
+		jsEngine.put("currentSong", currentSong);
+		jsEngine.put("music", music);
+		jsEngine.put("sfx", sfx);
+		this.runScript(jsEngine, setupAudio);
+		try {
+			invocableEngine.invokeFunction("setupAudio", this);
 
-		if (!audioManager.initialize()) {
-			System.out.println("The Audio Manager failed to initialize :(");
-			return;
+		} catch (ScriptException e1) {
+			System.out.println("ScriptException in " + setupAudio + e1);
+		} catch (NoSuchMethodException e2) {
+			System.out.println("No such method in " + setupAudio + e2);
+		} catch (NullPointerException e3) {
+			System.out.println("Null pointer exception reading " + setupAudio + e3);
 		}
-
-		clairDeLune = audioManager.createAudioResource(musicPath + "clairdelune.wav", AudioResourceType.AUDIO_STREAM);
-		arabesqueNoOne = audioManager.createAudioResource(musicPath + "arabesque_no_one.wav",
-				AudioResourceType.AUDIO_STREAM);
-		reverie = audioManager.createAudioResource(musicPath + "reverie.wav", AudioResourceType.AUDIO_STREAM);
-		scoreSfx = audioManager.createAudioResource(sfxPath + "score.wav", AudioResourceType.AUDIO_SAMPLE);
-		destroySfx = audioManager.createAudioResource(sfxPath + "destroyed.wav", AudioResourceType.AUDIO_SAMPLE);
-		lifeUpSfx = audioManager.createAudioResource(sfxPath + "lifeup.wav", AudioResourceType.AUDIO_SAMPLE);
-
-		music[0] = new Sound(clairDeLune, SoundType.SOUND_MUSIC, 100, false);
-		music[1] = new Sound(arabesqueNoOne, SoundType.SOUND_MUSIC, 100, false);
-		mus = new Sound(reverie, SoundType.SOUND_MUSIC, 100, false);
-		sfx[0] = new Sound(scoreSfx, SoundType.SOUND_EFFECT, 25, false);
-		sfx[1] = new Sound(destroySfx, SoundType.SOUND_EFFECT, 25, false);
-		sfx[2] = new Sound(lifeUpSfx, SoundType.SOUND_EFFECT, 25, false);
-
-		for (Sound m : music) {
-			m.initialize(audioManager);
-		}
-
-		for (Sound s : sfx) {
-			s.initialize(audioManager);
-		}
-
-		music[currentSong].play();
-	}*/
-
+		music = (Sound[]) jsEngine.get("music");
+		sfx = (Sound[]) jsEngine.get("sfx");
+	}
 	
+	private void setupNpc(Engine engine, SceneManager sceneManager) throws IOException {
+		npcs = new SceneNode[3];
+		npcPhysicsObjects = new PhysicsObject[3];
+
+		Entity dolphinNpcEntityOne = sceneManager.createEntity("npcEntityOne", "dolphinLowPoly.obj");
+		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
+
+		Entity dolphinNpcEntityTwo = sceneManager.createEntity("npcEntityTwo", "dolphinLowPoly.obj");
+		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
+
+		Entity dolphinNpcEntityThree = sceneManager.createEntity("npcEntityThree", "dolphinLowPoly.obj");
+		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
+
+		npcs[0] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityOne.getName() + "Node");
+		npcs[1] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityTwo.getName() + "Node");
+		npcs[2] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityThree.getName() + "Node");
+
+		Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
+		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
+				.createRenderState(RenderState.Type.TEXTURE);
+		textureStateOne.setTexture(textureOne);
+		dolphinNpcEntityOne.setRenderState(textureStateOne);
+		npcs[0].attachObject(dolphinNpcEntityOne);
+
+		Texture textureTwo = textureManager.getAssetByPath("red.jpeg");
+		TextureState textureStateTwo = (TextureState) sceneManager.getRenderSystem()
+				.createRenderState(RenderState.Type.TEXTURE);
+		textureStateTwo.setTexture(textureTwo);
+		dolphinNpcEntityTwo.setRenderState(textureStateTwo);
+		npcs[1].attachObject(dolphinNpcEntityTwo);
+
+		Texture textureThree = textureManager.getAssetByPath("chain-fence.jpeg");
+		TextureState textureStateThree = (TextureState) sceneManager.getRenderSystem()
+				.createRenderState(RenderState.Type.TEXTURE);
+		textureStateThree.setTexture(textureThree);
+		dolphinNpcEntityThree.setRenderState(textureStateThree);
+		npcs[2].attachObject(dolphinNpcEntityThree);
+
+		for (SceneNode n : npcs) {
+			n.scale(1.0f, 1.0f, 1.0f);
+		}
+
+		npcs[0].setLocalPosition(5.0f, -2.5f, 0.0f);
+		npcs[1].setLocalPosition(0.0f, -2.5f, 5.0f);
+		npcs[2].setLocalPosition(-5.0f, -2.5f, -5.0f);
+
+	}
+
+
 	/**
-	 * Initializes the JBullet physics engine and sets gravity to -9.8 units along the world Y component.
+	 * Initializes the JBullet physics engine and sets gravity to -9.8 units along
+	 * the world Y component.
 	 */
 	protected void setupPhysics() {
 		String engine = "ray.physics.JBullet.JBulletPhysicsEngine";
@@ -526,7 +467,8 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 
 	/**
-	 * Initializes the player physics objects and adds them to the physics world, as well as the ground plane
+	 * Initializes the player physics objects and adds them to the physics world, as
+	 * well as the ground plane
 	 */
 	protected void setupPhysicsWorld() {
 		float mass = 1.0f;
@@ -542,49 +484,47 @@ public class HuntingGame extends VariableFrameRateGame {
 		dolphinOnePhysicsObject.setSleepThresholds(0.0f, 0.0f);
 		dolphinNodeOne.setPhysicsObject(dolphinOnePhysicsObject);
 
-		
 		transform = toDoubleArray(groundNode.getLocalTransform().toFloatArray());
 		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), transform, up, 0.0f);
 
 		groundPlane.setBounciness(0.0f);
-//		groundNode.scale(500.0f, 1.0f, 500.0f);
-//		groundNode.setLocalPosition(0.0f, -0.8f, 0.0f);
+		
 		double[] planeTransform = groundPlane.getTransform();
 		planeTransform[12] = groundNode.getLocalPosition().x();
 		planeTransform[13] = groundNode.getLocalPosition().y();
 		planeTransform[14] = groundNode.getLocalPosition().z();
 		groundPlane.setTransform(planeTransform);
 		groundNode.setPhysicsObject(groundPlane);
-		
+
 		transform = toDoubleArray(npcs[0].getLocalTransform().toFloatArray());
 		npcPhysicsObjects[0] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
 		npcPhysicsObjects[0].setSleepThresholds(0.0f, 0.0f);
 		npcs[0].setPhysicsObject(npcPhysicsObjects[0]);
-		
+
 		transform = toDoubleArray(npcs[1].getLocalTransform().toFloatArray());
 		npcPhysicsObjects[1] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
 		npcPhysicsObjects[1].setSleepThresholds(0.0f, 0.0f);
 		npcs[1].setPhysicsObject(npcPhysicsObjects[1]);
-		
+
 		transform = toDoubleArray(npcs[2].getLocalTransform().toFloatArray());
 		npcPhysicsObjects[2] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
 		npcPhysicsObjects[2].setSleepThresholds(0.0f, 0.0f);
 		npcs[2].setPhysicsObject(npcPhysicsObjects[2]);
 
 	}
-	
+
 	private void setupNetwork() {
 		objectsToRemove = new Vector<UUID>();
 		isClientConnected = false;
 		try {
 			protocolClient = new ProtocolClient(InetAddress.getByName(serverAddress), serverPort, serverProtocol, this);
-			
+
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		if (protocolClient == null)
 			System.out.println("Missing protocol host");
 		else {
@@ -605,45 +545,9 @@ public class HuntingGame extends VariableFrameRateGame {
 		playerOneViewport.setClearColor(new Color(0.5f, 1.0f, 0.5f));
 	}
 
-	/*protected void setupSkybox(Engine engine, SceneManager sceneManager) throws IOException {
-		SkyBox worldSkybox = sceneManager.createSkyBox(SKYBOX);
-		Configuration configuration = engine.getConfiguration();
-
-		// initialize skybox textures
-		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.test"));
-		Texture skyboxFrontTexture = textureManager.getAssetByPath("front.jpg");
-		Texture skyboxBackTexture = textureManager.getAssetByPath("back.jpg");
-		Texture skyboxLeftTexture = textureManager.getAssetByPath("left.jpg");
-		Texture skyboxRightTexture = textureManager.getAssetByPath("right.jpg");
-		Texture skyboxTopTexture = textureManager.getAssetByPath("top.jpg");
-		Texture skyboxBottomTexture = textureManager.getAssetByPath("bottom.jpg");
-
-		// transform skybox textures
-		AffineTransform skyboxAffineTransform = new AffineTransform();
-		skyboxAffineTransform.translate(0.0, skyboxFrontTexture.getImage().getHeight());
-		skyboxAffineTransform.scale(1.0, 1.0);
-		skyboxFrontTexture.transform(skyboxAffineTransform);
-		skyboxBackTexture.transform(skyboxAffineTransform);
-		skyboxLeftTexture.transform(skyboxAffineTransform);
-		skyboxRightTexture.transform(skyboxAffineTransform);
-		skyboxTopTexture.transform(skyboxAffineTransform);
-		skyboxBottomTexture.transform(skyboxAffineTransform);
-
-		// set skybox textures
-		worldSkybox.setTexture(skyboxFrontTexture, SkyBox.Face.FRONT);
-		worldSkybox.setTexture(skyboxBackTexture, SkyBox.Face.BACK);
-		worldSkybox.setTexture(skyboxLeftTexture, SkyBox.Face.LEFT);
-		worldSkybox.setTexture(skyboxRightTexture, SkyBox.Face.RIGHT);
-		worldSkybox.setTexture(skyboxTopTexture, SkyBox.Face.TOP);
-		worldSkybox.setTexture(skyboxBottomTexture, SkyBox.Face.BOTTOM);
-
-		// assign skybox to sceneManager
-		sceneManager.setActiveSkyBox(worldSkybox);
-		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.textures.path"));
-	}*/
-
 	/**
 	 * Initializes 3P Camera controls for both players as well as their controls.
+	 * 
 	 * @param engine
 	 * @param sceneManager
 	 */
@@ -653,14 +557,14 @@ public class HuntingGame extends VariableFrameRateGame {
 		Camera cameraOne = sceneManager.getCamera("cameraOne");
 
 		String keyboardName = inputManager.getKeyboardName();
-
-		orbitCameraOne = new Camera3PController(cameraOne, cameraOneNode, dolphinNodeOne, keyboardName, inputManager);
+		String mouseName = inputManager.getMouseName();
+		orbitCameraOne = new Camera3PController(cameraOneNode, targetNode, com.dsgames.game.myGameEngine.controller.InputType.MOUSE, inputManager);
 		initializeMouse(renderSystem, renderWindow);
 	}
 
 	protected void setupInputs(SceneManager sceneManager) {
-		
-		//String gamepadName = inputManager.getFirstGamepadName();
+
+		// String gamepadName = inputManager.getFirstGamepadName();
 
 		moveLeftAction = new NetworkMoveLeftAction(this, dolphinNodeOne, protocolClient);
 		moveRightAction = new NetworkMoveRightAction(this, dolphinNodeOne, protocolClient);
@@ -671,24 +575,18 @@ public class HuntingGame extends VariableFrameRateGame {
 		avatarJumpAction = new AvatarJumpAction(this, dolphinNodeOne.getName());
 		avatarChargeAction = new AvatarChargeAction(this, dolphinNodeOne.getName());
 		closeConnectionAction = new CloseConnectionAction(protocolClient, this, isClientConnected);
-		
+		fireAction = new NetworkFireAction(this, dolphinNodeOne, protocolClient);
+
 		/*
-		 * Player One - KB
-		 * - WASD 		: Move 
-		 * - Arrows 	: Orbit camera 
-		 * - Q/E		: Yaw dolphin left/right
-		 * - SPACE 		: Jump
-		 * - LSHIFT 	: Activate charge 
-		 * - ESC 		: Quit 
-		 * - P 			: Skip Song 
-		 * - F 			: Zoom out 
-		 * - R 			: Zoom in
+		 * Player One - KB - WASD : Move - Arrows : Orbit camera - Q/E : Yaw dolphin
+		 * left/right - SPACE : Jump - LSHIFT : Activate charge - ESC : Quit - P : Skip
+		 * Song - F : Zoom out - R : Zoom in
 		 */
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
 			if (keyboards.getType() == Controller.Type.KEYBOARD) {
-				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.A,
-						moveLeftAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.A, moveLeftAction,
+						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.D,
 						moveRightAction, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
@@ -710,77 +608,77 @@ public class HuntingGame extends VariableFrameRateGame {
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.LSHIFT,
 						avatarChargeAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-				
+
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.K,
 						closeConnectionAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
 			}
+			if (keyboards.getType() == Controller.Type.MOUSE) {
+				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Button.LEFT,
+						fireAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+			}
 		}
 
 		/*
-		 * Player Two - Gamepad 
-		 * - LStick 	: X/Y 		: Move 
-		 * - RStick 	: RX/RY 	: Orbit camera 
-		 * - LB			: 4			: Yaw dolphin left
-		 * - RB			: 5			: Yaw dolphin right
-		 * - A 			: 0 		: Jump 
-		 * - B 			: 1 		: Activate charge 
-		 * - Y 			: 3 		: Skip Song 
-		 * - Menu 		: 7 		: Quit 
-		 * - LT 		: Z+ 		: Zoom out 
-		 * - RT 		: Z- 		: Zoom in
+		 * Player Two - Gamepad - LStick : X/Y : Move - RStick : RX/RY : Orbit camera -
+		 * LB : 4 : Yaw dolphin left - RB : 5 : Yaw dolphin right - A : 0 : Jump - B : 1
+		 * : Activate charge - Y : 3 : Skip Song - Menu : 7 : Quit - LT : Z+ : Zoom out
+		 * - RT : Z- : Zoom in
 		 */
-		/*if (gamepadName == null) {
-			System.out.println("No gamepad detected!");
-		} else {
-			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Axis.X,
-					leftStickXActionP2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-
-			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Axis.Y,
-					leftStickYActionP2, InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-
-			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Button._6,
-					exitGameAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
-
-			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Button._7,
-					exitGameAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
-
-			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Button._0,
-					avatarJumpActionP2, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-
-			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Button._1,
-					avatarChargeActionP2, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-
-			inputManager.associateAction(gamepadName, net.java.games.input.Component.Identifier.Button._3,
-					skipSongAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		}*/
+		/*
+		 * if (gamepadName == null) { System.out.println("No gamepad detected!"); } else
+		 * { inputManager.associateAction(gamepadName,
+		 * net.java.games.input.Component.Identifier.Axis.X, leftStickXActionP2,
+		 * InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		 * 
+		 * inputManager.associateAction(gamepadName,
+		 * net.java.games.input.Component.Identifier.Axis.Y, leftStickYActionP2,
+		 * InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+		 * 
+		 * inputManager.associateAction(gamepadName,
+		 * net.java.games.input.Component.Identifier.Button._6, exitGameAction,
+		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+		 * 
+		 * inputManager.associateAction(gamepadName,
+		 * net.java.games.input.Component.Identifier.Button._7, exitGameAction,
+		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
+		 * 
+		 * inputManager.associateAction(gamepadName,
+		 * net.java.games.input.Component.Identifier.Button._0, avatarJumpActionP2,
+		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		 * 
+		 * inputManager.associateAction(gamepadName,
+		 * net.java.games.input.Component.Identifier.Button._1, avatarChargeActionP2,
+		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		 * 
+		 * inputManager.associateAction(gamepadName,
+		 * net.java.games.input.Component.Identifier.Button._3, skipSongAction,
+		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY); }
+		 */
 
 	}
-	
+
 	public Vector<SceneNode> getPlayers() {
 		Vector<SceneNode> players = new Vector<SceneNode>();
 		players.add(dolphinNodeOne);
 		if (!ghostAvatars.isEmpty()) {
-			ghostAvatars.forEach((key, val)->{
+			ghostAvatars.forEach((key, val) -> {
 				players.add((SceneNode) val.getNode());
 			});
 		}
 		return players;
 	}
-	
+
 	public static float distanceFrom(Vector3 p1, Vector3 p2) {
-		return (float) Math.sqrt(
-				Math.pow(p1.x() - p2.x(), 2) + 
-				Math.pow(p1.y() - p2.y(), 2) + 
-				Math.pow(p1.z() - p2.z(), 2)
-		);
+		return (float) Math
+				.sqrt(Math.pow(p1.x() - p2.x(), 2) + Math.pow(p1.y() - p2.y(), 2) + Math.pow(p1.z() - p2.z(), 2));
 	}
-	
+
 	protected void processNetworking(float elapsedTime) {
 		if (protocolClient != null) {
 			protocolClient.processPackets();
 		}
-		
+
 		// remove ghost avatars of players who have left the game
 		Iterator<UUID> i = objectsToRemove.iterator();
 		while (i.hasNext()) {
@@ -810,7 +708,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
 		playerOneLivesString = Integer.toString(playerOneLives);
 		playerOneScoreString = Integer.toString(playerOneScore);
-	
+
 		displayString = "Player One Time: " + elapsedTimeString;
 		displayString += " | Lives = " + playerOneLivesString;
 		displayString += " | Score = " + playerOneScoreString;
@@ -837,20 +735,20 @@ public class HuntingGame extends VariableFrameRateGame {
 			displayString += "Claude Debussy - Reverie";
 			break;
 		}
-		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(0).getActualBottom())+2);
+		renderSystem.setHUD(displayString, 15, (renderSystem.getRenderWindow().getViewport(0).getActualBottom()) + 2);
 		updateVerticalPosition();
 		processNetworking(elapsedTime);
 		inputManager.update(elapsedTime);
-		
+
 		if (hostStatus == 0) {
 			npcController = new NPCController(this, protocolClient, npcs, npcPhysicsObjects, hostStatus);
 			hostStatus = -1;
 		}
-		
+
 		if (hostStatus == -1) {
 			npcController.runNpcLoop();
 		}
-		
+
 		mouseInit = true;
 		checkChargeTime();
 
@@ -867,20 +765,22 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		SkeletalEntity x = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
 		x.update();
-		
+
 		orbitCameraOne.updateCameraPosition();
 		if (!ghostAvatars.isEmpty()) {
-			ghostAvatars.forEach((k, v)->{
+			ghostAvatars.forEach((k, v) -> {
 				synchronizeAvatarPhysics(v.getNode());
 			});
 		}
+		
+		targetNode.lookAt(dolphinNodeOne);
 	}
-	
+
 	public Vector3 getPlayerPosition() {
 		SceneNode player = this.getEngine().getSceneManager().getSceneNode("dolphinEntityOneNode");
 		return player.getWorldPosition();
 	}
-	
+
 	public void addGhostAvatarToGameWorld(GhostAvatar avatar) throws IOException {
 		SceneManager sceneManager = this.getEngine().getSceneManager();
 		if (avatar != null && (!sceneManager.hasEntity("ghostEntity" + avatar.getId().toString()))) {
@@ -890,44 +790,45 @@ public class HuntingGame extends VariableFrameRateGame {
 			ghostNode.attachObject(ghostEntity);
 			ghostNode.scale(0.04f, 0.04f, 0.04f);
 			ghostNode.moveLeft(3.0f);
-			
+
 			Texture dolphinTexture = textureManager.getAssetByPath("modelGame.jpg");
 			TextureState dolphinTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 			dolphinTextureState.setTexture(dolphinTexture);
 			ghostEntity.setRenderState(dolphinTextureState);
-			
+
 			float mass = 1.0f;
 			double[] transform;
 
 			transform = toDoubleArray(ghostNode.getLocalTransform().toFloatArray());
-			PhysicsObject ghostNodePhyiscsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
+			PhysicsObject ghostNodePhyiscsObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass,
+					transform, 0.3f, 1.0f);
 
 			ghostNodePhyiscsObject.setBounciness(0.0f);
 			ghostNodePhyiscsObject.setFriction(0.0f);
 			ghostNodePhyiscsObject.setDamping(0.99f, 0.99f);
 			ghostNodePhyiscsObject.setSleepThresholds(0.0f, 0.0f);
 			ghostNode.setPhysicsObject(ghostNodePhyiscsObject);
-			
+
 			avatar.setNode(ghostNode);
 			avatar.setEntity(ghostEntity);
 			ghostAvatars.put(avatar.getId(), avatar);
 		}
 	}
-	
+
 	public void removeGhostAvatarFromGameWorld(GhostAvatar avatar) {
 		if (avatar != null) {
 			objectsToRemove.add(avatar.getId());
-			ghostAvatars.remove(avatar.getId());		
+			ghostAvatars.remove(avatar.getId());
 		}
 	}
-	
+
 	public void moveGhostAvatar(UUID id, Vector3 position) {
 		if (ghostAvatars.get(id) != null) {
 			ghostAvatars.get(id).getNode().setLocalPosition(position);
 			synchronizeAvatarPhysics(ghostAvatars.get(id).getNode());
 		}
 	}
-	
+
 	/**
 	 * Ensures that the player's vertical position traverses along the terrain
 	 */
@@ -938,9 +839,10 @@ public class HuntingGame extends VariableFrameRateGame {
 				tessellationEntity.getWorldHeight(avatarWorldPositionP1.x(), avatarWorldPositionP1.z()) + 0.3f,
 				avatarLocalPositionP1.z());
 		Vector3 groundPositionP1 = (Vector3) Vector3f.createFrom(avatarLocalPositionP1.x(),
-				groundTessellation.getWorldHeight(avatarWorldPositionP1.x(),  avatarWorldPositionP1.z() - 0.3f),
+				groundTessellation.getWorldHeight(avatarWorldPositionP1.x(), avatarWorldPositionP1.z() - 0.3f),
 				avatarLocalPositionP1.z());
-		if (avatarLocalPositionP1.y() <= terrainPositionP1.y() + 0.3f || avatarLocalPositionP1.y() <= groundPositionP1.y()) {
+		if (avatarLocalPositionP1.y() <= terrainPositionP1.y() + 0.3f
+				|| avatarLocalPositionP1.y() <= groundPositionP1.y()) {
 			Vector3 avatarPositionP1 = terrainPositionP1;
 			if (avatarPositionP1.y() < groundPositionP1.y()) {
 				avatarPositionP1 = groundPositionP1;
@@ -954,22 +856,19 @@ public class HuntingGame extends VariableFrameRateGame {
 		} else if (avatarLocalPositionP1.y() > terrainPositionP1.y() + 1.0f) {
 			jumpP1 = true;
 		}
-		
+
 		for (int i = 0; i < 3; i++) {
 			Vector3 npcWorldPosition = npcs[i].getWorldPosition();
 			Vector3 npcLocalPosition = npcs[i].getLocalPosition();
-			Vector3 npcTerrainPosition = (Vector3) Vector3f.createFrom(
-					npcLocalPosition.x(),
+			Vector3 npcTerrainPosition = (Vector3) Vector3f.createFrom(npcLocalPosition.x(),
 					tessellationEntity.getWorldHeight(npcWorldPosition.x(), npcWorldPosition.z() + 0.2f),
-					npcLocalPosition.z()
-					);
-			Vector3 npcGroundPlanePosition = (Vector3) Vector3f.createFrom(
-					npcLocalPosition.x(),
+					npcLocalPosition.z());
+			Vector3 npcGroundPlanePosition = (Vector3) Vector3f.createFrom(npcLocalPosition.x(),
 					groundTessellation.getWorldHeight(npcWorldPosition.x(), npcWorldPosition.z() + 0.2f),
-					npcLocalPosition.z()
-					);
-			
-			if (npcLocalPosition.y() <= npcTerrainPosition.y() + 0.3f || npcLocalPosition.y() <= npcGroundPlanePosition.y()) {
+					npcLocalPosition.z());
+
+			if (npcLocalPosition.y() <= npcTerrainPosition.y() + 0.3f
+					|| npcLocalPosition.y() <= npcGroundPlanePosition.y()) {
 				Vector3 npcPosition = npcTerrainPosition;
 				if (npcLocalPosition.y() < npcGroundPlanePosition.y()) {
 					npcPosition = npcGroundPlanePosition;
@@ -977,7 +876,7 @@ public class HuntingGame extends VariableFrameRateGame {
 				npcs[i].setLocalPosition(npcPosition);
 				synchronizeAvatarPhysics(npcs[i]);
 			}
-			
+
 		}
 	}
 
@@ -991,10 +890,11 @@ public class HuntingGame extends VariableFrameRateGame {
 		currentSong %= music.length;
 		music[currentSong].play();
 	}
-	
+
 	public void playSoundEffect() {
 		sfx[1].play();
 	}
+
 	public void playJumpSound() {
 		sfx[2].play();
 	}
@@ -1007,12 +907,12 @@ public class HuntingGame extends VariableFrameRateGame {
 			playerCharge.put(dolphinNodeOne, false);
 		}
 	}
-	
+
 	public void setIsConnected(boolean connected) {
 		isClientConnected = connected;
-		
+
 	}
-	
+
 	private void initializeMouse(RenderSystem renderSystem, RenderWindow render) {
 		Viewport view = renderWindow.getViewport(0);
 		int left = renderWindow.getLocationLeft();
@@ -1022,20 +922,20 @@ public class HuntingGame extends VariableFrameRateGame {
 		centerX = left + width / 2;
 		centerY = top + height / 2;
 		isRecentering = false;
-		
+
 		try {
 			mouseRobot = new Robot();
 		} catch (AWTException e) {
 			throw new RuntimeException("Couldn't initialize robot");
 		}
-		
+
 		recenterMouse();
 		lastMouseX = centerX;
 		lastMouseY = centerY;
-		
+
 		render.addMouseMotionListener(this);
 	}
-	
+
 	public void mouseMoveAction(MouseEvent e) {
 		if (mouseInit) {
 			if (isRecentering && centerX == e.getXOnScreen() && centerY == e.getYOnScreen()) {
@@ -1043,13 +943,14 @@ public class HuntingGame extends VariableFrameRateGame {
 			}
 			mouseX = e.getXOnScreen();
 			mouseY = e.getYOnScreen();
-			
+
 			float dx = lastMouseX - mouseX;
 			float dy = lastMouseY - mouseY;
-			
-			dolphinNodeOne.rotate(Degreef.createFrom((float) (dx * sensitivity)), Vector3f.createFrom(0.0f, 1.0f, 0.0f));
+
+			dolphinNodeOne.rotate(Degreef.createFrom((float) (dx * sensitivity)),
+					Vector3f.createFrom(0.0f, 1.0f, 0.0f));
 			orbitCameraOne.updateCameraPosition();
-			
+
 			lastMouseX = mouseX;
 			lastMouseY = mouseY;
 			recenterMouse();
@@ -1057,7 +958,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			lastMouseY = centerY;
 		}
 	}
-	
+
 	private void recenterMouse() {
 		Viewport view = renderWindow.getViewport(0);
 		int left = renderWindow.getLocationLeft();
@@ -1069,7 +970,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		isRecentering = true;
 		mouseRobot.mouseMove((int) centerX, (int) centerY);
 	}
-	
+
 	public void setIsConnected(boolean connected, int clientStatus) {
 		isClientConnected = connected;
 		if (clientStatus == 0)
@@ -1083,29 +984,26 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void moveNpc(int npcId, float[] npcTransform, Vector3 vectorPosition) {
 		if (npcController != null) {
 			if (npcController.getNpc(npcId) != null) {
-				double[] transform = {
-						npcTransform[0], npcTransform[1], npcTransform[2],
-						npcTransform[3], npcTransform[4], npcTransform[5],
-						npcTransform[6], npcTransform[7], npcTransform[8],
-						npcTransform[9], npcTransform[10], npcTransform[11],
-						npcTransform[12], npcTransform[13], npcTransform[14],
-						npcTransform[15]
-				};
+				double[] transform = { npcTransform[0], npcTransform[1], npcTransform[2], npcTransform[3],
+						npcTransform[4], npcTransform[5], npcTransform[6], npcTransform[7], npcTransform[8],
+						npcTransform[9], npcTransform[10], npcTransform[11], npcTransform[12], npcTransform[13],
+						npcTransform[14], npcTransform[15] };
 				npcController.getNpc(npcId).setTransform(transform);
 				npcController.getNpc(npcId).getNpcSceneNode().lookAt(vectorPosition);
 			}
 		}
-		
+
 	}
-	
+
 	/**
 	 * Adds the scene node the the stretch controller
+	 * 
 	 * @param player
 	 */
 	public void addToStretchController(SceneNode player) {
 		playerStretchController.addNode(player);
 	}
-	
+
 	public void synchronizeAvatarPhysics(Node avatarNode) {
 		if (running) {
 			double[] transform = avatarNode.getPhysicsObject().getTransform();
@@ -1118,27 +1016,22 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 	}
 
-	private void runScript(ScriptEngine engine,File scriptFile) {
-		try    
-		{ 
+	private void runScript(ScriptEngine engine, File scriptFile) {
+		try {
 			FileReader fileReader = new FileReader(scriptFile);
 			engine.eval(fileReader);
-			fileReader.close();    
-		}
-		catch(FileNotFoundException e1) {
-			System.out.println(scriptFile + " not found " + e1); 
-		} catch (IOException e2)     
-		{ 
-			System.out.println("IO problem with " + scriptFile + e2); 
-		}catch (ScriptException e3)      
-		{ 
-			System.out.println("ScriptException in " + scriptFile + e3); 
-		}catch (NullPointerException e4)   
-		{ 
-			System.out.println ("Null pointer exception in " + scriptFile + e4); 
+			fileReader.close();
+		} catch (FileNotFoundException e1) {
+			System.out.println(scriptFile + " not found " + e1);
+		} catch (IOException e2) {
+			System.out.println("IO problem with " + scriptFile + e2);
+		} catch (ScriptException e3) {
+			System.out.println("ScriptException in " + scriptFile + e3);
+		} catch (NullPointerException e4) {
+			System.out.println("Null pointer exception in " + scriptFile + e4);
 		}
 	}
-	
+
 	/**
 	 * Returns a random float array of size 3
 	 * 
@@ -1156,9 +1049,10 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 		return randomFloat;
 	}
-	
+
 	/**
 	 * Converts a double array into a float array
+	 * 
 	 * @param arr
 	 * @return
 	 */
@@ -1177,6 +1071,7 @@ public class HuntingGame extends VariableFrameRateGame {
 
 	/**
 	 * Converts a float array into a double array
+	 * 
 	 * @param arr
 	 * @return
 	 */
@@ -1216,11 +1111,11 @@ public class HuntingGame extends VariableFrameRateGame {
 				e.printStackTrace();
 			}
 		}
-		
+
 		System.out.println("NetworkServer instantiated!");
 		System.out.println("Using IP: " + ((HuntingGame) game).getAddress());
 		System.out.println("Serving over port: " + ((HuntingGame) game).getPort());
-		
+
 		try {
 			game.startup();
 			game.run();
@@ -1232,11 +1127,10 @@ public class HuntingGame extends VariableFrameRateGame {
 			game.exit();
 		}
 	}
-	
+
 	@Override
 	public void keyPressed(KeyEvent e) {
-		switch(e.getKeyCode())
-		{
+		switch (e.getKeyCode()) {
 		case KeyEvent.VK_V:
 			SkeletalEntity x = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
 			x.stopAnimation();
@@ -1247,7 +1141,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			z.stopAnimation();
 			z.playAnimation("walk",2f, LOOP,0);
 			break;
-			
+
 		case KeyEvent.VK_C:
 			SkeletalEntity y = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
 			y.stopAnimation();

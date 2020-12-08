@@ -14,12 +14,11 @@ with(JavaPackages)
 		tessellationNode = mygame.getEngine().getSceneManager().getRootSceneNode().createChildSceneNode(tessellationEntity.getName() + "Node");
 		tessellationNode.attachObject(tessellationEntity);
 
-		tessellationNode.translate(0.0, -10, 0.0);
+		tessellationNode.translate(0.0, -0.5, 0.0);
 		tessellationNode.scale(1000.0, 1000.0, 1000.0);
-		tessellationEntity.setHeightMap(mygame.getEngine(), "noisemap.jpg");
-		tessellationEntity.setNormalMap(mygame.getEngine(), "noisemapnormal.png");
-		tessellationEntity.setTexture(mygame.getEngine(), "grass.jpg");
+		tessellationEntity.setHeightMap(mygame.getEngine(), "heightmap.jpg");
+		tessellationEntity.setTexture(mygame.getEngine(), "heightmaptexture.jpg");
+		tessellationEntity.setNormalMap(mygame.getEngine(), "heightmapnormal.jpg");
 		tessellationEntity.setQuality(8);
-
 	}
 }
