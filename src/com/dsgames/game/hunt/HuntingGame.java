@@ -44,6 +44,7 @@ import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveForwa
 import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveLeftAction;
 import com.dsgames.game.myGameEngine.action.huntinggame.network.NetworkMoveRightAction;
 import com.dsgames.game.myGameEngine.ai.NPCController;
+import com.dsgames.game.myGameEngine.entities.AbstractNpcEntity;
 import com.dsgames.game.myGameEngine.entities.GhostAvatar;
 import com.dsgames.game.myGameEngine.network.ProtocolClient;
 import com.dsgames.game.myGameEngine.node.controller.StretchController;
@@ -109,6 +110,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Camera3PController orbitCameraOne;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private ConcurrentHashMap<UUID, GhostAvatar> ghostAvatars = new ConcurrentHashMap<UUID, GhostAvatar>();
+	private AbstractNpcEntity[] npcEntity;
 	private double sensitivity = 0.5;
 	private float lastMouseX, lastMouseY, mouseX, mouseY;
 	private InputManager inputManager;
@@ -402,53 +404,37 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 		music = (Sound[]) jsEngine.get("music");
 		sfx = (Sound[]) jsEngine.get("sfx");
-	}
+	} 
 	
 	private void setupNpc(Engine engine, SceneManager sceneManager) throws IOException {
-		npcs = new SceneNode[3];
-		npcPhysicsObjects = new PhysicsObject[3];
-
-		Entity dolphinNpcEntityOne = sceneManager.createEntity("npcEntityOne", "dolphinLowPoly.obj");
-		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
-
-		Entity dolphinNpcEntityTwo = sceneManager.createEntity("npcEntityTwo", "dolphinLowPoly.obj");
-		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
-
-		Entity dolphinNpcEntityThree = sceneManager.createEntity("npcEntityThree", "dolphinLowPoly.obj");
-		dolphinNpcEntityOne.setPrimitive(Primitive.TRIANGLES);
-
-		npcs[0] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityOne.getName() + "Node");
-		npcs[1] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityTwo.getName() + "Node");
-		npcs[2] = sceneManager.getRootSceneNode().createChildSceneNode(dolphinNpcEntityThree.getName() + "Node");
-
-		Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
-		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
-				.createRenderState(RenderState.Type.TEXTURE);
-		textureStateOne.setTexture(textureOne);
-		dolphinNpcEntityOne.setRenderState(textureStateOne);
-		npcs[0].attachObject(dolphinNpcEntityOne);
-
-		Texture textureTwo = textureManager.getAssetByPath("red.jpeg");
-		TextureState textureStateTwo = (TextureState) sceneManager.getRenderSystem()
-				.createRenderState(RenderState.Type.TEXTURE);
-		textureStateTwo.setTexture(textureTwo);
-		dolphinNpcEntityTwo.setRenderState(textureStateTwo);
-		npcs[1].attachObject(dolphinNpcEntityTwo);
-
-		Texture textureThree = textureManager.getAssetByPath("chain-fence.jpeg");
-		TextureState textureStateThree = (TextureState) sceneManager.getRenderSystem()
-				.createRenderState(RenderState.Type.TEXTURE);
-		textureStateThree.setTexture(textureThree);
-		dolphinNpcEntityThree.setRenderState(textureStateThree);
-		npcs[2].attachObject(dolphinNpcEntityThree);
-
-		for (SceneNode n : npcs) {
-			n.scale(1.0f, 1.0f, 1.0f);
+		npcEntity = new AbstractNpcEntity[6];
+		npcs = new SceneNode[6];
+		npcPhysicsObjects = new PhysicsObject[6];
+		if(npcEntity !=null)
+		{
+			for(int i = 0 ; i< npcEntity.length; i++) {
+				Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(i), "dolphinLowPoly.obj");
+				NpcEntity.setPrimitive(Primitive.TRIANGLES);
+				SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
+				Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
+				TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
+						.createRenderState(RenderState.Type.TEXTURE);
+				textureStateOne.setTexture(textureOne);
+				NpcEntity.setRenderState(textureStateOne);
+				NpcNode.attachObject(NpcEntity);
+				NpcNode.scale(1.0f, 1.0f, 1.0f);
+				NpcNode.setLocalPosition(5.0f, 1.5f, 0.0f);
+				npcEntity[i] = new AbstractNpcEntity(i,NpcNode,NpcEntity);
+				npcs[i] = (SceneNode) npcEntity[i].getNode();
+			}	
 		}
-
-		npcs[0].setLocalPosition(5.0f, -2.5f, 0.0f);
-		npcs[1].setLocalPosition(0.0f, -2.5f, 5.0f);
-		npcs[2].setLocalPosition(-5.0f, -2.5f, -5.0f);
+		
+		npcs[0].setLocalPosition(5.0f, 1.5f, 0.0f);
+		npcs[1].setLocalPosition(0.0f, 1.5f, 5.0f);
+		npcs[2].setLocalPosition(-5.0f, 1.5f, -5.0f);
+		npcs[3].setLocalPosition(0f, 1.5f, -5.0f);
+		npcs[4].setLocalPosition(50f, 1.5f, 50f);
+		npcs[5].setLocalPosition(5.0f, 1.5f, -5.0f);
 
 	}
 
@@ -510,7 +496,29 @@ public class HuntingGame extends VariableFrameRateGame {
 		npcPhysicsObjects[2] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
 		npcPhysicsObjects[2].setSleepThresholds(0.0f, 0.0f);
 		npcs[2].setPhysicsObject(npcPhysicsObjects[2]);
-
+		
+		transform = toDoubleArray(npcs[3].getLocalTransform().toFloatArray());
+		npcPhysicsObjects[3] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
+		npcPhysicsObjects[3].setSleepThresholds(0.0f, 0.0f);
+		npcs[3].setPhysicsObject(npcPhysicsObjects[3]);
+		
+		transform = toDoubleArray(npcs[4].getLocalTransform().toFloatArray());
+		npcPhysicsObjects[4] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
+		npcPhysicsObjects[4].setSleepThresholds(0.0f, 0.0f);
+		npcs[4].setPhysicsObject(npcPhysicsObjects[4]);
+		
+		for(int i =0; i < npcEntity.length;i++)
+		{
+			double[] transformNPC = toDoubleArray(npcEntity[i].getNode().getLocalTransform().toFloatArray());
+			PhysicsObject npcPhysicObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transformNPC, 0.3f, 1.0f);
+			npcPhysicObject.setBounciness(0.0f);
+			npcPhysicObject.setFriction(0.0f);
+			npcPhysicObject.setDamping(0.99f, 0.99f);
+			npcPhysicObject.setSleepThresholds(0.0f, 0.0f);
+			npcEntity[i].getNode().setPhysicsObject(npcPhysicObject);
+			npcEntity[i].setPhysicObject(npcPhysicObject);
+			npcPhysicsObjects[i]=npcEntity[i].getPhysicObject();
+		}
 	}
 
 	private void setupNetwork() {
@@ -857,11 +865,11 @@ public class HuntingGame extends VariableFrameRateGame {
 			jumpP1 = true;
 		}
 
-		for (int i = 0; i < 3; i++) {
-			Vector3 npcWorldPosition = npcs[i].getWorldPosition();
-			Vector3 npcLocalPosition = npcs[i].getLocalPosition();
+		for (int i = 0; i < npcEntity.length; i++) {
+			Vector3 npcWorldPosition = npcEntity[i].getNode().getWorldPosition();
+			Vector3 npcLocalPosition = npcEntity[i].getNode().getLocalPosition();
 			Vector3 npcTerrainPosition = (Vector3) Vector3f.createFrom(npcLocalPosition.x(),
-					tessellationEntity.getWorldHeight(npcWorldPosition.x(), npcWorldPosition.z() + 0.2f),
+					tessellationEntity.getWorldHeight(npcWorldPosition.x(), npcWorldPosition.z() + 0.3f),
 					npcLocalPosition.z());
 			Vector3 npcGroundPlanePosition = (Vector3) Vector3f.createFrom(npcLocalPosition.x(),
 					groundTessellation.getWorldHeight(npcWorldPosition.x(), npcWorldPosition.z() + 0.2f),
@@ -873,8 +881,8 @@ public class HuntingGame extends VariableFrameRateGame {
 				if (npcLocalPosition.y() < npcGroundPlanePosition.y()) {
 					npcPosition = npcGroundPlanePosition;
 				}
-				npcs[i].setLocalPosition(npcPosition);
-				synchronizeAvatarPhysics(npcs[i]);
+				npcEntity[i].getNode().setLocalPosition(npcPosition);
+				synchronizeAvatarPhysics(npcEntity[i].getNode());
 			}
 
 		}
