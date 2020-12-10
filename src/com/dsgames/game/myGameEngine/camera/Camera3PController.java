@@ -19,21 +19,24 @@ import ray.rml.Vector3f;
 
 public class Camera3PController {
 	
-	private static final float ORBIT_SPEED = 1.75f;
+	
+	private static final float MAX_ORBIT_SPEED = 2.0f;
+	private static final float MIN_ORBIT_SPEED = 0.5f;
 
 	private final SceneNode cameraNode; // the node the camera is attached to
 	private final SceneNode cameraTarget; // the target the camera looks at
 	private final InputManager inputManager; // the game input manager for this camera
 	private final InputType inputType; // this controller type
 	
+	private float orbitSpeed = 1.0f;
 	private float cameraAzimuth; // rotation of camera around Y axis
 	private float cameraElevation; // elevation of camera above target
 	private float maxAzimuth = 230.0f, minAzimuth = 130.0f;
 	private float radius; // distance between camera and target
 	private Vector3 worldUpVec; // the world's up vector
 	
-	private static final float MAX_ZOOM_OUT = 0.5f;
-	private static final float MAX_ZOOM_IN = -1.0f;
+	private static final float MAX_ZOOM_OUT = 3.5f;
+	private static final float MAX_ZOOM_IN = 2.5f;
 	
 	public Camera3PController(SceneNode cameraN, SceneNode target, InputType inputType, InputManager inputManager) {
 		this.cameraNode = cameraN;
@@ -43,7 +46,7 @@ public class Camera3PController {
 		
 		this.cameraAzimuth = 180.0f; // start from BEHIND and ABOVE the target
 		this.cameraElevation = 20.0f; // elevation is in degrees
-		this.radius = 2.5f;
+		this.radius = 3.0f;
 		this.worldUpVec = Vector3f.createFrom(0.0f, 1.0f, 0.0f); // Y is UP
 		setupInput(this.inputManager, this.inputType);
 		updateCameraPosition();
@@ -61,10 +64,12 @@ public class Camera3PController {
 	
 	private void setupInput(final InputManager inputManager, final InputType inputType) {
 		final Action orbitAroundAction = new OrbitAroundAction();
-		OrbitRadiusAction orbitRadiusAction = new OrbitRadiusAction();
-		OrbitElevationAction orbitElevationAction = new OrbitElevationAction();
+		Action orbitRadiusAction = new OrbitRadiusAction();
+		Action orbitElevationAction = new OrbitElevationAction();
 		Action avatarTurnLeftAction = new AvatarTurnLeftAction();
 		Action avatarTurnRightAction = new AvatarTurnRightAction();
+		Action increaseOrbitSpeedAction = new IncreaseOrbitSpeedAction();
+		Action decreaseOrbitSpeedAction = new DecreaseOrbitSpeedAction();
 		
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
@@ -78,6 +83,16 @@ public class Camera3PController {
 						net.java.games.input.Component.Identifier.Key.E, 
 						avatarTurnRightAction, 
 						InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.RBRACKET, 
+						increaseOrbitSpeedAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+				
+				inputManager.associateAction(keyboards, 
+						net.java.games.input.Component.Identifier.Key.LBRACKET, 
+						decreaseOrbitSpeedAction, 
+						InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 			}
 		}
 		
@@ -111,6 +126,42 @@ public class Camera3PController {
 		return ret;
 	}
 	
+	private class IncreaseOrbitSpeedAction extends AbstractInputAction {
+
+		@Override
+		public void performAction(float time, Event evt) {
+			orbitSpeed += 0.5f;
+			System.out.println("Increasing orbit speed: " + orbitSpeed);
+			if (orbitSpeed > MAX_ORBIT_SPEED) {
+				System.out.println("Orbit speed at maximum!");
+				orbitSpeed = MAX_ORBIT_SPEED;
+			} else if (orbitSpeed < MIN_ORBIT_SPEED) {
+				System.out.println("Orbit speed at minimum!");
+				orbitSpeed = MIN_ORBIT_SPEED;
+			}
+			
+		}
+		
+	}
+	
+	private class DecreaseOrbitSpeedAction extends AbstractInputAction {
+
+		@Override
+		public void performAction(float time, Event evt) {
+			System.out.println("Decreasing orbit speed: " + orbitSpeed);
+			orbitSpeed -= 0.5f;
+			if (orbitSpeed > MAX_ORBIT_SPEED) {
+				System.out.println("Orbit speed at maximum!");
+				orbitSpeed = MAX_ORBIT_SPEED;
+			} else if (orbitSpeed < MIN_ORBIT_SPEED) {
+				System.out.println("Orbit speed at minimum!");
+				orbitSpeed = MIN_ORBIT_SPEED;
+			}
+			
+		}
+		
+	}
+	
 	/**
 	 * Moves the camera around the target (changes camera azimuth).
 	 *
@@ -120,9 +171,9 @@ public class Camera3PController {
 		public void performAction(float time, net.java.games.input.Event e) {
 			float rotation;
 			if (e.getValue() < -0.2) {
-				rotation = 1.2f;
+				rotation = orbitSpeed;
 			} else if (e.getValue() > 0.2) {
-				rotation = -1.2f;
+				rotation = -orbitSpeed;
 			} else 
 				rotation = 0.0f;
 			cameraAzimuth += rotation;
@@ -164,9 +215,9 @@ public class Camera3PController {
 		public void performAction(float time, net.java.games.input.Event e) {
 			float rotation;
 			if (e.getValue() > -0.2) {
-				rotation = 1.2f;
+				rotation = orbitSpeed;
 			} else if (e.getValue() < 0.2) {
-				rotation = -1.2f;
+				rotation = -orbitSpeed;
 			} else 
 				rotation = 0.0f;
 			cameraElevation += rotation;

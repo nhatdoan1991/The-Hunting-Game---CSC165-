@@ -229,6 +229,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		cameraOneNode.attachObject(cameraOne);
 		cameraOne.setMode('n');
 		cameraOne.getFrustum().setFarClipDistance(1000.0f);
+		initializeMouse(renderSystem, renderWindow);
 	}
 
 	/**
@@ -300,7 +301,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
 		
 		targetNode = dolphinNodeOne.createChildSceneNode("targetNode");
-		targetNode.setLocalPosition(0.0f, 0.0f, 50.0f);
+		targetNode.setLocalPosition(0.0f, 10.0f, 50.0f);
 
 		// initialize textures
 		Texture dolphinOneTexture = textureManager.getAssetByPath("playerModel.png");
@@ -561,13 +562,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	 */
 	protected void setupOrbitCameras(Engine engine, SceneManager sceneManager) {
 		SceneNode cameraOneNode = sceneManager.getSceneNode("cameraOneNode");
-
-		Camera cameraOne = sceneManager.getCamera("cameraOne");
-
-		String keyboardName = inputManager.getKeyboardName();
-		String mouseName = inputManager.getMouseName();
 		orbitCameraOne = new Camera3PController(cameraOneNode, targetNode, com.dsgames.game.myGameEngine.controller.InputType.MOUSE, inputManager);
-		initializeMouse(renderSystem, renderWindow);
 	}
 
 	protected void setupInputs(SceneManager sceneManager) {
@@ -585,11 +580,6 @@ public class HuntingGame extends VariableFrameRateGame {
 		closeConnectionAction = new CloseConnectionAction(protocolClient, this, isClientConnected);
 		fireAction = new NetworkFireAction(this, dolphinNodeOne, protocolClient);
 
-		/*
-		 * Player One - KB - WASD : Move - Arrows : Orbit camera - Q/E : Yaw dolphin
-		 * left/right - SPACE : Jump - LSHIFT : Activate charge - ESC : Quit - P : Skip
-		 * Song - F : Zoom out - R : Zoom in
-		 */
 		ArrayList<Controller> controllersArrayList = inputManager.getControllers();
 		for (Controller keyboards : controllersArrayList) {
 			if (keyboards.getType() == Controller.Type.KEYBOARD) {
@@ -627,43 +617,6 @@ public class HuntingGame extends VariableFrameRateGame {
 			}
 		}
 
-		/*
-		 * Player Two - Gamepad - LStick : X/Y : Move - RStick : RX/RY : Orbit camera -
-		 * LB : 4 : Yaw dolphin left - RB : 5 : Yaw dolphin right - A : 0 : Jump - B : 1
-		 * : Activate charge - Y : 3 : Skip Song - Menu : 7 : Quit - LT : Z+ : Zoom out
-		 * - RT : Z- : Zoom in
-		 */
-		/*
-		 * if (gamepadName == null) { System.out.println("No gamepad detected!"); } else
-		 * { inputManager.associateAction(gamepadName,
-		 * net.java.games.input.Component.Identifier.Axis.X, leftStickXActionP2,
-		 * InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		 * 
-		 * inputManager.associateAction(gamepadName,
-		 * net.java.games.input.Component.Identifier.Axis.Y, leftStickYActionP2,
-		 * InputManager.INPUT_ACTION_TYPE.REPEAT_WHILE_DOWN);
-		 * 
-		 * inputManager.associateAction(gamepadName,
-		 * net.java.games.input.Component.Identifier.Button._6, exitGameAction,
-		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
-		 * 
-		 * inputManager.associateAction(gamepadName,
-		 * net.java.games.input.Component.Identifier.Button._7, exitGameAction,
-		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_AND_RELEASE);
-		 * 
-		 * inputManager.associateAction(gamepadName,
-		 * net.java.games.input.Component.Identifier.Button._0, avatarJumpActionP2,
-		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		 * 
-		 * inputManager.associateAction(gamepadName,
-		 * net.java.games.input.Component.Identifier.Button._1, avatarChargeActionP2,
-		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
-		 * 
-		 * inputManager.associateAction(gamepadName,
-		 * net.java.games.input.Component.Identifier.Button._3, skipSongAction,
-		 * InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY); }
-		 */
-
 	}
 
 	public Vector<SceneNode> getPlayers() {
@@ -699,7 +652,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	protected void update(Engine engine) {
 		renderSystem = (GL4RenderSystem) engine.getRenderSystem();
 		elapsedTime += engine.getElapsedTimeMillis();
-
+		
 		if (running) {
 			Matrix4 matrix;
 			physicsEngine.update(elapsedTime);
@@ -758,6 +711,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 
 		mouseInit = true;
+		recenterMouse();
 		checkChargeTime();
 
 		if (jumpP1) {
