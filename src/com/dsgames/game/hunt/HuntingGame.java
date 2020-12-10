@@ -110,6 +110,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Camera3PController orbitCameraOne;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private ConcurrentHashMap<UUID, GhostAvatar> ghostAvatars = new ConcurrentHashMap<UUID, GhostAvatar>();
+	private ConcurrentHashMap<SceneNode, Vector3[]> bullets = new ConcurrentHashMap<SceneNode, Vector3[]>();
 	private AbstractNpcEntity[] npcEntity;
 	private double sensitivity = 0.5;
 	private float lastMouseX, lastMouseY, mouseX, mouseY;
@@ -664,7 +665,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			}
 
 		}
-
+		targetNode = (SceneNode) orbitCameraOne.getCameraTarget();
 		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
 		playerOneLivesString = Integer.toString(playerOneLives);
@@ -725,6 +726,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			jumpP1 = false;
 		}
 
+		
 		SkeletalEntity x = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
 		x.update();
 
@@ -736,6 +738,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 		
 		targetNode.lookAt(dolphinNodeOne);
+	//	updateBullets();
 	}
 
 	public Vector3 getPlayerPosition() {
@@ -861,6 +864,50 @@ public class HuntingGame extends VariableFrameRateGame {
 		sfx[2].play();
 	}
 
+	public void fireBullet() throws IOException {
+		Engine engine = this.getEngine();
+		SceneManager sceneManager = engine.getSceneManager();
+		SceneNode player = this.dolphinNodeOne;
+		Entity bulletEntity = sceneManager.createEntity("bullet" + UUID.randomUUID().toString(), "sphere.obj");
+		bulletEntity.setPrimitive(Primitive.TRIANGLES);
+		SceneNode bulletNode = sceneManager.getRootSceneNode().createChildSceneNode(bulletEntity.getName() + "Node");
+		
+		bulletNode.attachObject(bulletEntity);
+		
+		Light bulletLight = sceneManager.createLight(bulletEntity.getName() + "Light", Light.Type.POINT);
+		bulletLight.setAmbient(new Color(1.0f, 0.6353f, 0.6118f)); // 255, 165, 155
+		bulletLight.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
+		bulletLight.setSpecular(new Color(0.5f, 0.5f, 0.5f));
+		bulletLight.setConstantAttenuation(10.3f);
+		bulletLight.setLinearAttenuation(10.06f);
+		bulletLight.setQuadraticAttenuation(10.001f);
+		bulletLight.setFalloffExponent(100.0f);
+		bulletLight.setRange(0.01f);
+		bulletNode.attachObject(bulletLight);
+		
+		// doesnt currently set it to be ahead of the player
+		// only sets the bullet to be +3 in relation to their Z position
+		Vector3 origin = Vector3f.createFrom(player.getLocalPosition().x(), player.getLocalPosition().y(), player.getLocalPosition().z() + 3.0f);
+
+		bulletNode.setLocalPosition(origin);
+		bulletNode.scale(0.5f, 0.5f, 0.5f);
+		
+		// bulletNode -> [origin, currentPosition]
+		Vector3[] positions = {
+				origin,
+				Vector3f.createFrom(bulletNode.getLocalPosition().x(), bulletNode.getLocalPosition().y(), bulletNode.getLocalPosition().z())
+		};
+		
+		bullets.put(bulletNode, positions);
+		
+		Texture bulletTexture = textureManager.getAssetByPath("bullet.png");
+		TextureState bulletTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		bulletTextureState.setTexture(bulletTexture);
+		
+		bulletEntity.setRenderState(bulletTextureState);
+		System.out.println("Firing " + bulletNode.getName() + bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition());
+	}
+	
 	/**
 	 * Checks if the player can perform a charge or not
 	 */
@@ -873,6 +920,21 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void setIsConnected(boolean connected) {
 		isClientConnected = connected;
 
+	}
+	
+	private void updateBullets() {
+		bullets.forEach((bullet, position) -> {
+			Vector3 slope = bullet.getLocalPosition().sub(position[1]);
+			bullet.setLocalPosition(bullet.getLocalPosition().add(slope));
+			System.out.println("New local position: " + bullet.getLocalPosition());
+			System.out.println("New world position: " + bullet.getWorldPosition());
+			if (Math.abs(Math.abs(bullet.getLocalPosition().x()) - Math.abs(position[0].x())) > 50.0f || Math.abs(Math.abs(bullet.getLocalPosition().y()) - Math.abs(position[0].y()))  > 50.0f || Math.abs(Math.abs(bullet.getLocalPosition().z()) - Math.abs(position[0].z())) > 50.0f ) {
+				bullets.remove(bullet);
+			}
+			
+			
+			
+		});
 	}
 
 	private void initializeMouse(RenderSystem renderSystem, RenderWindow render) {
