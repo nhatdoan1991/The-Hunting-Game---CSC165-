@@ -1,6 +1,7 @@
 package com.dsgames.game.myGameEngine.ai;
 
 import java.util.Random;
+import java.io.IOException;
 import java.lang.*;
 import java.util.Vector;
 
@@ -297,14 +298,16 @@ public class NPCController {
 			super.target = super.origin;
 		}
 		
-		public void ultimateSkill() {
+		public void ultimateSkill() throws IOException {
 			if(getIsDelayed()==false)
 			{
 				System.out.println("Ultimate Skill of Boss ");
 				int count=0;
-				while(count <36)
+				while(count <18)
 				{
-					super.npcSceneNode.yaw(Degreef.createFrom(10.0f));
+					super.npcSceneNode.yaw(Degreef.createFrom(20.0f));
+					Vector3 target =  Vector3f.createFrom(super.npcSceneNode.getLocalPosition().x()+super.npcSceneNode.getLocalForwardAxis().x()*10f,super.npcSceneNode.getLocalPosition().y(),super.npcSceneNode.getLocalPosition().z()+super.npcSceneNode.getLocalForwardAxis().z()*10f);
+					game.npcFireBullet(super.npcSceneNode, target);
 					count++;
 					//System.out.println(count);
 				}
@@ -324,7 +327,7 @@ public class NPCController {
 			super.origin = Vector3f.createFrom(super.npcSceneNode.getLocalPosition().x() + 0.3f, super.npcSceneNode.getLocalPosition().y() - 0.3f, super.npcSceneNode.getLocalPosition().z() + 0.3f); 
 			super.target = super.origin;
 		}
-		public void shotPlayer(){
+		public void shotPlayer() throws IOException{
 			Vector3 npcLocation = super.getNpcLocation();
 			Vector<SceneNode> players = game.getPlayers();
 			float d = 20.0f;
@@ -345,7 +348,7 @@ public class NPCController {
 				targetToShot = players.get(targetIndex);
 				if(isShoting==false)
 				{
-					System.out.println("shooting player " + targetIndex);
+					game.npcFireBullet(super.npcSceneNode,targetToShot.getLocalPosition());
 					setIsShoting(true);
 				}
 			}
@@ -686,7 +689,12 @@ public class NPCController {
 		protected BTStatus update(float elapsedTime) {
 			if(m instanceof monster)
 			{
-				((monster) m).shotPlayer();
+				try {
+					((monster) m).shotPlayer();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			
 			return BTStatus.BH_SUCCESS;
@@ -741,7 +749,12 @@ public class BossUltimateSkill extends BTAction{
 	protected BTStatus update(float arg0) {
 		if(m instanceof boss)
 		{
-			((boss) m).ultimateSkill();
+			try {
+				((boss) m).ultimateSkill();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 		return null;

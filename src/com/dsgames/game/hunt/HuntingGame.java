@@ -738,7 +738,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 		
 		targetNode.lookAt(dolphinNodeOne);
-	//	updateBullets();
+		updateBullets();
 	}
 
 	public Vector3 getPlayerPosition() {
@@ -863,7 +863,42 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void playJumpSound() {
 		sfx[2].play();
 	}
+	public void npcFireBullet(SceneNode sn,Vector3 target) throws IOException{
+		Engine engine = this.getEngine();
+		SceneManager sceneManager = engine.getSceneManager();
+		
+		Entity bulletEntity = sceneManager.createEntity("bullet" + UUID.randomUUID().toString(), "sphere.obj");
+		bulletEntity.setPrimitive(Primitive.TRIANGLES);
+		SceneNode bulletNode = sceneManager.getRootSceneNode().createChildSceneNode(bulletEntity.getName() + "Node");
+		bulletNode.attachObject(bulletEntity);
+		
+		Vector3 origin = Vector3f.createFrom(sn.getLocalPosition().x(), sn.getLocalPosition().y(), sn.getLocalPosition().z() + 2.0f);
 
+		bulletNode.setLocalPosition(origin);
+		bulletNode.scale(0.2f, 0.2f, 0.2f);
+		
+		Vector3[] positions = {
+				origin,
+				Vector3f.createFrom(bulletNode.getLocalPosition().x(), bulletNode.getLocalPosition().y(), bulletNode.getLocalPosition().z())
+		};
+		
+		double[] transform = toDoubleArray(bulletNode.getLocalTransform().toFloatArray());
+		PhysicsObject bulletPhysicObject= physicsEngine.addCapsuleObject(physicsEngine.nextUID(), 0.1f, transform, 0.3f, 1.0f);
+		bulletPhysicObject.setSleepThresholds(0.0f, 0.0f);
+		bulletNode.setPhysicsObject(bulletPhysicObject);
+		
+		bulletNode.lookAt(Vector3f.createFrom(target.x(), target.y(), target.z()));
+		
+		bullets.put(bulletNode, positions);
+		
+		Texture bulletTexture = textureManager.getAssetByPath("red.jpeg");
+		TextureState bulletTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		bulletTextureState.setTexture(bulletTexture);
+		
+		bulletEntity.setRenderState(bulletTextureState);
+		//System.out.println("Firing " + bulletNode.getName() + bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition());
+		
+	}
 	public void fireBullet() throws IOException {
 		Engine engine = this.getEngine();
 		SceneManager sceneManager = engine.getSceneManager();
@@ -874,7 +909,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		
 		bulletNode.attachObject(bulletEntity);
 		
-		Light bulletLight = sceneManager.createLight(bulletEntity.getName() + "Light", Light.Type.POINT);
+		/*Light bulletLight = sceneManager.createLight(bulletEntity.getName() + "Light", Light.Type.POINT);
 		bulletLight.setAmbient(new Color(1.0f, 0.6353f, 0.6118f)); // 255, 165, 155
 		bulletLight.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
 		bulletLight.setSpecular(new Color(0.5f, 0.5f, 0.5f));
@@ -884,10 +919,10 @@ public class HuntingGame extends VariableFrameRateGame {
 		bulletLight.setFalloffExponent(100.0f);
 		bulletLight.setRange(0.01f);
 		bulletNode.attachObject(bulletLight);
-		
+		*/
 		// doesnt currently set it to be ahead of the player
 		// only sets the bullet to be +3 in relation to their Z position
-		Vector3 origin = Vector3f.createFrom(player.getLocalPosition().x(), player.getLocalPosition().y(), player.getLocalPosition().z() + 3.0f);
+		Vector3 origin = Vector3f.createFrom(player.getLocalPosition().x()+player.getLocalForwardAxis().x()*2.0f, player.getLocalPosition().y(), player.getLocalPosition().z()+player.getLocalForwardAxis().z()*2.0f);
 
 		bulletNode.setLocalPosition(origin);
 		bulletNode.scale(0.5f, 0.5f, 0.5f);
@@ -898,6 +933,13 @@ public class HuntingGame extends VariableFrameRateGame {
 				Vector3f.createFrom(bulletNode.getLocalPosition().x(), bulletNode.getLocalPosition().y(), bulletNode.getLocalPosition().z())
 		};
 		
+		double[] transform = toDoubleArray(bulletNode.getLocalTransform().toFloatArray());
+		PhysicsObject bulletPhysicObject= physicsEngine.addCapsuleObject(physicsEngine.nextUID(), 0.1f, transform, 0.3f, 1.0f);
+		bulletPhysicObject.setSleepThresholds(0.0f, 0.0f);
+		bulletNode.setPhysicsObject(bulletPhysicObject);
+		
+		bulletNode.lookAt(Vector3f.createFrom(player.getLocalPosition().x()+player.getLocalForwardAxis().x()*3000.0f, player.getLocalForwardAxis().y(),player.getLocalPosition().z()+player.getLocalForwardAxis().z()*3000.0f));
+		
 		bullets.put(bulletNode, positions);
 		
 		Texture bulletTexture = textureManager.getAssetByPath("bullet.png");
@@ -905,7 +947,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		bulletTextureState.setTexture(bulletTexture);
 		
 		bulletEntity.setRenderState(bulletTextureState);
-		System.out.println("Firing " + bulletNode.getName() + bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition());
+		//System.out.println("Firing " + bulletNode.getName() + bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition()+ " at " + player.getLocalForwardAxis().x()+ " at " + player.getLocalForwardAxis().y()+ " at " +player.getLocalForwardAxis().z());
 	}
 	
 	/**
@@ -924,16 +966,20 @@ public class HuntingGame extends VariableFrameRateGame {
 	
 	private void updateBullets() {
 		bullets.forEach((bullet, position) -> {
+			float[] playerDirection = {
+					bullet.getLocalForwardAxis().x() * 12.0f,
+					0.0f,
+					bullet.getLocalForwardAxis().z() * 12.0f
+			};
+			bullet.getPhysicsObject().setLinearVelocity(playerDirection);
 			Vector3 slope = bullet.getLocalPosition().sub(position[1]);
 			bullet.setLocalPosition(bullet.getLocalPosition().add(slope));
-			System.out.println("New local position: " + bullet.getLocalPosition());
-			System.out.println("New world position: " + bullet.getWorldPosition());
+			//System.out.println("New local position: " + bullet.getLocalPosition());
+			//System.out.println("New world position: " + bullet.getWorldPosition());
+			//synchronizeAvatarPhysics(bullet);
 			if (Math.abs(Math.abs(bullet.getLocalPosition().x()) - Math.abs(position[0].x())) > 50.0f || Math.abs(Math.abs(bullet.getLocalPosition().y()) - Math.abs(position[0].y()))  > 50.0f || Math.abs(Math.abs(bullet.getLocalPosition().z()) - Math.abs(position[0].z())) > 50.0f ) {
 				bullets.remove(bullet);
-			}
-			
-			
-			
+			}		
 		});
 	}
 
