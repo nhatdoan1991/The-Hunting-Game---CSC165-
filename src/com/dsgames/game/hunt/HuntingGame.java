@@ -135,6 +135,8 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Vector<UUID> objectsToRemove;
 	private VerticalOrbitController playerOrbitControllerVertical;
 	private ZBufferState zState;
+	private int numberOfNpc=0,numberOfDolphin=20, numberOfMonster=20,numberOfSnitch=1,numberOfBoss=1;
+	private boolean isStarted = false;
 
 	protected ScriptEngine jsEngine;
 	protected File test, addLight, setupSkybox, setupTerrain, setupAudio;
@@ -409,38 +411,123 @@ public class HuntingGame extends VariableFrameRateGame {
 	} 
 	
 	private void setupNpc(Engine engine, SceneManager sceneManager) throws IOException {
-		npcEntity = new AbstractNpcEntity[6];
-		npcs = new SceneNode[6];
-		npcPhysicsObjects = new PhysicsObject[6];
+		
+		numberOfNpc = numberOfDolphin+numberOfMonster+numberOfSnitch+numberOfBoss;
+		npcEntity = new AbstractNpcEntity[numberOfNpc];
+		npcs = new SceneNode[numberOfNpc];
+		npcPhysicsObjects = new PhysicsObject[numberOfNpc];
 		if(npcEntity !=null)
 		{
 			for(int i = 0 ; i< npcEntity.length; i++) {
-				Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(i), "dolphinLowPoly.obj");
-				NpcEntity.setPrimitive(Primitive.TRIANGLES);
-				SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
-				Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
-				TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
-						.createRenderState(RenderState.Type.TEXTURE);
-				textureStateOne.setTexture(textureOne);
-				NpcEntity.setRenderState(textureStateOne);
-				NpcNode.attachObject(NpcEntity);
-				NpcNode.scale(1.0f, 1.0f, 1.0f);
-				NpcNode.setLocalPosition(5.0f, 1.5f, 0.0f);
-				npcEntity[i] = new AbstractNpcEntity(i,NpcNode,NpcEntity);
-				npcs[i] = (SceneNode) npcEntity[i].getNode();
+				if(i<numberOfDolphin)
+				{
+					spawningDolphin(engine,sceneManager,i);
+				}else if(i<numberOfMonster+numberOfDolphin)
+				{
+					spawningMonster(engine,sceneManager,i);
+				}
+				else if(i<numberOfMonster+numberOfDolphin+numberOfSnitch)
+				{
+					spawningSnitch(engine,sceneManager,i);
+				}
+				else {
+					spawningBoss(engine,sceneManager,i);
+				}
+				
 			}	
 		}
-		
-		npcs[0].setLocalPosition(5.0f, 1.5f, 0.0f);
-		npcs[1].setLocalPosition(0.0f, 1.5f, 5.0f);
-		npcs[2].setLocalPosition(-5.0f, 1.5f, -5.0f);
-		npcs[3].setLocalPosition(0f, 1.5f, -5.0f);
-		npcs[4].setLocalPosition(50f, 1.5f, 50f);
-		npcs[5].setLocalPosition(5.0f, 1.5f, -5.0f);
 
 	}
-
-
+	private void spawningDolphin(Engine engine, SceneManager sceneManager,int index) throws IOException {
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(index), "dolphinLowPoly.obj");
+		NpcEntity.setPrimitive(Primitive.TRIANGLES);
+		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
+		Texture textureOne = textureManager.getAssetByPath("leggedDolphinBlue.png");
+		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
+				.createRenderState(RenderState.Type.TEXTURE);
+		textureStateOne.setTexture(textureOne);
+		NpcEntity.setRenderState(textureStateOne);
+		NpcNode.attachObject(NpcEntity);
+		NpcNode.scale(10.0f, 10.00f, 10.0f);
+		Vector3 randomLocation = randomLocationDolphin(sceneManager);
+		NpcNode.setLocalPosition(randomLocation);
+		npcEntity[index] = new AbstractNpcEntity(index,NpcNode,NpcEntity);
+		npcs[index] = (SceneNode) npcEntity[index].getNode();
+	}
+	private void spawningMonster(Engine engine, SceneManager sceneManager,int index) throws IOException {
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(index), "dolphinLowPoly.obj");
+		NpcEntity.setPrimitive(Primitive.TRIANGLES);
+		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
+		Texture textureOne = textureManager.getAssetByPath("leggedDolphinRed.png");
+		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
+				.createRenderState(RenderState.Type.TEXTURE);
+		textureStateOne.setTexture(textureOne);
+		NpcEntity.setRenderState(textureStateOne);
+		NpcNode.attachObject(NpcEntity);
+		NpcNode.scale(5.0f, 5.0f, 5.0f);
+		Vector3 randomLocation = randomLocationMonster(sceneManager);
+		NpcNode.setLocalPosition(randomLocation);
+		npcEntity[index] = new AbstractNpcEntity(index,NpcNode,NpcEntity);
+		npcs[index] = (SceneNode) npcEntity[index].getNode();
+	}
+	private void spawningSnitch(Engine engine, SceneManager sceneManager,int index) throws IOException {
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(index), "dolphinLowPoly.obj");
+		NpcEntity.setPrimitive(Primitive.TRIANGLES);
+		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
+		Texture textureOne = textureManager.getAssetByPath("Dolphin_HighPolyUV.png");
+		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
+				.createRenderState(RenderState.Type.TEXTURE);
+		textureStateOne.setTexture(textureOne);
+		NpcEntity.setRenderState(textureStateOne);
+		NpcNode.attachObject(NpcEntity);
+		NpcNode.scale(1.0f, 1.0f, 1.0f);
+		Vector3 randomLocation = randomLocationMonster(sceneManager);
+		NpcNode.setLocalPosition(randomLocation);
+		npcEntity[index] = new AbstractNpcEntity(index,NpcNode,NpcEntity);
+		npcs[index] = (SceneNode) npcEntity[index].getNode();
+	}
+	
+	private void spawningBoss(Engine engine, SceneManager sceneManager,int index) throws IOException {
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(index), "dolphinLowPoly.obj");
+		NpcEntity.setPrimitive(Primitive.TRIANGLES);
+		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
+		Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
+		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
+				.createRenderState(RenderState.Type.TEXTURE);
+		textureStateOne.setTexture(textureOne);
+		NpcEntity.setRenderState(textureStateOne);
+		NpcNode.attachObject(NpcEntity);
+		NpcNode.scale(1.0f, 1.0f, 1.0f);
+		NpcNode.setLocalPosition(0f,0f,0f);
+		npcEntity[index] = new AbstractNpcEntity(index,NpcNode,NpcEntity);
+		npcs[index] = (SceneNode) npcEntity[index].getNode();
+	}
+	/**
+	 * Random Location for Dolphin NPC
+	 * **/
+	private Vector3 randomLocationDolphin(SceneManager sceneManager) {
+		Vector3 center = sceneManager.getRootSceneNode().getLocalPosition();
+		Vector3 randomPosition;
+		float[] randomFloat;
+		do {
+			randomFloat = randomFloatArray(1000);
+			randomPosition = Vector3f.createFrom(randomFloat[0],1.5f,randomFloat[2]);
+		}while(distanceFrom(center,randomPosition) < 420f);
+		return randomPosition;
+	}
+	/**
+	 * Random Location for Monsters
+	 * **/
+	private Vector3 randomLocationMonster(SceneManager sceneManager) {
+		Vector3 center = sceneManager.getRootSceneNode().getLocalPosition();
+		Vector3 randomPosition;
+		float[] randomFloat;
+		do {
+			randomFloat = randomFloatArray(1000);
+			randomPosition = Vector3f.createFrom(randomFloat[0],1.5f,randomFloat[2]);
+		}while(distanceFrom(center,randomPosition) > 380f);
+		return randomPosition;
+	}
 	/**
 	 * Initializes the JBullet physics engine and sets gravity to -9.8 units along
 	 * the world Y component.
@@ -483,31 +570,6 @@ public class HuntingGame extends VariableFrameRateGame {
 		planeTransform[14] = groundNode.getLocalPosition().z();
 		groundPlane.setTransform(planeTransform);
 		groundNode.setPhysicsObject(groundPlane);
-
-		transform = toDoubleArray(npcs[0].getLocalTransform().toFloatArray());
-		npcPhysicsObjects[0] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
-		npcPhysicsObjects[0].setSleepThresholds(0.0f, 0.0f);
-		npcs[0].setPhysicsObject(npcPhysicsObjects[0]);
-
-		transform = toDoubleArray(npcs[1].getLocalTransform().toFloatArray());
-		npcPhysicsObjects[1] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
-		npcPhysicsObjects[1].setSleepThresholds(0.0f, 0.0f);
-		npcs[1].setPhysicsObject(npcPhysicsObjects[1]);
-
-		transform = toDoubleArray(npcs[2].getLocalTransform().toFloatArray());
-		npcPhysicsObjects[2] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
-		npcPhysicsObjects[2].setSleepThresholds(0.0f, 0.0f);
-		npcs[2].setPhysicsObject(npcPhysicsObjects[2]);
-		
-		transform = toDoubleArray(npcs[3].getLocalTransform().toFloatArray());
-		npcPhysicsObjects[3] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
-		npcPhysicsObjects[3].setSleepThresholds(0.0f, 0.0f);
-		npcs[3].setPhysicsObject(npcPhysicsObjects[3]);
-		
-		transform = toDoubleArray(npcs[4].getLocalTransform().toFloatArray());
-		npcPhysicsObjects[4] = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transform, 0.3f, 1.0f);
-		npcPhysicsObjects[4].setSleepThresholds(0.0f, 0.0f);
-		npcs[4].setPhysicsObject(npcPhysicsObjects[4]);
 		
 		for(int i =0; i < npcEntity.length;i++)
 		{
@@ -1197,7 +1259,10 @@ public class HuntingGame extends VariableFrameRateGame {
 			game.exit();
 		}
 	}
-
+	public boolean isStarted()
+	{
+		return isStarted;
+	}
 	@Override
 	public void keyPressed(KeyEvent e) {
 		switch (e.getKeyCode()) {
