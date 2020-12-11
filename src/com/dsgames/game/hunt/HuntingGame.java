@@ -135,7 +135,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Vector<UUID> objectsToRemove;
 	private VerticalOrbitController playerOrbitControllerVertical;
 	private ZBufferState zState;
-	private int numberOfNpc=0,numberOfDolphin=20, numberOfMonster=20,numberOfSnitch=1,numberOfBoss=1;
+	private int numberOfNpc = 0, numberOfDolphin = 20, numberOfMonster = 20, numberOfSnitch = 1, numberOfBoss = 1;
 	private boolean isStarted = false;
 
 	protected ScriptEngine jsEngine;
@@ -252,13 +252,13 @@ public class HuntingGame extends VariableFrameRateGame {
 		// initialize zState
 		zState = (ZBufferState) renderSystem.createRenderState(RenderState.Type.ZBUFFER);
 		zState.setEnabled(true);
-		
+
 		// initialize script engine
 		ScriptEngineManager factory = new ScriptEngineManager();
 		java.util.List<ScriptEngineFactory> list = factory.getEngineFactories();
 		jsEngine = factory.getEngineByName("js");
 		Invocable invocableEngine = (Invocable) jsEngine;
-	
+
 		// initialize game
 		setupTerrain(engine, sceneManager, invocableEngine);
 		setupSkybox(engine, sceneManager, invocableEngine);
@@ -272,7 +272,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		setupOrbitCameras(engine, sceneManager);
 		setupAudio(engine, sceneManager, invocableEngine);
 	}
-	
+
 	/**
 	 * Initializes the player entity and node objects
 	 * 
@@ -281,17 +281,18 @@ public class HuntingGame extends VariableFrameRateGame {
 	 * @throws IOException
 	 */
 	private void setupPlayer(Engine engine, SceneManager sceneManager) throws IOException {
-		//Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne", "playerModel.obj");
-		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("dolphinEntityOne", "test.rkm","test.rks");
+		// Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne",
+		// "playerModel.obj");
+		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("dolphinEntityOne", "test.rkm", "test.rks");
 		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
-		
+
 		// load animations
-		dolphinEntityOne.loadAnimation("wave","wave.rka");
-		dolphinEntityOne.loadAnimation("walk","walk.rka");
+		dolphinEntityOne.loadAnimation("wave", "wave.rka");
+		dolphinEntityOne.loadAnimation("walk", "walk.rka");
 
 		dolphinNodeOne = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityOne.getName() + "Node");
 		dolphinNodeOne.attachObject(dolphinEntityOne);
-		
+
 		// initialize 'charge' state
 		playerCharge.put(dolphinNodeOne, false);
 		playerStretchController = new StretchController();
@@ -302,7 +303,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		// initialize position and scale
 		dolphinNodeOne.setLocalPosition(0.0f, -2.5f, 0.0f);
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
-		
+
 		targetNode = dolphinNodeOne.createChildSceneNode("targetNode");
 		targetNode.setLocalPosition(0.0f, 10.0f, 50.0f);
 
@@ -310,10 +311,10 @@ public class HuntingGame extends VariableFrameRateGame {
 		Texture dolphinOneTexture = textureManager.getAssetByPath("playerModel.png");
 		TextureState dolphinOneTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		dolphinOneTextureState.setTexture(dolphinOneTexture);
-		
+
 		dolphinEntityOne.setRenderState(dolphinOneTextureState);
 	}
-	
+
 	/**
 	 * Imports and generates a height map from a noise map image, and scales it to
 	 * the size of the ground plane. A normal map is then applied to the original
@@ -332,7 +333,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		groundTessellation.setHeightMap(engine, "waterHeight.jpg");
 		groundTessellation.setTexture(engine, "waterTexture.jpg");
 		groundTessellation.setQuality(8);
-		
+
 		setupTerrain = new File("setupTerrain.js");
 		this.runScript(jsEngine, setupTerrain);
 		try {
@@ -363,7 +364,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println("Null pointer exception reading " + setupSkybox + e3);
 		}
 	}
-	
+
 	protected void setupLights(Engine engine, SceneManager sceneManager, Invocable invocableEngine) {
 		addLight = new File("addLight.js");
 		this.runScript(jsEngine, addLight);
@@ -383,7 +384,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			System.out.println("Null pointer exception reading " + addLight + e3);
 		}
 	}
-	
+
 	/**
 	 * Initializes and loads audio resources from the asset folder, and sets music[]
 	 * and sfx[] to their respective resources, and plays them.
@@ -408,38 +409,33 @@ public class HuntingGame extends VariableFrameRateGame {
 		}
 		music = (Sound[]) jsEngine.get("music");
 		sfx = (Sound[]) jsEngine.get("sfx");
-	} 
-	
+	}
+
 	private void setupNpc(Engine engine, SceneManager sceneManager) throws IOException {
-		
-		numberOfNpc = numberOfDolphin+numberOfMonster+numberOfSnitch+numberOfBoss;
+
+		numberOfNpc = numberOfDolphin + numberOfMonster + numberOfSnitch + numberOfBoss;
 		npcEntity = new AbstractNpcEntity[numberOfNpc];
 		npcs = new SceneNode[numberOfNpc];
 		npcPhysicsObjects = new PhysicsObject[numberOfNpc];
-		if(npcEntity !=null)
-		{
-			for(int i = 0 ; i< npcEntity.length; i++) {
-				if(i<numberOfDolphin)
-				{
-					spawningDolphin(engine,sceneManager,i);
-				}else if(i<numberOfMonster+numberOfDolphin)
-				{
-					spawningMonster(engine,sceneManager,i);
+		if (npcEntity != null) {
+			for (int i = 0; i < npcEntity.length; i++) {
+				if (i < numberOfDolphin) {
+					spawningDolphin(engine, sceneManager, i);
+				} else if (i < numberOfMonster + numberOfDolphin) {
+					spawningMonster(engine, sceneManager, i);
+				} else if (i < numberOfMonster + numberOfDolphin + numberOfSnitch) {
+					spawningSnitch(engine, sceneManager, i);
+				} else {
+					spawningBoss(engine, sceneManager, i);
 				}
-				else if(i<numberOfMonster+numberOfDolphin+numberOfSnitch)
-				{
-					spawningSnitch(engine,sceneManager,i);
-				}
-				else {
-					spawningBoss(engine,sceneManager,i);
-				}
-				
-			}	
+
+			}
 		}
 
 	}
-	private void spawningDolphin(Engine engine, SceneManager sceneManager,int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(index), "dolphinLowPoly.obj");
+
+	private void spawningDolphin(Engine engine, SceneManager sceneManager, int index) throws IOException {
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("leggedDolphinBlue.png");
@@ -451,11 +447,12 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcNode.scale(10.0f, 10.00f, 10.0f);
 		Vector3 randomLocation = randomLocationDolphin(sceneManager);
 		NpcNode.setLocalPosition(randomLocation);
-		npcEntity[index] = new AbstractNpcEntity(index,NpcNode,NpcEntity);
+		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
 	}
-	private void spawningMonster(Engine engine, SceneManager sceneManager,int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(index), "dolphinLowPoly.obj");
+
+	private void spawningMonster(Engine engine, SceneManager sceneManager, int index) throws IOException {
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("leggedDolphinRed.png");
@@ -467,11 +464,12 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcNode.scale(5.0f, 5.0f, 5.0f);
 		Vector3 randomLocation = randomLocationMonster(sceneManager);
 		NpcNode.setLocalPosition(randomLocation);
-		npcEntity[index] = new AbstractNpcEntity(index,NpcNode,NpcEntity);
+		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
 	}
-	private void spawningSnitch(Engine engine, SceneManager sceneManager,int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(index), "dolphinLowPoly.obj");
+
+	private void spawningSnitch(Engine engine, SceneManager sceneManager, int index) throws IOException {
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("Dolphin_HighPolyUV.png");
@@ -483,12 +481,12 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcNode.scale(1.0f, 1.0f, 1.0f);
 		Vector3 randomLocation = randomLocationMonster(sceneManager);
 		NpcNode.setLocalPosition(randomLocation);
-		npcEntity[index] = new AbstractNpcEntity(index,NpcNode,NpcEntity);
+		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
 	}
-	
-	private void spawningBoss(Engine engine, SceneManager sceneManager,int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne"+ Integer.toString(index), "dolphinLowPoly.obj");
+
+	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
@@ -498,36 +496,39 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcEntity.setRenderState(textureStateOne);
 		NpcNode.attachObject(NpcEntity);
 		NpcNode.scale(1.0f, 1.0f, 1.0f);
-		NpcNode.setLocalPosition(0f,0f,0f);
-		npcEntity[index] = new AbstractNpcEntity(index,NpcNode,NpcEntity);
+		NpcNode.setLocalPosition(0f, 0f, 0f);
+		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
 	}
+
 	/**
 	 * Random Location for Dolphin NPC
-	 * **/
+	 **/
 	private Vector3 randomLocationDolphin(SceneManager sceneManager) {
 		Vector3 center = sceneManager.getRootSceneNode().getLocalPosition();
 		Vector3 randomPosition;
 		float[] randomFloat;
 		do {
 			randomFloat = randomFloatArray(1000);
-			randomPosition = Vector3f.createFrom(randomFloat[0],1.5f,randomFloat[2]);
-		}while(distanceFrom(center,randomPosition) < 420f);
+			randomPosition = Vector3f.createFrom(randomFloat[0], 0.0f, randomFloat[2]);
+		} while (distanceFrom(center, randomPosition) < 420f);
 		return randomPosition;
 	}
+
 	/**
 	 * Random Location for Monsters
-	 * **/
+	 **/
 	private Vector3 randomLocationMonster(SceneManager sceneManager) {
 		Vector3 center = sceneManager.getRootSceneNode().getLocalPosition();
 		Vector3 randomPosition;
 		float[] randomFloat;
 		do {
 			randomFloat = randomFloatArray(1000);
-			randomPosition = Vector3f.createFrom(randomFloat[0],1.5f,randomFloat[2]);
-		}while(distanceFrom(center,randomPosition) > 380f);
+			randomPosition = Vector3f.createFrom(randomFloat[0], 1.5f, randomFloat[2]);
+		} while (distanceFrom(center, randomPosition) > 380f);
 		return randomPosition;
 	}
+
 	/**
 	 * Initializes the JBullet physics engine and sets gravity to -9.8 units along
 	 * the world Y component.
@@ -563,25 +564,25 @@ public class HuntingGame extends VariableFrameRateGame {
 		groundPlane = physicsEngine.addStaticPlaneObject(physicsEngine.nextUID(), transform, up, 0.0f);
 
 		groundPlane.setBounciness(0.0f);
-		
+
 		double[] planeTransform = groundPlane.getTransform();
 		planeTransform[12] = groundNode.getLocalPosition().x();
 		planeTransform[13] = groundNode.getLocalPosition().y();
 		planeTransform[14] = groundNode.getLocalPosition().z();
 		groundPlane.setTransform(planeTransform);
 		groundNode.setPhysicsObject(groundPlane);
-		
-		for(int i =0; i < npcEntity.length;i++)
-		{
+
+		for (int i = 0; i < npcEntity.length; i++) {
 			double[] transformNPC = toDoubleArray(npcEntity[i].getNode().getLocalTransform().toFloatArray());
-			PhysicsObject npcPhysicObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transformNPC, 0.3f, 1.0f);
+			PhysicsObject npcPhysicObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), mass, transformNPC,
+					0.3f, 1.0f);
 			npcPhysicObject.setBounciness(0.0f);
 			npcPhysicObject.setFriction(0.0f);
 			npcPhysicObject.setDamping(0.99f, 0.99f);
 			npcPhysicObject.setSleepThresholds(0.0f, 0.0f);
 			npcEntity[i].getNode().setPhysicsObject(npcPhysicObject);
 			npcEntity[i].setPhysicObject(npcPhysicObject);
-			npcPhysicsObjects[i]=npcEntity[i].getPhysicObject();
+			npcPhysicsObjects[i] = npcEntity[i].getPhysicObject();
 		}
 	}
 
@@ -625,7 +626,8 @@ public class HuntingGame extends VariableFrameRateGame {
 	 */
 	protected void setupOrbitCameras(Engine engine, SceneManager sceneManager) {
 		SceneNode cameraOneNode = sceneManager.getSceneNode("cameraOneNode");
-		orbitCameraOne = new Camera3PController(cameraOneNode, targetNode, com.dsgames.game.myGameEngine.controller.InputType.MOUSE, inputManager);
+		orbitCameraOne = new Camera3PController(cameraOneNode, targetNode,
+				com.dsgames.game.myGameEngine.controller.InputType.MOUSE, inputManager);
 	}
 
 	protected void setupInputs(SceneManager sceneManager) {
@@ -715,7 +717,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	protected void update(Engine engine) {
 		renderSystem = (GL4RenderSystem) engine.getRenderSystem();
 		elapsedTime += engine.getElapsedTimeMillis();
-		
+
 		if (running) {
 			Matrix4 matrix;
 			physicsEngine.update(elapsedTime);
@@ -788,8 +790,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			jumpP1 = false;
 		}
 
-		
-		SkeletalEntity x = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
+		SkeletalEntity x = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 		x.update();
 
 		orbitCameraOne.updateCameraPosition();
@@ -798,7 +799,7 @@ public class HuntingGame extends VariableFrameRateGame {
 				synchronizeAvatarPhysics(v.getNode());
 			});
 		}
-		
+
 		targetNode.lookAt(dolphinNodeOne);
 		updateBullets();
 	}
@@ -925,42 +926,45 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void playJumpSound() {
 		sfx[2].play();
 	}
-	public void npcFireBullet(SceneNode sn,Vector3 target) throws IOException{
+
+	public void npcFireBullet(SceneNode sn, Vector3 target) throws IOException {
 		Engine engine = this.getEngine();
 		SceneManager sceneManager = engine.getSceneManager();
-		
+
 		Entity bulletEntity = sceneManager.createEntity("bullet" + UUID.randomUUID().toString(), "sphere.obj");
 		bulletEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode bulletNode = sceneManager.getRootSceneNode().createChildSceneNode(bulletEntity.getName() + "Node");
 		bulletNode.attachObject(bulletEntity);
-		
-		Vector3 origin = Vector3f.createFrom(sn.getLocalPosition().x(), sn.getLocalPosition().y(), sn.getLocalPosition().z() + 2.0f);
+
+		Vector3 origin = Vector3f.createFrom(sn.getLocalPosition().x(), sn.getLocalPosition().y(),
+				sn.getLocalPosition().z() + 2.0f);
 
 		bulletNode.setLocalPosition(origin);
 		bulletNode.scale(0.2f, 0.2f, 0.2f);
-		
-		Vector3[] positions = {
-				origin,
-				Vector3f.createFrom(bulletNode.getLocalPosition().x(), bulletNode.getLocalPosition().y(), bulletNode.getLocalPosition().z())
-		};
-		
+
+		Vector3[] positions = { origin, Vector3f.createFrom(bulletNode.getLocalPosition().x(),
+				bulletNode.getLocalPosition().y(), bulletNode.getLocalPosition().z()) };
+
 		double[] transform = toDoubleArray(bulletNode.getLocalTransform().toFloatArray());
-		PhysicsObject bulletPhysicObject= physicsEngine.addCapsuleObject(physicsEngine.nextUID(), 0.1f, transform, 0.3f, 1.0f);
+		PhysicsObject bulletPhysicObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), 0.1f, transform,
+				0.3f, 1.0f);
 		bulletPhysicObject.setSleepThresholds(0.0f, 0.0f);
 		bulletNode.setPhysicsObject(bulletPhysicObject);
-		
+
 		bulletNode.lookAt(Vector3f.createFrom(target.x(), target.y(), target.z()));
-		
+
 		bullets.put(bulletNode, positions);
-		
+
 		Texture bulletTexture = textureManager.getAssetByPath("red.jpeg");
 		TextureState bulletTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		bulletTextureState.setTexture(bulletTexture);
-		
+
 		bulletEntity.setRenderState(bulletTextureState);
-		//System.out.println("Firing " + bulletNode.getName() + bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition());
-		
+		// System.out.println("Firing " + bulletNode.getName() +
+		// bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition());
+
 	}
+
 	public void fireBullet() throws IOException {
 		Engine engine = this.getEngine();
 		SceneManager sceneManager = engine.getSceneManager();
@@ -968,50 +972,56 @@ public class HuntingGame extends VariableFrameRateGame {
 		Entity bulletEntity = sceneManager.createEntity("bullet" + UUID.randomUUID().toString(), "sphere.obj");
 		bulletEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode bulletNode = sceneManager.getRootSceneNode().createChildSceneNode(bulletEntity.getName() + "Node");
-		
+
 		bulletNode.attachObject(bulletEntity);
-		
-		/*Light bulletLight = sceneManager.createLight(bulletEntity.getName() + "Light", Light.Type.POINT);
-		bulletLight.setAmbient(new Color(1.0f, 0.6353f, 0.6118f)); // 255, 165, 155
-		bulletLight.setDiffuse(new Color(0.7f, 0.7f, 0.7f));
-		bulletLight.setSpecular(new Color(0.5f, 0.5f, 0.5f));
-		bulletLight.setConstantAttenuation(10.3f);
-		bulletLight.setLinearAttenuation(10.06f);
-		bulletLight.setQuadraticAttenuation(10.001f);
-		bulletLight.setFalloffExponent(100.0f);
-		bulletLight.setRange(0.01f);
-		bulletNode.attachObject(bulletLight);
-		*/
+
+		/*
+		 * Light bulletLight = sceneManager.createLight(bulletEntity.getName() +
+		 * "Light", Light.Type.POINT); bulletLight.setAmbient(new Color(1.0f, 0.6353f,
+		 * 0.6118f)); // 255, 165, 155 bulletLight.setDiffuse(new Color(0.7f, 0.7f,
+		 * 0.7f)); bulletLight.setSpecular(new Color(0.5f, 0.5f, 0.5f));
+		 * bulletLight.setConstantAttenuation(10.3f);
+		 * bulletLight.setLinearAttenuation(10.06f);
+		 * bulletLight.setQuadraticAttenuation(10.001f);
+		 * bulletLight.setFalloffExponent(100.0f); bulletLight.setRange(0.01f);
+		 * bulletNode.attachObject(bulletLight);
+		 */
 		// doesnt currently set it to be ahead of the player
 		// only sets the bullet to be +3 in relation to their Z position
-		Vector3 origin = Vector3f.createFrom(player.getLocalPosition().x()+player.getLocalForwardAxis().x()*2.0f, player.getLocalPosition().y(), player.getLocalPosition().z()+player.getLocalForwardAxis().z()*2.0f);
+		Vector3 origin = Vector3f.createFrom(player.getLocalPosition().x() + player.getLocalForwardAxis().x() * 2.0f,
+				player.getLocalPosition().y(), player.getLocalPosition().z() + player.getLocalForwardAxis().z() * 2.0f);
 
 		bulletNode.setLocalPosition(origin);
 		bulletNode.scale(0.5f, 0.5f, 0.5f);
-		
+
 		// bulletNode -> [origin, currentPosition]
-		Vector3[] positions = {
-				origin,
-				Vector3f.createFrom(bulletNode.getLocalPosition().x(), bulletNode.getLocalPosition().y(), bulletNode.getLocalPosition().z())
-		};
-		
+		Vector3[] positions = { origin, Vector3f.createFrom(bulletNode.getLocalPosition().x(),
+				bulletNode.getLocalPosition().y(), bulletNode.getLocalPosition().z()) };
+
 		double[] transform = toDoubleArray(bulletNode.getLocalTransform().toFloatArray());
-		PhysicsObject bulletPhysicObject= physicsEngine.addCapsuleObject(physicsEngine.nextUID(), 0.1f, transform, 0.3f, 1.0f);
+		PhysicsObject bulletPhysicObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), 0.1f, transform,
+				0.3f, 1.0f);
 		bulletPhysicObject.setSleepThresholds(0.0f, 0.0f);
 		bulletNode.setPhysicsObject(bulletPhysicObject);
-		
-		bulletNode.lookAt(Vector3f.createFrom(player.getLocalPosition().x()+player.getLocalForwardAxis().x()*3000.0f, player.getLocalForwardAxis().y(),player.getLocalPosition().z()+player.getLocalForwardAxis().z()*3000.0f));
-		
+
+		bulletNode
+				.lookAt(Vector3f.createFrom(player.getLocalPosition().x() + player.getLocalForwardAxis().x() * 3000.0f,
+						player.getLocalForwardAxis().y(),
+						player.getLocalPosition().z() + player.getLocalForwardAxis().z() * 3000.0f));
+
 		bullets.put(bulletNode, positions);
-		
+
 		Texture bulletTexture = textureManager.getAssetByPath("bullet.png");
 		TextureState bulletTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		bulletTextureState.setTexture(bulletTexture);
-		
+
 		bulletEntity.setRenderState(bulletTextureState);
-		//System.out.println("Firing " + bulletNode.getName() + bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition()+ " at " + player.getLocalForwardAxis().x()+ " at " + player.getLocalForwardAxis().y()+ " at " +player.getLocalForwardAxis().z());
+		// System.out.println("Firing " + bulletNode.getName() +
+		// bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition()+
+		// " at " + player.getLocalForwardAxis().x()+ " at " +
+		// player.getLocalForwardAxis().y()+ " at " +player.getLocalForwardAxis().z());
 	}
-	
+
 	/**
 	 * Checks if the player can perform a charge or not
 	 */
@@ -1025,23 +1035,26 @@ public class HuntingGame extends VariableFrameRateGame {
 		isClientConnected = connected;
 
 	}
-	
+
 	private void updateBullets() {
 		bullets.forEach((bullet, position) -> {
-			float[] playerDirection = {
-					bullet.getLocalForwardAxis().x() * 12.0f,
-					0.0f,
-					bullet.getLocalForwardAxis().z() * 12.0f
-			};
+			float[] playerDirection = { bullet.getLocalForwardAxis().x() * 12.0f, 0.0f,
+					bullet.getLocalForwardAxis().z() * 12.0f };
 			bullet.getPhysicsObject().setLinearVelocity(playerDirection);
 			Vector3 slope = bullet.getLocalPosition().sub(position[1]);
 			bullet.setLocalPosition(bullet.getLocalPosition().add(slope));
-			//System.out.println("New local position: " + bullet.getLocalPosition());
-			//System.out.println("New world position: " + bullet.getWorldPosition());
-			//synchronizeAvatarPhysics(bullet);
-			if (Math.abs(Math.abs(bullet.getLocalPosition().x()) - Math.abs(position[0].x())) > 50.0f || Math.abs(Math.abs(bullet.getLocalPosition().y()) - Math.abs(position[0].y()))  > 50.0f || Math.abs(Math.abs(bullet.getLocalPosition().z()) - Math.abs(position[0].z())) > 50.0f ) {
+			// System.out.println("New local position: " + bullet.getLocalPosition());
+			// System.out.println("New world position: " + bullet.getWorldPosition());
+			// synchronizeAvatarPhysics(bullet);
+			if (Math.abs(Math.abs(bullet.getLocalPosition().x()) - Math.abs(position[0].x())) > 50.0f
+					|| Math.abs(Math.abs(bullet.getLocalPosition().y()) - Math.abs(position[0].y())) > 50.0f
+					|| Math.abs(Math.abs(bullet.getLocalPosition().z()) - Math.abs(position[0].z())) > 50.0f) {
+				bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
+				synchronizeAvatarPhysics(bullet);
+				this.getEngine().getSceneManager().destroySceneNode(bullet);
 				bullets.remove(bullet);
-			}		
+				
+			}
 		});
 	}
 
@@ -1259,26 +1272,27 @@ public class HuntingGame extends VariableFrameRateGame {
 			game.exit();
 		}
 	}
-	public boolean isStarted()
-	{
+
+	public boolean isStarted() {
 		return isStarted;
 	}
+
 	@Override
 	public void keyPressed(KeyEvent e) {
 		switch (e.getKeyCode()) {
 		case KeyEvent.VK_V:
-			SkeletalEntity x = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
+			SkeletalEntity x = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 			x.stopAnimation();
-			x.playAnimation("wave",0.5f, LOOP,0);
+			x.playAnimation("wave", 0.5f, LOOP, 0);
 			break;
 		case KeyEvent.VK_B:
-			SkeletalEntity z = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
+			SkeletalEntity z = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 			z.stopAnimation();
-			z.playAnimation("walk",2f, LOOP,0);
+			z.playAnimation("walk", 2f, LOOP, 0);
 			break;
 
 		case KeyEvent.VK_C:
-			SkeletalEntity y = (SkeletalEntity)getEngine().getSceneManager().getEntity("dolphinEntityOne");
+			SkeletalEntity y = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 			y.stopAnimation();
 			break;
 		}
