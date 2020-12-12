@@ -81,36 +81,36 @@ public class NPCController {
 		tree.insert(20, new FlyAway(n));
 	}
 	public void setupBehaviorTreeMonster(Npc m,BehaviorTree tree) {
-		tree.insertAtRoot(new BTSequence(5));
+		//tree.insertAtRoot(new BTSequence(5));
 		tree.insertAtRoot(new BTSequence(10));
 		tree.insertAtRoot(new BTSequence(20));
-		tree.insert(5, new CheckIsGameStarted(game,m, false));
-		tree.insert(5, new NpcWalkAround(m));
-		tree.insert(10, new CheckFurthestPlayer(m, false));
-		tree.insert(10, new GoHomeAction(m));
-		tree.insert(20, new CheckClosestPlayer(m, false));
-		tree.insert(20, new FollowPlayerAction(m));
-		tree.insert(20, new CheckClosestPlayer(m, false));
-		tree.insert(20, new ShotPlayer(m));
+		tree.insertAtRoot(new BTSequence(30));
+		tree.insert(10, new CheckInitMove(m, false));
+		tree.insert(10, new NpcWalkAround(m));
+		tree.insert(20, new CheckFurthestPlayer(m, false));
+		tree.insert(20, new GoHomeAction(m));
+		tree.insert(30, new CheckClosestPlayer(m, false));
+		tree.insert(30, new FollowPlayerAction(m));
+		tree.insert(30, new CheckClosestPlayer(m, false));
+		tree.insert(30, new ShotPlayer(m));
 	}
 	public void updateNPCs() {
 		for (int i = 0; i < npcs.length; i++) {
 			if (npcs[i] != null) {
 				
-				
-				if(Math.round(game.getElapsedTime()/1000)%(rd.nextInt(5)+4) ==0)
-				{
-					npcs[i].walkingAround();
-					//System.out.println(Math.round(game.getElapsedTime()/1000));
-				}
 				npcs[i].updateLocation();
 				if(distanceBetween(game.getPlayerPosition(),npcs[i].getNpcLocation())< 1.0f)
 				{
 					game.playSoundEffect();
 				}
+				if(npcs[i] instanceof dolphin)
+				{
+					npcs[i].walkingAround();
+				}
 				if(npcs[i] instanceof monster)
 				{
 					npcs[i].delay(5000f);
+					npcs[i].walkingAround();
 				}
 				if(npcs[i] instanceof snitch)
 				{
@@ -119,6 +119,7 @@ public class NPCController {
 				if(npcs[i] instanceof boss)
 				{
 					npcs[i].delay((float)rd.nextInt(5000)+10000);
+					npcs[i].walkingAround();
 				}
 			}
 		}
@@ -141,6 +142,7 @@ public class NPCController {
 		for (int i=0; i < numberofDolphin; i++) {
 			if (npcNodes[i] != null) {
 				npcs[i] = new dolphin(npcNodes[i], npcPhysicsObjects[i], i);
+				npcs[i].walkingAround();
 				setupBehaviorTree(npcs[i], behaviorTreeDolphin[0]);
 				index++;
 			}
@@ -148,6 +150,7 @@ public class NPCController {
 		for (int i=index; i < numberofDolphin+numberofMonster; i++) {
 			if (npcNodes[i] != null) {
 					npcs[i]= new monster(npcNodes[i], npcPhysicsObjects[i], i);
+					npcs[i].walkingAround();
 					setupBehaviorTreeMonster(npcs[i], behaviorTreeMonster[0]);
 				index++;
 				
@@ -219,7 +222,6 @@ public class NPCController {
 			super.npcTransform = physicsObject.getTransform();
 			super.origin = Vector3f.createFrom(super.npcSceneNode.getLocalPosition().x() + 0.3f, super.npcSceneNode.getLocalPosition().y() - 0.3f, super.npcSceneNode.getLocalPosition().z() + 0.3f); 
 			super.target = super.origin;
-			// TODO Auto-generated constructor stub
 		}
 		
 		public void flyAwayFromPlayer() {
@@ -292,6 +294,7 @@ public class NPCController {
 			super.target = super.origin;
 		}
 		public void shotPlayer() throws IOException{
+			System.out.println("test");
 			Vector3 npcLocation = super.getNpcLocation();
 			Vector<SceneNode> players = game.getPlayers();
 			float d = 20.0f;
@@ -331,7 +334,7 @@ public class NPCController {
 		private int npcId;
 		private boolean chasing;
 		private boolean active;
-		private boolean isDelayed = false,isDelaying = false, isWalking=true;
+		private boolean isDelayed = false,isDelaying = false, isWalking=true, initMove =false;
 		private float delayedTime = 0;
 		
 		
@@ -370,11 +373,15 @@ public class NPCController {
 		{
 			return this.delayedTime;	
 		}
-		
+		public boolean getInitMove() {
+			return this.initMove;
+		}
+		public void setInitMove(boolean b) {
+			this.initMove = b;
+		}
 		public void walkingAround() {
-			if(isWalking ==true)
+			if(Math.round(game.getElapsedTime()/1000)%(rd.nextInt(5)+8) ==0)
 			{
-				System.out.println("test");
 				Vector3 npcLocation = getNpcLocation();
 				float radius = 100f;
 				float random = rd.nextFloat()*200f-100.0f;
@@ -388,6 +395,7 @@ public class NPCController {
 				}
 		
 				target = Vector3f.createFrom(circleX,npcLocation.y(),circleZ);
+				this.setInitMove(true);
 			}
 			
 		}
@@ -491,28 +499,25 @@ public class NPCController {
 		
 		
 	}
-	public class CheckIsGameStarted extends BTCondition {
+	public class CheckInitMove extends BTCondition {
 		
 		private Npc npc;
-		private HuntingGame game; 
 		
-		public CheckIsGameStarted(HuntingGame game, Npc n, boolean toNegate) {
+		public CheckInitMove( Npc n, boolean toNegate) {
 			super(toNegate);
-			this.game = game;
 			npc = n;
 		}
 
 		@Override
 		protected boolean check() {
 			//This must be false at first
-			boolean isStarted = true;
 
-			if (game.isStarted()==true) {
-				isStarted  = true;
+			if (npc.getInitMove()==false) {
+				return true;
+			}else
+			{
+				return false;
 			}
-					
-			
-			return isStarted ;
 		}
 		
 	}
