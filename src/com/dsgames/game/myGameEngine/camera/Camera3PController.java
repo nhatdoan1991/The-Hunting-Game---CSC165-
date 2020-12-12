@@ -11,6 +11,7 @@ import ray.input.InputManager;
 import ray.input.InputManager.INPUT_ACTION_TYPE;
 import ray.input.action.AbstractInputAction;
 import ray.input.action.Action;
+import ray.rage.scene.Node;
 import ray.rage.scene.SceneNode;
 import ray.rml.Angle;
 import ray.rml.Degreef;
@@ -60,6 +61,10 @@ public class Camera3PController {
 		final double z = this.radius * Math.cos(phi) * Math.cos(theta);
 		this.cameraNode.setLocalPosition(Vector3f.createFrom((float)x, (float)y, (float)z).add(this.cameraTarget.getWorldPosition()));
 		this.cameraNode.lookAt(this.cameraTarget, this.worldUpVec);
+	}
+	
+	public Node getCameraTarget() {
+		return this.cameraTarget;
 	}
 	
 	private void setupInput(final InputManager inputManager, final InputType inputType) {

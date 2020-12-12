@@ -1,6 +1,7 @@
 package com.dsgames.game.myGameEngine.ai;
 
 import java.util.Random;
+import java.io.IOException;
 import java.lang.*;
 import java.util.Vector;
 
@@ -22,8 +23,9 @@ import ray.rml.Vector3f;
 
 public class NPCController {
 
-	private Npc[] npcs = new Npc[6];
-	private int numberofDolphin =3, numberofMonster =1,numberofSnitch =1,numberofBoss=1;
+	
+	private int numberofDolphin =20, numberofMonster =20,numberofSnitch =1,numberofBoss=1;
+	private Npc[] npcs = new Npc[numberofDolphin+numberofMonster+numberofSnitch+numberofBoss];
 	Random rd = new Random();
 	
 	BehaviorTree[] behaviorTreeDolphin = {
@@ -79,8 +81,11 @@ public class NPCController {
 		tree.insert(20, new FlyAway(n));
 	}
 	public void setupBehaviorTreeMonster(Npc m,BehaviorTree tree) {
+		tree.insertAtRoot(new BTSequence(5));
 		tree.insertAtRoot(new BTSequence(10));
 		tree.insertAtRoot(new BTSequence(20));
+		tree.insert(5, new CheckIsGameStarted(game,m, false));
+		tree.insert(5, new NpcWalkAround(m));
 		tree.insert(10, new CheckFurthestPlayer(m, false));
 		tree.insert(10, new GoHomeAction(m));
 		tree.insert(20, new CheckClosestPlayer(m, false));
@@ -91,6 +96,13 @@ public class NPCController {
 	public void updateNPCs() {
 		for (int i = 0; i < npcs.length; i++) {
 			if (npcs[i] != null) {
+				
+				
+				if(Math.round(game.getElapsedTime()/1000)%(rd.nextInt(5)+4) ==0)
+				{
+					npcs[i].walkingAround();
+					//System.out.println(Math.round(game.getElapsedTime()/1000));
+				}
 				npcs[i].updateLocation();
 				if(distanceBetween(game.getPlayerPosition(),npcs[i].getNpcLocation())< 1.0f)
 				{
@@ -98,37 +110,11 @@ public class NPCController {
 				}
 				if(npcs[i] instanceof monster)
 				{
-					if(((monster)npcs[i]).getIsRecharging()==true)
-					{
-						if(((monster)npcs[i]).getShotingTime() <= game.getElapsedTime()-5000)
-						{
-							((monster)npcs[i]).setIsShoting(false);
-							((monster)npcs[i]).setIsRecharging(false);
-						}
-					}
-					if(((monster)npcs[i]).getIsShoting()==true&&((monster)npcs[i]).getIsRecharging()==false )
-					{
-						
-						((monster)npcs[i]).setShotingTime(game.getElapsedTime());
-						((monster)npcs[i]).setIsRecharging(true);
-					}
+					npcs[i].delay(5000f);
 				}
 				if(npcs[i] instanceof snitch)
 				{
-					if(((snitch)npcs[i]).getIsTurning()==true)
-					{
-						if(((snitch)npcs[i]).getTurnTime() <= game.getElapsedTime()-5000-7000*rd.nextFloat())
-						{
-							((snitch)npcs[i]).setIsTurning(false);
-							((snitch)npcs[i]).setIsTurned(false);
-						}
-					}
-					if(((snitch)npcs[i]).getIsTurned()==true&&((snitch)npcs[i]).getIsTurning()==false )
-					{
-						
-						((snitch)npcs[i]).setTurnTime(game.getElapsedTime());
-						((snitch)npcs[i]).setIsTurning(true);
-					}
+					npcs[i].delay((float)rd.nextInt(5000)+3000);
 				}
 				if(npcs[i] instanceof boss)
 				{
@@ -227,8 +213,7 @@ public class NPCController {
 		
 	}
 	public class snitch extends Npc{
-		private boolean isTurning=false,isTurned= false;
-		private float turnTime=0f;
+
 		public snitch(SceneNode sceneNode, PhysicsObject physicsObject, int id) {
 			super(sceneNode, physicsObject, id);
 			super.npcTransform = physicsObject.getTransform();
@@ -236,24 +221,7 @@ public class NPCController {
 			super.target = super.origin;
 			// TODO Auto-generated constructor stub
 		}
-		public void setIsTurning(boolean b) {
-			this.isTurning = b;
-		}
-		public boolean getIsTurning() {
-			return this.isTurning;
-		}
-		public void setIsTurned(boolean b) {
-			this.isTurned = b;
-		}
-		public boolean getIsTurned() {
-			return this.isTurned;
-		}
-		public void setTurnTime(float b) {
-			this.turnTime = b;
-		}
-		public float getTurnTime() {
-			return this.turnTime;
-		}
+		
 		public void flyAwayFromPlayer() {
 			Vector3 npcLocation = super.getNpcLocation();
 			Vector<SceneNode> players = game.getPlayers();
@@ -269,7 +237,7 @@ public class NPCController {
 		}	
 		public void flyRanDomDirection() {
 
-			if(this.isTurned==false)
+			if(super.getIsDelayed()==false)
 			{
 				Vector3 npcLocation = super.getNpcLocation();
 				float radius = 20f;
@@ -284,7 +252,7 @@ public class NPCController {
 				}
 		
 				super.target = Vector3f.createFrom(circleX,npcLocation.y(),circleZ);	
-				this.setIsTurned(true);
+				this.setIsDelayed(true);
 			}
 		}
 	}
@@ -297,14 +265,15 @@ public class NPCController {
 			super.target = super.origin;
 		}
 		
-		public void ultimateSkill() {
+		public void ultimateSkill() throws IOException {
 			if(getIsDelayed()==false)
 			{
-				System.out.println("Ultimate Skill of Boss ");
 				int count=0;
-				while(count <36)
+				while(count <18)
 				{
-					super.npcSceneNode.yaw(Degreef.createFrom(10.0f));
+					super.npcSceneNode.yaw(Degreef.createFrom(20.0f));
+					Vector3 target =  Vector3f.createFrom(super.npcSceneNode.getLocalPosition().x()+super.npcSceneNode.getLocalForwardAxis().x()*10f,super.npcSceneNode.getLocalPosition().y(),super.npcSceneNode.getLocalPosition().z()+super.npcSceneNode.getLocalForwardAxis().z()*10f);
+					game.npcFireBullet(super.npcSceneNode, target);
 					count++;
 					//System.out.println(count);
 				}
@@ -316,15 +285,13 @@ public class NPCController {
 	}
 	public class monster extends Npc{
 		
-		private boolean isShoting = false,isRecharging = false;
-		private float shotingTime = 0;
 		public monster(SceneNode sceneNode, PhysicsObject physicsObject, int id) {
 			super(sceneNode, physicsObject, id);
 			super.npcTransform = physicsObject.getTransform();
 			super.origin = Vector3f.createFrom(super.npcSceneNode.getLocalPosition().x() + 0.3f, super.npcSceneNode.getLocalPosition().y() - 0.3f, super.npcSceneNode.getLocalPosition().z() + 0.3f); 
 			super.target = super.origin;
 		}
-		public void shotPlayer(){
+		public void shotPlayer() throws IOException{
 			Vector3 npcLocation = super.getNpcLocation();
 			Vector<SceneNode> players = game.getPlayers();
 			float d = 20.0f;
@@ -343,37 +310,14 @@ public class NPCController {
 			}
 			if (minDistance < d) {
 				targetToShot = players.get(targetIndex);
-				if(isShoting==false)
+				if(super.getIsDelayed()==false)
 				{
-					System.out.println("shooting player " + targetIndex);
-					setIsShoting(true);
+					game.npcFireBullet(super.npcSceneNode,targetToShot.getLocalPosition());
+					super.setIsDelayed(true);
 				}
 			}
 			
 		}
-		public void setIsRecharging(boolean b) {
-			this.isRecharging = b;
-		}
-		public boolean getIsRecharging() {
-			return this.isRecharging;
-		}
-		public void setShotingTime(float time) {
-			this.shotingTime = time;
-		}
-		public float getShotingTime() {
-			return this.shotingTime;
-		}
-		public void setIsShoting(boolean b)
-		{
-			this.isShoting = b;	
-		}
-		public boolean getIsShoting()
-		{
-			return this.isShoting;	
-		}
-		public boolean checkDelayTime(float shotingTime) {
-			return true;
-		} 
 	}
 	
 	
@@ -387,7 +331,7 @@ public class NPCController {
 		private int npcId;
 		private boolean chasing;
 		private boolean active;
-		private boolean isDelayed = false,isDelaying = false;
+		private boolean isDelayed = false,isDelaying = false, isWalking=true;
 		private float delayedTime = 0;
 		
 		
@@ -399,6 +343,12 @@ public class NPCController {
 			origin = Vector3f.createFrom(npcSceneNode.getLocalPosition().x() + 0.3f, npcSceneNode.getLocalPosition().y() - 0.3f, npcSceneNode.getLocalPosition().z() + 0.3f);
 	 		   
 			target = origin;
+		}
+		public void setIsWalking(boolean b) {
+			this.isWalking = b;
+		}
+		public boolean getIsWalking() {
+			return this.isWalking;
 		}
 		public void setIsDelayed(boolean b) {
 			this.isDelayed = b;
@@ -421,6 +371,26 @@ public class NPCController {
 			return this.delayedTime;	
 		}
 		
+		public void walkingAround() {
+			if(isWalking ==true)
+			{
+				System.out.println("test");
+				Vector3 npcLocation = getNpcLocation();
+				float radius = 100f;
+				float random = rd.nextFloat()*200f-100.0f;
+				float circleX = random+npcLocation.x();
+				float circleZ = 0;
+				if(rd.nextInt(2)==0) {
+					circleZ = (float) (npcLocation.z()+Math.sqrt(Math.pow(radius,2) - Math.pow(circleX-npcLocation.x(),2)));
+				}else
+				{
+					circleZ = (float) (npcLocation.z()-Math.sqrt(Math.pow(radius,2) - Math.pow(circleX-npcLocation.x(),2)));
+				}
+		
+				target = Vector3f.createFrom(circleX,npcLocation.y(),circleZ);
+			}
+			
+		}
 		public void delay(float delayTime) {
 			if(getIsDelaying()==true)
 			{
@@ -521,7 +491,54 @@ public class NPCController {
 		
 		
 	}
-	
+	public class CheckIsGameStarted extends BTCondition {
+		
+		private Npc npc;
+		private HuntingGame game; 
+		
+		public CheckIsGameStarted(HuntingGame game, Npc n, boolean toNegate) {
+			super(toNegate);
+			this.game = game;
+			npc = n;
+		}
+
+		@Override
+		protected boolean check() {
+			//This must be false at first
+			boolean isStarted = true;
+
+			if (game.isStarted()==true) {
+				isStarted  = true;
+			}
+					
+			
+			return isStarted ;
+		}
+		
+	}
+	public class CheckTooFarFromOrigin extends BTCondition {
+		
+		private Npc npc;
+		
+		public CheckTooFarFromOrigin(Npc n, boolean toNegate) {
+			super(toNegate);
+			npc = n;
+		}
+
+		@Override
+		protected boolean check() {
+			boolean isTooFar = false;
+
+			float distanceFromOrigin = npc.distanceToOrigin();
+			if (distanceFromOrigin > 30.0f) {
+				isTooFar = true;
+			}
+					
+			
+			return isTooFar;
+		}
+		
+	}
 	public class CheckClosestPlayer extends BTCondition {
 		
 		private Npc npc;
@@ -686,7 +703,12 @@ public class NPCController {
 		protected BTStatus update(float elapsedTime) {
 			if(m instanceof monster)
 			{
-				((monster) m).shotPlayer();
+				try {
+					((monster) m).shotPlayer();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			
 			return BTStatus.BH_SUCCESS;
@@ -741,9 +763,28 @@ public class BossUltimateSkill extends BTAction{
 	protected BTStatus update(float arg0) {
 		if(m instanceof boss)
 		{
-			((boss) m).ultimateSkill();
+			try {
+				((boss) m).ultimateSkill();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
+		return null;
+	}
+	
+}
+public class NpcWalkAround extends BTAction{
+
+	
+	private Npc m;
+	public NpcWalkAround(Npc m) {
+		this.m = m;
+	}
+	@Override
+	protected BTStatus update(float arg0) {
+		m.walkingAround();
 		return null;
 	}
 	
