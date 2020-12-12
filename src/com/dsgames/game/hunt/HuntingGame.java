@@ -452,7 +452,15 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 
 	private void spawningMonster(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "monster.obj");
+		
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("npcEntityOne" + Integer.toString(index), "monster.rkm", "monster.rks");
+		NpcEntity.setPrimitive(Primitive.TRIANGLES);
+
+		// load animations
+		NpcEntity.loadAnimation("monster_walking", "monster_walking.rka");
+		//NpcEntity.loadAnimation("walk", "walk.rka");
+		
+		//Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "monster.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("npcTexture.png");
@@ -460,14 +468,20 @@ public class HuntingGame extends VariableFrameRateGame {
 				.createRenderState(RenderState.Type.TEXTURE);
 		textureStateOne.setTexture(textureOne);
 		NpcEntity.setRenderState(textureStateOne);
+		
+		playMonsterWalking(NpcEntity);
+		
 		NpcNode.attachObject(NpcEntity);
-		NpcNode.scale(1.0f, 1.0f, 1.0f);
+		NpcNode.scale(0.2f, 0.2f, 0.2f);
 		Vector3 randomLocation = randomLocationMonster(sceneManager);
 		NpcNode.setLocalPosition(randomLocation);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
 	}
-
+	public void playMonsterWalking(SkeletalEntity x) {
+		x.stopAnimation();
+		x.playAnimation("monster_walking", 0.5f, LOOP, 0);
+	}
 	private void spawningSnitch(Engine engine, SceneManager sceneManager, int index) throws IOException {
 		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
@@ -792,7 +806,11 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		SkeletalEntity x = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 		x.update();
-
+		for(int i = 20; i< 40;i++)
+		{
+			SkeletalEntity monsterSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("npcEntityOne" + Integer.toString(i));
+			monsterSkeletal.update();
+		}
 		orbitCameraOne.updateCameraPosition();
 		if (!ghostAvatars.isEmpty()) {
 			ghostAvatars.forEach((k, v) -> {
