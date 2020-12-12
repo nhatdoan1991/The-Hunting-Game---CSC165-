@@ -115,7 +115,6 @@ public class NPCController {
 				if(npcs[i] instanceof snitch)
 				{
 					npcs[i].delay((float)rd.nextInt(5000)+3000);
-					System.out.println(npcs[i].getNpcLocation());
 				}
 				if(npcs[i] instanceof boss)
 				{
