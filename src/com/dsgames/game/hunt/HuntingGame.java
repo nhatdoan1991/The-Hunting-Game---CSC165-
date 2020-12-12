@@ -452,16 +452,16 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 
 	private void spawningMonster(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "monster.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
-		Texture textureOne = textureManager.getAssetByPath("leggedDolphinRed.png");
+		Texture textureOne = textureManager.getAssetByPath("npcTexture.png");
 		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
 				.createRenderState(RenderState.Type.TEXTURE);
 		textureStateOne.setTexture(textureOne);
 		NpcEntity.setRenderState(textureStateOne);
 		NpcNode.attachObject(NpcEntity);
-		NpcNode.scale(5.0f, 5.0f, 5.0f);
+		NpcNode.scale(1.0f, 1.0f, 1.0f);
 		Vector3 randomLocation = randomLocationMonster(sceneManager);
 		NpcNode.setLocalPosition(randomLocation);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
@@ -486,10 +486,10 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 
 	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
+		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "boss.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
-		Texture textureOne = textureManager.getAssetByPath("blue.jpeg");
+		Texture textureOne = textureManager.getAssetByPath("Dragon_ground_color.jpg");
 		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
 				.createRenderState(RenderState.Type.TEXTURE);
 		textureStateOne.setTexture(textureOne);
@@ -955,7 +955,7 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		bullets.put(bulletNode, positions);
 
-		Texture bulletTexture = textureManager.getAssetByPath("red.jpeg");
+		Texture bulletTexture = textureManager.getAssetByPath("Fire_A_2.png");
 		TextureState bulletTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		bulletTextureState.setTexture(bulletTexture);
 
