@@ -15,24 +15,28 @@ with(JavaPackages)
 		configuration = engine.getConfiguration();
 
 		// initialize skybox textures
-		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.test"));
+		textureManager.setBaseDirectoryPath(configuration.valueOf("assets.skyboxes.path.hunt"));
 		skyboxFrontTexture = textureManager.getAssetByPath("front.jpg");
-		skyboxBackTexture = textureManager.getAssetByPath("back.jpg");
-		skyboxLeftTexture = textureManager.getAssetByPath("left.jpg");
 		skyboxRightTexture = textureManager.getAssetByPath("right.jpg");
+		skyboxLeftTexture = textureManager.getAssetByPath("left.jpg");
+		skyboxBackTexture = textureManager.getAssetByPath("back.jpg");
+		
 		skyboxTopTexture = textureManager.getAssetByPath("top.jpg");
 		skyboxBottomTexture = textureManager.getAssetByPath("bottom.jpg");
 
 		// transform skybox textures
 		skyboxAffineTransform = new AffineTransform();
+		skyboxInverseAffineTransform = new AffineTransform();
 		skyboxAffineTransform.translate(skyboxFrontTexture.getImage().getHeight(), skyboxFrontTexture.getImage().getHeight());
-		skyboxAffineTransform.scale(-1, -1);
+		skyboxInverseAffineTransform.translate(skyboxFrontTexture.getImage().getHeight(), skyboxFrontTexture.getImage().getHeight());
+		skyboxAffineTransform.scale(1, 1);
+		skyboxInverseAffineTransform.scale(-1, -1);
 		//skyboxAffineTransform.rotate(180);
 		skyboxFrontTexture.transform(skyboxAffineTransform);
 		skyboxBackTexture.transform(skyboxAffineTransform);
 		skyboxLeftTexture.transform(skyboxAffineTransform);
 		skyboxRightTexture.transform(skyboxAffineTransform);
-		skyboxTopTexture.transform(skyboxAffineTransform);
+		skyboxTopTexture.transform(skyboxInverseAffineTransform);
 		skyboxBottomTexture.transform(skyboxAffineTransform);
 
 		// set skybox textures
