@@ -741,6 +741,14 @@ public class HuntingGame extends VariableFrameRateGame {
 					sceneNode.setLocalPosition(matrix.value(0, 3), matrix.value(1, 3), matrix.value(2, 3));
 				}
 			}
+			if (!ghostAvatars.isEmpty()) {
+				ghostAvatars.forEach((k, v) -> {
+					synchronizeAvatarPhysics(v.getNode());
+				});
+			}
+			updateBullets();
+			checkBulletCollision();
+			checkNpcCollision();
 
 		}
 		targetNode = (SceneNode) orbitCameraOne.getCameraTarget();
@@ -812,14 +820,8 @@ public class HuntingGame extends VariableFrameRateGame {
 			monsterSkeletal.update();
 		}
 		orbitCameraOne.updateCameraPosition();
-		if (!ghostAvatars.isEmpty()) {
-			ghostAvatars.forEach((k, v) -> {
-				synchronizeAvatarPhysics(v.getNode());
-			});
-		}
 
 		targetNode.lookAt(dolphinNodeOne);
-		updateBullets();
 	}
 
 	public Vector3 getPlayerPosition() {
@@ -949,7 +951,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		Engine engine = this.getEngine();
 		SceneManager sceneManager = engine.getSceneManager();
 
-		Entity bulletEntity = sceneManager.createEntity("bullet" + UUID.randomUUID().toString(), "sphere.obj");
+		Entity bulletEntity = sceneManager.createEntity("monsterBullet" + UUID.randomUUID().toString(), "sphere.obj");
 		bulletEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode bulletNode = sceneManager.getRootSceneNode().createChildSceneNode(bulletEntity.getName() + "Node");
 		bulletNode.attachObject(bulletEntity);
@@ -987,7 +989,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		Engine engine = this.getEngine();
 		SceneManager sceneManager = engine.getSceneManager();
 		SceneNode player = this.dolphinNodeOne;
-		Entity bulletEntity = sceneManager.createEntity("bullet" + UUID.randomUUID().toString(), "sphere.obj");
+		Entity bulletEntity = sceneManager.createEntity("playerBullet" + UUID.randomUUID().toString(), "sphere.obj");
 		bulletEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode bulletNode = sceneManager.getRootSceneNode().createChildSceneNode(bulletEntity.getName() + "Node");
 
@@ -1074,6 +1076,51 @@ public class HuntingGame extends VariableFrameRateGame {
 				
 			}
 		});
+	}
+	
+	private void checkBulletCollision() {
+		if (bullets.isEmpty()) {
+			return;
+		}
+		
+		bullets.forEach((bullet, position) -> {
+			if (bullet.getName().substring(0, 6).equalsIgnoreCase("player")) {
+				for (int i = 0; i < npcs.length; i++) {
+					
+					if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(npcs[i])) < 2.0f) {
+						System.out.println(bullet.getName().substring(0, 6) + " bullet distance: " + distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(npcs[i])));
+						if (bullet.getName().substring(0, 6).equalsIgnoreCase("player")) {
+							System.out.println("Player bullet hit " + npcs[i].getName());
+							bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
+							synchronizeAvatarPhysics(bullet);
+							this.getEngine().getSceneManager().destroySceneNode(bullet);
+							bullets.remove(bullet);
+						}
+					}	
+				}
+			} else if (bullet.getName().substring(0, 7).equalsIgnoreCase("monster")) {
+				if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)) < 1.0f) {
+					System.out.println(bullet.getName().substring(0,7) + " bullet distance: " + distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
+					System.out.println("Monster bullet hit player");
+					bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
+					synchronizeAvatarPhysics(bullet);
+					this.getEngine().getSceneManager().destroySceneNode(bullet);
+					bullets.remove(bullet);
+				}
+			}
+		});
+	}
+	
+	private void checkNpcCollision() {
+		if (npcs.length < 1) {
+			return;
+		}
+		
+		for (int i = 0; i < npcs.length; i++) {
+			if (distanceFrom(getPhysicsPosition(npcs[i]), getPhysicsPosition(dolphinNodeOne)) <= 1.0f) {
+				System.out.println("Physical collision between player and " + npcs[i].getName() + " | distance: " + distanceFrom(getPhysicsPosition(npcs[i]), getPhysicsPosition(dolphinNodeOne)));
+			}
+		}
 	}
 
 	private void initializeMouse(RenderSystem renderSystem, RenderWindow render) {
@@ -1178,6 +1225,15 @@ public class HuntingGame extends VariableFrameRateGame {
 			avatarNode.getPhysicsObject().setTransform(toDoubleArray(avatarNode.getWorldTransform().toFloatArray()));
 		}
 	}
+	
+	private Vector3 getPhysicsPosition(Node avatarNode) {
+		if (running) {
+			float[] transform = toFloatArray(avatarNode.getPhysicsObject().getTransform());
+			return Vector3f.createFrom(transform[12], transform[13], transform[14]);
+		}
+		return Vector3f.createFrom(10000.0f, 10000.0f, 10000.0f);
+	}
+	
 
 	private void runScript(ScriptEngine engine, File scriptFile) {
 		try {
