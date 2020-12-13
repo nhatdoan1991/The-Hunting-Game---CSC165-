@@ -294,7 +294,7 @@ public class NPCController {
 		}
 
 		public void shotPlayer() throws IOException {
-			System.out.println("test");
+		//	System.out.println("shot player test");
 			Vector3 npcLocation = super.getNpcLocation();
 			Vector<SceneNode> players = game.getPlayers();
 			float d = 20.0f;
