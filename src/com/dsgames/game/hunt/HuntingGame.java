@@ -483,8 +483,16 @@ public class HuntingGame extends VariableFrameRateGame {
 		x.playAnimation("monster_walking", 0.5f, LOOP, 0);
 	}
 	private void spawningSnitch(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
+
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("npcEntityOne" + Integer.toString(index), "Night_Fury.rkm", "Night_Fury.rks");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
+
+		// load animations
+		NpcEntity.loadAnimation("Fly_Night_Fury", "Fly_Night_Fury.rka");
+		playFlyingSnitch(NpcEntity);
+		
+		//Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
+		//NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("Dolphin_HighPolyUV.png");
 		TextureState textureStateOne = (TextureState) sceneManager.getRenderSystem()
@@ -492,13 +500,17 @@ public class HuntingGame extends VariableFrameRateGame {
 		textureStateOne.setTexture(textureOne);
 		NpcEntity.setRenderState(textureStateOne);
 		NpcNode.attachObject(NpcEntity);
-		NpcNode.scale(1.0f, 1.0f, 1.0f);
-		Vector3 randomLocation = randomLocationMonster(sceneManager);
-		NpcNode.setLocalPosition(randomLocation);
+		NpcNode.scale(0.3f, 0.3f, 0.3f);
+		//Vector3 randomLocation = randomLocationMonster(sceneManager);
+		//NpcNode.setLocalPosition(randomLocation);
+		NpcNode.setLocalPosition(0.0f,0.0f,0.0f);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
-		npcs[index] = (SceneNode) npcEntity[index].getNode();
+		npcs[index] = (SceneNode) npcEntity[index].getNode(); 	
 	}
-
+	public void playFlyingSnitch(SkeletalEntity x) {
+		x.stopAnimation();
+		x.playAnimation("Fly_Night_Fury", 10f, LOOP, 0);
+	}
 	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
 		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "boss.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
@@ -814,7 +826,7 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		SkeletalEntity x = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 		x.update();
-		for(int i = 20; i< 40;i++)
+		for(int i = 20; i< 41;i++)
 		{
 			SkeletalEntity monsterSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("npcEntityOne" + Integer.toString(i));
 			monsterSkeletal.update();
