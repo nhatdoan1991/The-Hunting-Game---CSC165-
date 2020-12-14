@@ -461,7 +461,7 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		// load animations
 		NpcEntity.loadAnimation("monster_walking", "monster_walking.rka");
-		//NpcEntity.loadAnimation("walk", "walk.rka");
+		NpcEntity.loadAnimation("monster_shooting", "monster_shooting.rka");
 		
 		//Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "monster.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
@@ -482,9 +482,14 @@ public class HuntingGame extends VariableFrameRateGame {
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
 		healths.put(NpcNode,175);
 	}
+
 	public void playMonsterWalking(SkeletalEntity x) {
 		x.stopAnimation();
-		x.playAnimation("monster_walking", 0.5f, LOOP, 0);
+		x.playAnimation("monster_walking", 3f, LOOP, 0);
+	}
+	public void playMonsterShooting(SkeletalEntity x) {
+		x.stopAnimation();
+		x.playAnimation("monster_shooting", 1.5f, LOOP, 0);
 	}
 	private void spawningSnitch(Engine engine, SceneManager sceneManager, int index) throws IOException {
 
@@ -513,7 +518,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	public void playFlyingSnitch(SkeletalEntity x) {
 		x.stopAnimation();
-		x.playAnimation("Fly_Night_Fury", 10f, LOOP, 0);
+		x.playAnimation("Fly_Night_Fury", 15f, LOOP, 0);
 	}
 	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
 		Entity NpcEntity = sceneManager.createEntity("bossess" + Integer.toString(index), "boss.obj");
@@ -1050,6 +1055,9 @@ public class HuntingGame extends VariableFrameRateGame {
 		bulletEntity.setRenderState(bulletTextureState);
 		// System.out.println("Firing " + bulletNode.getName() +
 		// bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition());
+		String monster_index = sn.getName().substring(7,9);
+		SkeletalEntity monsterSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("monster" + monster_index);
+		this.playMonsterShooting(monsterSkeletal);
 
 	}
 
