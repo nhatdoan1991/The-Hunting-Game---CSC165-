@@ -272,7 +272,7 @@ public class NPCController {
 									+ super.npcSceneNode.getLocalForwardAxis().x() * 10f,
 							super.npcSceneNode.getLocalPosition().y(), super.npcSceneNode.getLocalPosition().z()
 									+ super.npcSceneNode.getLocalForwardAxis().z() * 10f);
-					game.npcFireBullet(super.npcSceneNode, target);
+					game.bossFireBullet(super.npcSceneNode, target);
 					count++;
 					// System.out.println(count);
 				}
@@ -313,7 +313,7 @@ public class NPCController {
 			if (minDistance < d) {
 				targetToShot = players.get(targetIndex);
 				if (super.getIsDelayed() == false) {
-					game.npcFireBullet(super.npcSceneNode, targetToShot.getLocalPosition());
+					game.monsterFireBullet(super.npcSceneNode, targetToShot.getLocalPosition());
 					super.setIsDelayed(true);
 				}
 			}
