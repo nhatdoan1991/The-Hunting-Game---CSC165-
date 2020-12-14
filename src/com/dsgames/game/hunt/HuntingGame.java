@@ -100,9 +100,10 @@ public class HuntingGame extends VariableFrameRateGame {
 	public HashMap<SceneNode, Boolean> playerCharge = new HashMap<SceneNode, Boolean>();
 	public IAudioManager audioManager;
 	public int chargeTimeP1 = 1000;
-	public SceneNode dolphinNodeOne, originNode, tessellationNode;
+	public SceneNode dolphinNodeOne, originNode, tessellationNode; 
 	public PhysicsEngine physicsEngine;
 	public PhysicsObject ballOnePhysicsObject, groundPlane, dolphinOnePhysicsObject;
+	public int playerPoint =0;
 
 	private Action moveLeftAction, moveRightAction, moveForwardAction, moveBackwardAction, exitGameAction,
 			skipSongAction, avatarJumpAction, avatarChargeAction, closeConnectionAction, fireAction;
@@ -111,6 +112,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private ConcurrentHashMap<UUID, GhostAvatar> ghostAvatars = new ConcurrentHashMap<UUID, GhostAvatar>();
 	private ConcurrentHashMap<SceneNode, Vector3[]> bullets = new ConcurrentHashMap<SceneNode, Vector3[]>();
+	private ConcurrentHashMap<SceneNode, Integer> healths = new ConcurrentHashMap<SceneNode,Integer>();
 	private AbstractNpcEntity[] npcEntity;
 	private double sensitivity = 0.5;
 	private float lastMouseX, lastMouseY, mouseX, mouseY;
@@ -149,10 +151,10 @@ public class HuntingGame extends VariableFrameRateGame {
 	private static final String SKYBOX = "OceanSkybox";
 	private static final String SEPARATOR = "----------------------------------------------------";
 
-	float elapsedTime = 0.0f;
+	float elapsedTime = 0.0f,gameTime = 0.0f;
 	GL4RenderSystem renderSystem;
 	HashMap<SceneNode, Boolean> activePlanets = new HashMap<SceneNode, Boolean>();
-	int elapsedTimeSeconds, playerOneLives = 2, playerOneScore = 0, currentSong = 0;
+	int elapsedTimeSeconds, playerOneLives = 2, playerOneScore = 0, currentSong = 0 , playerHealth = 0;
 	String elapsedTimeString, displayString, playerOneLivesString, playerTwoLivesString, playerOneScoreString,
 			playerTwoScoreString;
 
@@ -311,8 +313,8 @@ public class HuntingGame extends VariableFrameRateGame {
 		Texture dolphinOneTexture = textureManager.getAssetByPath("playerModel.png");
 		TextureState dolphinOneTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		dolphinOneTextureState.setTexture(dolphinOneTexture);
-
 		dolphinEntityOne.setRenderState(dolphinOneTextureState);
+		healths.put(dolphinNodeOne,100);
 	}
 
 	/**
@@ -435,7 +437,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 
 	private void spawningDolphin(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
+		Entity NpcEntity = sceneManager.createEntity("dolphin" + Integer.toString(index), "dolphinLowPoly.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("leggedDolphinBlue.png");
@@ -445,15 +447,16 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcEntity.setRenderState(textureStateOne);
 		NpcNode.attachObject(NpcEntity);
 		NpcNode.scale(10.0f, 10.00f, 10.0f);
-		Vector3 randomLocation = randomLocationDolphin(sceneManager);
+		Vector3 randomLocation = randomLocationDolphin();
 		NpcNode.setLocalPosition(randomLocation);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
+		healths.put(NpcNode,125);
 	}
 
 	private void spawningMonster(Engine engine, SceneManager sceneManager, int index) throws IOException {
 		
-		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("npcEntityOne" + Integer.toString(index), "monster.rkm", "monster.rks");
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("monster" + Integer.toString(index), "monster.rkm", "monster.rks");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 
 		// load animations
@@ -473,10 +476,11 @@ public class HuntingGame extends VariableFrameRateGame {
 		
 		NpcNode.attachObject(NpcEntity);
 		NpcNode.scale(0.2f, 0.2f, 0.2f);
-		Vector3 randomLocation = randomLocationMonster(sceneManager);
+		Vector3 randomLocation = randomLocationMonster();
 		NpcNode.setLocalPosition(randomLocation);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
+		healths.put(NpcNode,175);
 	}
 	public void playMonsterWalking(SkeletalEntity x) {
 		x.stopAnimation();
@@ -484,7 +488,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	private void spawningSnitch(Engine engine, SceneManager sceneManager, int index) throws IOException {
 
-		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("npcEntityOne" + Integer.toString(index), "Night_Fury.rkm", "Night_Fury.rks");
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("snitchs" + Integer.toString(index), "Night_Fury.rkm", "Night_Fury.rks");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 
 		// load animations
@@ -501,18 +505,18 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcEntity.setRenderState(textureStateOne);
 		NpcNode.attachObject(NpcEntity);
 		NpcNode.scale(0.3f, 0.3f, 0.3f);
-		//Vector3 randomLocation = randomLocationMonster(sceneManager);
-		//NpcNode.setLocalPosition(randomLocation);
-		NpcNode.setLocalPosition(0.0f,0.0f,0.0f);
+		Vector3 randomLocation = randomLocationMonster();
+		NpcNode.setLocalPosition(randomLocation);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode(); 	
+		healths.put(NpcNode,75);
 	}
 	public void playFlyingSnitch(SkeletalEntity x) {
 		x.stopAnimation();
 		x.playAnimation("Fly_Night_Fury", 10f, LOOP, 0);
 	}
 	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "boss.obj");
+		Entity NpcEntity = sceneManager.createEntity("bossess" + Integer.toString(index), "boss.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("Dragon_ground_color.jpg");
@@ -525,13 +529,15 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcNode.setLocalPosition(0f, 0f, 0f);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
+		healths.put(NpcNode,2000);
 	}
-
+	//reSpawnNPC
+	
 	/**
 	 * Random Location for Dolphin NPC
 	 **/
-	private Vector3 randomLocationDolphin(SceneManager sceneManager) {
-		Vector3 center = sceneManager.getRootSceneNode().getLocalPosition();
+	private Vector3 randomLocationDolphin() {
+		Vector3 center = this.getEngine().getSceneManager().getRootSceneNode().getLocalPosition();
 		Vector3 randomPosition;
 		float[] randomFloat;
 		do {
@@ -544,8 +550,8 @@ public class HuntingGame extends VariableFrameRateGame {
 	/**
 	 * Random Location for Monsters
 	 **/
-	private Vector3 randomLocationMonster(SceneManager sceneManager) {
-		Vector3 center = sceneManager.getRootSceneNode().getLocalPosition();
+	private Vector3 randomLocationMonster() {
+		Vector3 center = this.getEngine().getSceneManager().getRootSceneNode().getLocalPosition();
 		Vector3 randomPosition;
 		float[] randomFloat;
 		do {
@@ -743,7 +749,17 @@ public class HuntingGame extends VariableFrameRateGame {
 	protected void update(Engine engine) {
 		renderSystem = (GL4RenderSystem) engine.getRenderSystem();
 		elapsedTime += engine.getElapsedTimeMillis();
-
+		if(!isStarted) {
+			gameTime = getGameStartTime();
+			isStarted = true;
+		}else {
+			gameTime += engine.getElapsedTimeMillis();
+		}
+		if(Math.round(gameTime/1000) >=180)
+		{
+			//Game Stop, count points of teams
+			System.out.println("Game Over!!!!!");
+		}
 		if (running) {
 			Matrix4 matrix;
 			physicsEngine.update(elapsedTime);
@@ -826,11 +842,13 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		SkeletalEntity x = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 		x.update();
-		for(int i = 20; i< 41;i++)
+		for(int i = 20; i< 40;i++)
 		{
-			SkeletalEntity monsterSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("npcEntityOne" + Integer.toString(i));
+			SkeletalEntity monsterSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("monster" + Integer.toString(i));
 			monsterSkeletal.update();
 		}
+		SkeletalEntity monsterSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("snitchs" + Integer.toString(40));
+		monsterSkeletal.update();
 		orbitCameraOne.updateCameraPosition();
 
 		targetNode.lookAt(dolphinNodeOne);
@@ -872,6 +890,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			avatar.setNode(ghostNode);
 			avatar.setEntity(ghostEntity);
 			ghostAvatars.put(avatar.getId(), avatar);
+			healths.put(ghostNode,100);
 		}
 	}
 
@@ -958,8 +977,45 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void playJumpSound() {
 		sfx[2].play();
 	}
+	
+	public void bossFireBullet(SceneNode sn, Vector3 target) throws IOException {
+		Engine engine = this.getEngine();
+		SceneManager sceneManager = engine.getSceneManager();
 
-	public void npcFireBullet(SceneNode sn, Vector3 target) throws IOException {
+		Entity bulletEntity = sceneManager.createEntity("bossBullet" + UUID.randomUUID().toString(), "sphere.obj");
+		bulletEntity.setPrimitive(Primitive.TRIANGLES);
+		SceneNode bulletNode = sceneManager.getRootSceneNode().createChildSceneNode(bulletEntity.getName() + "Node");
+		bulletNode.attachObject(bulletEntity);
+
+		Vector3 origin = Vector3f.createFrom(sn.getLocalPosition().x(), sn.getLocalPosition().y(),
+				sn.getLocalPosition().z() + 2.0f);
+
+		bulletNode.setLocalPosition(origin);
+		bulletNode.scale(0.2f, 0.2f, 0.2f);
+
+		Vector3[] positions = { origin, Vector3f.createFrom(bulletNode.getLocalPosition().x(),
+				bulletNode.getLocalPosition().y(), bulletNode.getLocalPosition().z()) };
+
+		double[] transform = toDoubleArray(bulletNode.getLocalTransform().toFloatArray());
+		PhysicsObject bulletPhysicObject = physicsEngine.addCapsuleObject(physicsEngine.nextUID(), 0.1f, transform,
+				0.3f, 1.0f);
+		bulletPhysicObject.setSleepThresholds(0.0f, 0.0f);
+		bulletNode.setPhysicsObject(bulletPhysicObject);
+
+		bulletNode.lookAt(Vector3f.createFrom(target.x(), target.y(), target.z()));
+
+		bullets.put(bulletNode, positions);
+
+		Texture bulletTexture = textureManager.getAssetByPath("Fire_A_2.png");
+		TextureState bulletTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
+		bulletTextureState.setTexture(bulletTexture);
+
+		bulletEntity.setRenderState(bulletTextureState);
+		// System.out.println("Firing " + bulletNode.getName() +
+		// bulletNode.getLocalPosition() + " at " + this.targetNode.getWorldPosition());
+
+	}
+	public void monsterFireBullet(SceneNode sn, Vector3 target) throws IOException {
 		Engine engine = this.getEngine();
 		SceneManager sceneManager = engine.getSceneManager();
 
@@ -1102,7 +1158,42 @@ public class HuntingGame extends VariableFrameRateGame {
 					if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(npcs[i])) < 2.0f) {
 						System.out.println(bullet.getName().substring(0, 6) + " bullet distance: " + distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(npcs[i])));
 						if (bullet.getName().substring(0, 6).equalsIgnoreCase("player")) {
-							System.out.println("Player bullet hit " + npcs[i].getName());
+							System.out.println("Player bullet hit " + npcs[i].getName().substring(0,6));
+							healths.put(npcs[i], healths.get(npcs[i])-25);
+							if(healths.get(npcs[i])<=0)
+							{
+								//NPC dies and respawn
+								String nameOfMonster = npcs[i].getName().substring(0,7);
+								Vector3 randomLocation;
+								switch(nameOfMonster) {
+									case "dolphin":
+										healths.put(npcs[i], 125);
+										randomLocation = randomLocationDolphin();
+										npcs[i].setLocalPosition(randomLocation);
+										playerPoint += 0;
+									break;
+									case "monster":
+										healths.put(npcs[i], 175);
+										randomLocation = randomLocationMonster();
+										npcs[i].setLocalPosition(randomLocation);
+										playerPoint += 100;
+										break;
+									case "snitchs":
+										healths.put(npcs[i], 75);
+										randomLocation = randomLocationMonster();
+										npcs[i].setLocalPosition(randomLocation);
+										playerPoint += 1000;
+										break;
+										
+									case "bossess":
+										//game ends
+										playerPoint += 5000;
+										System.out.println("End Game");
+										break;
+								}
+								
+							}
+							healths.put(npcs[i], healths.get(npcs[i])-25);
 							bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
 							synchronizeAvatarPhysics(bullet);
 							this.getEngine().getSceneManager().destroySceneNode(bullet);
@@ -1114,6 +1205,28 @@ public class HuntingGame extends VariableFrameRateGame {
 				if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)) < 1.0f) {
 					System.out.println(bullet.getName().substring(0,7) + " bullet distance: " + distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
 					System.out.println("Monster bullet hit player");
+					healths.put(dolphinNodeOne,healths.get(dolphinNodeOne)- 20);
+					if(healths.get(dolphinNodeOne)<=100)
+					{
+						//player dies, need to respawn and deduct point
+						dolphinNodeOne.setLocalPosition(0.0f,0f,0f);
+						playerPoint = playerPoint - 1000;
+					}
+					bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
+					synchronizeAvatarPhysics(bullet);
+					this.getEngine().getSceneManager().destroySceneNode(bullet);
+					bullets.remove(bullet);
+				}
+			}else if (bullet.getName().substring(0, 4).equalsIgnoreCase("boss")) {
+				if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)) < 1.0f) {
+					System.out.println(bullet.getName().substring(0,7) + " bullet distance: " + distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
+					System.out.println("Boss bullet hit player");
+					healths.put(dolphinNodeOne,healths.get(dolphinNodeOne)- 40);
+					if(healths.get(dolphinNodeOne)<=100)
+					{
+						//player dies, no respawn
+						System.out.println("You are dead. Please wait until the game ends");
+					}
 					bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
 					synchronizeAvatarPhysics(bullet);
 					this.getEngine().getSceneManager().destroySceneNode(bullet);
@@ -1131,10 +1244,42 @@ public class HuntingGame extends VariableFrameRateGame {
 		for (int i = 0; i < npcs.length; i++) {
 			if (distanceFrom(getPhysicsPosition(npcs[i]), getPhysicsPosition(dolphinNodeOne)) <= 1.0f) {
 				System.out.println("Physical collision between player and " + npcs[i].getName() + " | distance: " + distanceFrom(getPhysicsPosition(npcs[i]), getPhysicsPosition(dolphinNodeOne)));
+				String nameOfMonster = npcs[i].getName().substring(0,7);
+				Vector3 randomLocation;
+				switch(nameOfMonster) {
+					case "dolphin":
+						healths.put(dolphinNodeOne,healths.get(dolphinNodeOne)- 50);
+						break;
+					case "monster":
+						healths.put(dolphinNodeOne,healths.get(dolphinNodeOne)- 40);
+						break;
+					case "snitchs":
+						//player capture the snitch
+						System.out.println("Player captured the snitch" );
+						playerPoint+=1000;
+						healths.put(npcs[i], 75);
+						randomLocation = randomLocationMonster();
+						npcs[i].setLocalPosition(randomLocation);
+						break;
+						
+					case "bossess":
+						//game ends
+						healths.put(dolphinNodeOne,healths.get(dolphinNodeOne)- 100);
+						System.out.println("End Game");
+						break;
+				}
+				if(healths.get(dolphinNodeOne)<=100)
+				{
+					//player dies, need to respawn and deduct point
+					dolphinNodeOne.setLocalPosition(0.0f,0f,0f);
+					playerPoint = playerPoint - 1000;
+				}
 			}
 		}
 	}
-
+	private float getGameStartTime() {
+		return elapsedTime;
+	}
 	private void initializeMouse(RenderSystem renderSystem, RenderWindow render) {
 		Viewport view = renderWindow.getViewport(0);
 		int left = renderWindow.getLocationLeft();
