@@ -138,7 +138,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private VerticalOrbitController playerOrbitControllerVertical;
 	private ZBufferState zState;
 	private int numberOfNpc = 0, numberOfDolphin = 20, numberOfMonster = 20, numberOfSnitch = 1, numberOfBoss = 1;
-	private boolean isStarted = false, isPlayerRunning =false, isStepping = false;
+	private boolean isStarted = false, isPlayerRunning =false, isStepping = false,isStepped = false, isRunned = false;
 	private float lastPlayerRunTime = 0, lastPlayerStep =0;
 
 	protected ScriptEngine jsEngine;
@@ -329,7 +329,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void playPlayerRunningAnimation() {
 		SkeletalEntity playerSkeletalEntity = (SkeletalEntity) getEngine().getSceneManager().getEntity("player");
 		playerSkeletalEntity.stopAnimation();
-		playerSkeletalEntity.playAnimation("player_running", 5f, LOOP, 0);
+		playerSkeletalEntity.playAnimation("player_running", 8f, LOOP, 0);
 	}
 	public void playPlayerJumpAnimation() {
 		SkeletalEntity playerSkeletalEntity = (SkeletalEntity) getEngine().getSceneManager().getEntity("player");
@@ -853,23 +853,39 @@ public class HuntingGame extends VariableFrameRateGame {
 			checkBulletCollision();
 			checkNpcCollision();
 		}
-		if(isPlayerRunning)
-		{
-			
-			if(lastPlayerRunTime +500 < gameTime)
+		if(isRunned) {
+			if(isRunned && isPlayerRunning ==false)
+			{
+				playPlayerRunningAnimation();
+				isPlayerRunning =true;
+			}
+			if(lastPlayerRunTime +500 < gameTime && isPlayerRunning == true)
+			{
+				isPlayerRunning = false;
+			}
+			if(isPlayerRunning == false)
 			{
 				playPlayerStandingAnimation();
-				isPlayerRunning =false;
+				isRunned =false;
 			}
 		}
-		if(isStepping)
-		{
-			if(lastPlayerRunTime +500 < gameTime)
+		if(isStepped) {
+			if(isStepped && isStepping ==false)
+			{
+				playPlayerRightStepAnimation();
+				isStepping =true;
+			}
+			if(lastPlayerRunTime +500 < gameTime && isStepping == true)
+			{
+				isStepping = false;
+			}
+			if(isStepping == false)
 			{
 				playPlayerStandingAnimation();
-				isStepping=false;
+				isStepped =false;
 			}
 		}
+	
 		targetNode = (SceneNode) orbitCameraOne.getCameraTarget();
 		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
@@ -1459,6 +1475,12 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	public void setIsPlayerStepping(boolean b) {
 		isStepping = b;
+	}
+	public void setIsRunned(boolean b) {
+		isRunned =b;
+	}
+	public void setIsStepped(boolean b) {
+		isStepped = b;
 	}
 	/**
 	 * Adds the scene node the the stretch controller
