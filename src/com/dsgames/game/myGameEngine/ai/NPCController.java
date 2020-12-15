@@ -16,6 +16,7 @@ import ray.ai.behaviortrees.BTStatus;
 import ray.ai.behaviortrees.BehaviorTree;
 import ray.physics.PhysicsObject;
 import ray.rage.scene.SceneNode;
+import ray.rage.scene.SkeletalEntity;
 import ray.rml.Angle;
 import ray.rml.Degreef;
 import ray.rml.Vector3;
@@ -81,8 +82,8 @@ public class NPCController {
 		tree.insertAtRoot(new BTSequence(10));
 		tree.insertAtRoot(new BTSequence(20));
 		tree.insertAtRoot(new BTSequence(30));
-		tree.insert(10, new CheckInitMove(m, false));
-		tree.insert(10, new NpcWalkAround(m));
+		tree.insert(10, new CheckMonsterShooting(m, false));
+		tree.insert(10, new MonsterStand(m));
 		tree.insert(20, new CheckFurthestPlayer(m, false));
 		tree.insert(20, new GoHomeAction(m));
 		tree.insert(30, new CheckClosestPlayer(m, false));
@@ -103,8 +104,20 @@ public class NPCController {
 					npcs[i].walkAround();
 				}
 				if (npcs[i] instanceof Monster) {
-					npcs[i].delay(5000f);
-					npcs[i].walkAround();
+					npcs[i].delay(3000f);
+					Monster m = (Monster) npcs[i];
+					if(m.getIsShooting()==false)
+					{
+						npcs[i].walkAround();					
+					}else {
+						if(game.getElapsedTime()-m.getShootingTime() >= 2000)
+						{
+							m.setIsShooting(false);
+							SkeletalEntity monsterSkeletal = (SkeletalEntity) game.getEngine().getSceneManager().getEntity("monster" + m.getNpcSceneNode().getName().substring(7,9));
+							game.playMonsterWalking(monsterSkeletal);
+						}	
+					}
+					
 				}
 				if (npcs[i] instanceof Snitch) {
 					npcs[i].delay((float) rd.nextInt(5000) + 3000);
@@ -284,6 +297,9 @@ public class NPCController {
 	}
 
 	public class Monster extends Npc {
+		private boolean isShooting =false;
+		private float shootingTime = 0;
+		
 
 		public Monster(SceneNode sceneNode, PhysicsObject physicsObject, int id) {
 			super(sceneNode, physicsObject, id);
@@ -292,32 +308,52 @@ public class NPCController {
 					super.npcSceneNode.getLocalPosition().y() - 0.3f, super.npcSceneNode.getLocalPosition().z() + 0.3f);
 			super.target = super.origin;
 		}
-
+		public boolean getIsShooting() {
+			return this.isShooting;
+		}
+		public void setIsShooting(boolean b) {
+			this.isShooting=b;
+		}
+		public float getShootingTime() {
+			return this.shootingTime;
+		}
 		public void shotPlayer() throws IOException {
-		//	System.out.println("shot player test");
+			if(isShooting ==false)
+			{
+//				System.out.println("shot player test");
+				Vector3 npcLocation = super.getNpcLocation();
+				Vector<SceneNode> players = game.getPlayers();
+				float d = 20.0f;
+				SceneNode targetToShot = players.get(0);
+				float minDistance = 101f;
+				int targetIndex = 0;
+				for (int i = 0; i < players.size(); i++) {
+					Vector3 position = players.get(i).getLocalPosition();
+					float distance = HuntingGame.distanceFrom((Vector3f) npcLocation, (Vector3f) position);
+					// System.out.println("distance player"+distance);
+					if (distance < minDistance) {
+						minDistance = distance;
+						targetIndex = i;
+					}
+				}
+				if (minDistance < d) {
+					targetToShot = players.get(targetIndex);
+					if (super.getIsDelayed() == false) {
+						game.monsterFireBullet(super.npcSceneNode, targetToShot.getLocalPosition());
+						super.setIsDelayed(true);
+					}
+				}
+				setIsShooting(true);
+				shootingTime = game.getElapsedTime();
+			}
+		
+		}
+		public void stand() {
 			Vector3 npcLocation = super.getNpcLocation();
-			Vector<SceneNode> players = game.getPlayers();
-			float d = 20.0f;
-			SceneNode targetToShot = players.get(0);
-			float minDistance = 101f;
-			int targetIndex = 0;
-			for (int i = 0; i < players.size(); i++) {
-				Vector3 position = players.get(i).getLocalPosition();
-				float distance = HuntingGame.distanceFrom((Vector3f) npcLocation, (Vector3f) position);
-				// System.out.println("distance player"+distance);
-				if (distance < minDistance) {
-					minDistance = distance;
-					targetIndex = i;
-				}
-			}
-			if (minDistance < d) {
-				targetToShot = players.get(targetIndex);
-				if (super.getIsDelayed() == false) {
-					game.monsterFireBullet(super.npcSceneNode, targetToShot.getLocalPosition());
-					super.setIsDelayed(true);
-				}
-			}
-
+			float[] playerDirection = { 0f, 0.0f,
+					0f };
+			super.npcPhysicsObject.setLinearVelocity(playerDirection);
+			super.target = Vector3f.createFrom(npcLocation.x(),npcLocation.y(),npcLocation.z());
 		}
 	}
 
@@ -501,11 +537,11 @@ public class NPCController {
 
 	}
 
-	public class CheckInitMove extends BTCondition {
+	public class CheckMonsterShooting extends BTCondition {
 
 		private Npc npc;
 
-		public CheckInitMove(Npc n, boolean toNegate) {
+		public CheckMonsterShooting(Npc n, boolean toNegate) {
 			super(toNegate);
 			npc = n;
 		}
@@ -513,12 +549,24 @@ public class NPCController {
 		@Override
 		protected boolean check() {
 			// This must be false at first
+			boolean isPlayerClose = false;
+			Vector3 npcLocation = npc.getNpcLocation();
+			Vector<SceneNode> players = game.getPlayers();
 
-			if (npc.getInitMove() == false) {
-				return true;
-			} else {
-				return false;
+			if (players != null) {
+				for (SceneNode player : players) {
+					Vector3 playerPosition = player.getLocalPosition();
+					float distanceFromPlayer = distanceBetween((Vector3f) npcLocation, (Vector3f) playerPosition);
+					if(npc instanceof Monster) {
+						Monster m = (Monster) npc;
+						if (distanceFromPlayer < 20.0f && m.getIsShooting()==true) {
+							isPlayerClose = true;
+						}
+					}			
+				}
 			}
+			
+			return isPlayerClose;
 		}
 
 	}
@@ -790,17 +838,22 @@ public class NPCController {
 
 	}
 
-	public class NpcWalkAround extends BTAction {
+	public class MonsterStand extends BTAction {
 
-		private Npc m;
+		private Npc npc;
 
-		public NpcWalkAround(Npc m) {
-			this.m = m;
+		public MonsterStand(Npc m) {
+			this.npc = m;
 		}
 
 		@Override
 		protected BTStatus update(float arg0) {
-			m.walkAround();
+			if(npc instanceof Monster)
+			{
+				Monster m = (Monster) npc;
+				m.stand();
+			}
+			//m.walkAround();
 			return null;
 		}
 
