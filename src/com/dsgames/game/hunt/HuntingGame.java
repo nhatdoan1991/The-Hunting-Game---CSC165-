@@ -83,6 +83,7 @@ import ray.rage.scene.Node;
 import ray.rage.scene.SceneManager;
 import ray.rage.scene.SceneNode;
 import ray.rage.scene.SkeletalEntity;
+import ray.rage.scene.SkeletalEntity.EndType;
 import ray.rage.scene.Tessellation;
 import ray.rage.scene.controllers.OrbitController;
 import ray.rage.util.Configuration;
@@ -138,8 +139,8 @@ public class HuntingGame extends VariableFrameRateGame {
 	private VerticalOrbitController playerOrbitControllerVertical;
 	private ZBufferState zState;
 	private int numberOfNpc = 0, numberOfDolphin = 20, numberOfMonster = 20, numberOfSnitch = 1, numberOfBoss = 1;
-	private boolean isStarted = false, isPlayerRunning =false, isStepping = false,isStepped = false, isRunned = false;
-	private float lastPlayerRunTime = 0, lastPlayerStep =0;
+	private boolean isStarted = false, isPlayerRunning =false, isStepping = false,isStepped = false, isRunned = false,isShoted =false,isJumped = false;
+	private float lastPlayerRunTime = 0, lastPlayerStep =0 , lastShotTime = 0,lastJumpTime = 0;
 
 	protected ScriptEngine jsEngine;
 	protected File test, addLight, setupSkybox, setupTerrain, setupAudio;
@@ -324,7 +325,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void playPlayerStandingAnimation() {
 		SkeletalEntity playerSkeletalEntity = (SkeletalEntity) getEngine().getSceneManager().getEntity("player");
 		playerSkeletalEntity.stopAnimation();
-		playerSkeletalEntity.playAnimation("standing", 5f, LOOP, 0);
+		playerSkeletalEntity.playAnimation("standing", 5f, LOOP , 0);
 	}
 	public void playPlayerRunningAnimation() {
 		SkeletalEntity playerSkeletalEntity = (SkeletalEntity) getEngine().getSceneManager().getEntity("player");
@@ -334,7 +335,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	public void playPlayerJumpAnimation() {
 		SkeletalEntity playerSkeletalEntity = (SkeletalEntity) getEngine().getSceneManager().getEntity("player");
 		playerSkeletalEntity.stopAnimation();
-		playerSkeletalEntity.playAnimation("player_jump", 5f, LOOP, 0);
+		playerSkeletalEntity.playAnimation("player_jump", 2f, LOOP, 0);
 	}
 	public void playPlayerShootingAnimation() {
 		SkeletalEntity playerSkeletalEntity = (SkeletalEntity) getEngine().getSceneManager().getEntity("player");
@@ -875,7 +876,7 @@ public class HuntingGame extends VariableFrameRateGame {
 				playPlayerRightStepAnimation();
 				isStepping =true;
 			}
-			if(lastPlayerRunTime +500 < gameTime && isStepping == true)
+			if(lastPlayerStep +500 < gameTime && isStepping == true)
 			{
 				isStepping = false;
 			}
@@ -883,6 +884,13 @@ public class HuntingGame extends VariableFrameRateGame {
 			{
 				playPlayerStandingAnimation();
 				isStepped =false;
+			}
+		}
+		if(isShoted) {
+			if(lastShotTime+ 1000 < gameTime)
+			{
+				playPlayerStandingAnimation();
+				isShoted =false;
 			}
 		}
 	
@@ -935,19 +943,20 @@ public class HuntingGame extends VariableFrameRateGame {
 		mouseInit = true;
 		recenterMouse();
 		checkChargeTime();
-
+		SceneNode playerNode = getEngine().getSceneManager().getSceneNode("playerNode");
 		if (jumpP1) {
-			velocityP1 -= 1.0f;
+			velocityP1 -=15.0f;
 			if (Math.abs(velocityP1) > TERMINAL_VELOCITY) {
-				velocityP1 = TERMINAL_VELOCITY * -1;
+				velocityP1 = TERMINAL_VELOCITY * -2;
 			}
 			dolphinNodeOne.getPhysicsObject().applyForce(0.0f, velocityP1, 0.0f, 0.0f, 0.0f, 0.0f);
-		} else if (dolphinNodeOne.getWorldPosition().y() <= 0.5f && jumpP1) {
-			velocityP1 = 0.0f;
-			jumpP1 = false;
-			playPlayerStandingAnimation();
-		}
-
+			if (dolphinNodeOne.getWorldPosition().y() <= 1f+tessellationEntity.getWorldHeight(playerNode.getWorldPosition().x(), playerNode.getWorldPosition().z())&& lastJumpTime + 3000 < gameTime) {
+				System.out.println("test");
+				velocityP1 = 0.0f;
+				jumpP1 = false;
+				playPlayerRunningAnimation();
+			}
+		} 
 		SkeletalEntity x = (SkeletalEntity) getEngine().getSceneManager().getEntity("player");
 		x.update();
 		for(int i = 20; i< 40;i++)
@@ -1039,13 +1048,13 @@ public class HuntingGame extends VariableFrameRateGame {
 			dolphinNodeOne.setLocalPosition(avatarPositionP1);
 			synchronizeAvatarPhysics(dolphinNodeOne);
 			if (jumpP1) {
-				dolphinNodeOne.getPhysicsObject().applyForce(0.0f, 1500.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-				jumpP1 = false;
+				dolphinNodeOne.getPhysicsObject().applyForce(0.0f, 800f, 0.0f, 0.0f, 0.0f, 0.0f);
+				//jumpP1 = false;
 			}
-		} else if (avatarLocalPositionP1.y() > terrainPositionP1.y() + 1.0f) {
-			jumpP1 = true;
-		}
-
+		} //else if (avatarLocaPositionP1.y() > terrainPositionP1.y() + 1.0f) {
+			//jumpP1 = true;
+		//}
+			
 		for (int i = 0; i < npcEntity.length; i++) {
 			Vector3 npcWorldPosition = npcEntity[i].getNode().getWorldPosition();
 			Vector3 npcLocalPosition = npcEntity[i].getNode().getLocalPosition();
@@ -1222,6 +1231,8 @@ public class HuntingGame extends VariableFrameRateGame {
 		// " at " + player.getLocalForwardAxis().x()+ " at " +
 		// player.getLocalForwardAxis().y()+ " at " +player.getLocalForwardAxis().z());
 		playPlayerShootingAnimation();
+		isShoted = true;
+		lastShotTime = gameTime;
 	}
 
 	/**
@@ -1481,6 +1492,13 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	public void setIsStepped(boolean b) {
 		isStepped = b;
+	}
+	public void setIsShoted(boolean b)
+	{
+		isShoted = b;
+	}
+	public void setLastJumpTime(float f) {
+		lastJumpTime = f;
 	}
 	/**
 	 * Adds the scene node the the stretch controller
