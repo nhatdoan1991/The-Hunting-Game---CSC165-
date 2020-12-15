@@ -36,7 +36,12 @@ public class UDPServer extends GameConnectionServer<UUID> {
 					clientInfo = getServerSocket().createClientInfo(senderIP, sendPort);
 					clientId = UUID.fromString(messageTokens[1]);
 					addClient(clientInfo, clientId);
-					sendJoinedMessage(clientId, true, connectedClients++);
+					int team = 0;
+					if(connectedClients%2==1)
+					{
+						team=1;
+					}
+					sendJoinedMessage(clientId, true, connectedClients++,team);
 				} catch (IOException e) {
 					e.printStackTrace();
 				} finally {
@@ -69,8 +74,9 @@ public class UDPServer extends GameConnectionServer<UUID> {
 				position[0] = messageTokens[2];
 				position[1] = messageTokens[3];
 				position[2] = messageTokens[4];
-				sendCreateMessage(clientId, position);
-				sendWantsDetailsForMessage(clientId);
+				System.out.println(clientId +" in team "+messageTokens[5]);
+				sendCreateMessage(clientId, position,messageTokens[5]);
+				sendWantsDetailsForMessage(clientId,messageTokens[5]);
 				break;
 
 			
@@ -130,11 +136,11 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	 * @param success
 	 * @param clients
 	 */
-	public void sendJoinedMessage(UUID clientId, boolean success, int clients) {
+	public void sendJoinedMessage(UUID clientId, boolean success, int clients,int team) {
 		try {
 			String message = "server-join,";
 			if (success) {
-				message += "success," + clients;
+				message += "success," + clients+","+team;
 			} else {
 				message += "fail," + clients;
 			}
@@ -145,14 +151,14 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	}
 	
 	/**
-	 * server-create, clientId, x, y, z
+	 * server-create, clientId, x, y, z,team
 	 * @param clientId
 	 * @param position
 	 */
-	public void sendCreateMessage(UUID clientId, String[] position) {
+	public void sendCreateMessage(UUID clientId, String[] position, String team) {
 		try {
 			String p = processPosition(position);
-			forwardPacketToAll("server-create," + clientId.toString() + p, clientId);
+			forwardPacketToAll("server-create," + clientId.toString() + p+","+team, clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -162,9 +168,9 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	 * server-wants-details, clientId
 	 * @param clientId
 	 */
-	public void sendWantsDetailsForMessage(UUID clientId) {
+	public void sendWantsDetailsForMessage(UUID clientId,String team) {
 		try {
-			forwardPacketToAll("server-wants-details," + clientId.toString(), clientId);
+			forwardPacketToAll("server-wants-details," + clientId.toString()+","+team, clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

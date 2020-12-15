@@ -42,7 +42,8 @@ public class ProtocolClient extends GameConnectionClient {
 				// we only care about successful connections
 				if (messageTokens[1].compareTo("success") == 0) {
 					game.setIsConnected(true);
-					sendCreateMessage(game.getPlayerPosition());
+					sendCreateMessage(game.getPlayerPosition(),messageTokens[2]);
+					game.setTeam(messageTokens[2]);
 				} else {
 					game.setIsConnected(false);
 				}
@@ -74,9 +75,11 @@ public class ProtocolClient extends GameConnectionClient {
 				
 			// server-wants-details, clientId
 			case "server-wants-details":
+		
 				ghostId = UUID.fromString(messageTokens[1]);
 				position = ghostAvatars.get(ghostId).getPosition();
-				sendDetailsForMessage(ghostId, position);
+				sendDetailsForMessage(ghostId, position,messageTokens[2]);
+				assignTeamForGhost(ghostId,messageTokens[2]);
 				break;
 
 			// server-move, clientId, x, y, z
@@ -88,7 +91,7 @@ public class ProtocolClient extends GameConnectionClient {
 						Float.parseFloat(messageTokens[4])
 						);
 				game.moveGhostAvatar(ghostId, position);
-				//	updateGhostAvatarPosition(ghostId, position);
+				updateGhostAvatarPosition(ghostId, position);
 				break;
 
 			case "server-npc-position-message":
@@ -152,14 +155,17 @@ public class ProtocolClient extends GameConnectionClient {
 		return ghost;
 	}
 	
+	public void assignTeamForGhost(UUID id, String team) {
+		game.assignTeam(id,team);
+	}
 	/**
 	 * client-create, localId, locX, locY, locZ
 	 * @param playerPosition
 	 */
-	private void sendCreateMessage(Vector3 playerPosition) {
+	private void sendCreateMessage(Vector3 playerPosition, String team) {
 		try {
 			String message = new String("client-create," + this.id.toString());
-			message += "," + playerPosition.x() + "," + playerPosition.y() + "," + playerPosition.z();
+			message += "," + playerPosition.x() + "," + playerPosition.y() + "," + playerPosition.z()+ "," + team;
 			sendPacket(message);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -210,10 +216,10 @@ public class ProtocolClient extends GameConnectionClient {
 	 * @param remoteId
 	 * @param position
 	 */
-	public void sendDetailsForMessage(UUID remoteId, Vector3 position) {
+	public void sendDetailsForMessage(UUID remoteId, Vector3 position,String team) {
 		try {
 			String message = new String("client-details-for," + this.id.toString() + "," + remoteId.toString());
-			message += "," + position.x() + "," + position.y() + "," + position.z();
+			message += "," + position.x() + "," + position.y() + "," + position.z()+","+team;
 			sendPacket(message);
 		} catch (IOException e) {
 			e.printStackTrace();

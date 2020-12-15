@@ -112,6 +112,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private Camera3PController orbitCameraOne;
 	private DecimalFormat formatFloat = new DecimalFormat("#.##");
 	private ConcurrentHashMap<UUID, GhostAvatar> ghostAvatars = new ConcurrentHashMap<UUID, GhostAvatar>();
+	private ConcurrentHashMap<UUID, String> teamOfGhost = new ConcurrentHashMap<UUID, String>();
 	private ConcurrentHashMap<SceneNode, Vector3[]> bullets = new ConcurrentHashMap<SceneNode, Vector3[]>();
 	private ConcurrentHashMap<SceneNode, Integer> healths = new ConcurrentHashMap<SceneNode,Integer>();
 	private AbstractNpcEntity[] npcEntity;
@@ -141,6 +142,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private int numberOfNpc = 0, numberOfDolphin = 20, numberOfMonster = 20, numberOfSnitch = 1, numberOfBoss = 1;
 	private boolean isStarted = false, isPlayerRunning =false, isStepping = false,isStepped = false, isRunned = false,isShoted =false,isJumped = false;
 	private float lastPlayerRunTime = 0, lastPlayerStep =0 , lastShotTime = 0,lastJumpTime = 0;
+	private String teamOfPlayer = "0";
 
 	protected ScriptEngine jsEngine;
 	protected File test, addLight, setupSkybox, setupTerrain, setupAudio;
@@ -828,6 +830,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		if(!isStarted) {
 			gameTime = getGameStartTime();
 			isStarted = true;
+			
 		}else {
 			gameTime += engine.getElapsedTimeMillis();
 		}
@@ -1310,6 +1313,12 @@ public class HuntingGame extends VariableFrameRateGame {
 						}
 					}	
 				}
+				ghostAvatars.forEach((key, val) -> {
+						if(distanceFrom(ghostAvatars.get(key).getPosition(),getPhysicsPosition(bullet))< 2.0f && teamOfGhost.get(key) != teamOfPlayer)
+						{
+							System.out.println("Player bullet hit Ghost" + ghostAvatars.get(key));
+						}
+				});
 			} else if (bullet.getName().substring(0, 7).equalsIgnoreCase("monster")) {
 				if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)) < 1.0f) {
 					System.out.println(bullet.getName().substring(0,7) + " bullet distance: " + distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
@@ -1468,6 +1477,15 @@ public class HuntingGame extends VariableFrameRateGame {
 			}
 		}
 
+	}
+	//assign Ghost Team
+	public void assignTeam(UUID id, String team) {
+		teamOfGhost.put(id,team);
+	}
+	//set Team for player 
+	public void setTeam(String team)
+	{
+		this.teamOfPlayer = team;
 	}
 	//Player running animation check
 	public void setPlayerLastRunTime(float f)
