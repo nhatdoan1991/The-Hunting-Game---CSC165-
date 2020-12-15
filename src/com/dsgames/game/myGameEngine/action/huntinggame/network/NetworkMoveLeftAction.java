@@ -21,6 +21,8 @@ public class NetworkMoveLeftAction extends AbstractInputAction {
 	
 	@Override
 	public void performAction(float time, Event evt) {
+		game.setPlayerStepTime(game.getGameTime());
+		game.setIsStepped(true);
 		float speed = game.getEngine().getElapsedTimeMillis() * 0.003f;
 		avatarNode.moveLeft(-speed * 3.0f);
 		game.synchronizeAvatarPhysics(avatarNode);
