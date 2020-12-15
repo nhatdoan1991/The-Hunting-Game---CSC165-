@@ -21,9 +21,12 @@ public class NetworkMoveBackwardAction extends AbstractInputAction {
 	
 	@Override
 	public void performAction(float time, Event evt) {
+		game.setIsPlayerRunning(true);
+		game.setPlayerLastRunTime(game.getGameTime());
 		float speed = game.getEngine().getElapsedTimeMillis() * 0.003f;
-		avatarNode.moveBackward(speed * 3.0f);
+		avatarNode.moveBackward(speed * 1.5f);
 		game.synchronizeAvatarPhysics(avatarNode);
 		protocolClient.sendMoveMessage(avatarNode.getWorldPosition());
+		game.playPlayerRunningAnimation();
 	}
 }

@@ -21,9 +21,12 @@ public class NetworkMoveRightAction extends AbstractInputAction {
 	
 	@Override
 	public void performAction(float time, Event evt) {
+		game.setPlayerStepTime(game.getGameTime());
+		game.setIsPlayerStepping(true);
 		float speed = game.getEngine().getElapsedTimeMillis() * 0.003f;
 		avatarNode.moveRight(-speed * 3.0f);
 		game.synchronizeAvatarPhysics(avatarNode);
 		protocolClient.sendMoveMessage(avatarNode.getWorldPosition());
+		game.playPlayerRightStepAnimation();
 	}
 }

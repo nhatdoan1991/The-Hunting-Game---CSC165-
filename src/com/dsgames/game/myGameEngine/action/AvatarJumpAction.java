@@ -18,11 +18,12 @@ public class AvatarJumpAction extends AbstractInputAction {
 	@Override
 	public void performAction(float time, Event e) {
 		switch (player) {
-		case "dolphinEntityOneNode":
+		case "playerNode":
 			game.jumpP1 = true;
 			game.dolphinOnePhysicsObject.applyForce(0.0f, 400.0f, 0.0f, 0.0f, 0.0f, 0.0f);
 			game.velocityP1 = 0.0f;
 			game.playJumpSound();
+			game.playPlayerJumpAnimation();
 			break;
 		}
 	}

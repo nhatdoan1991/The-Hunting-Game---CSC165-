@@ -21,9 +21,13 @@ public class NetworkMoveForwardAction extends AbstractInputAction {
 	
 	@Override
 	public void performAction(float time, Event evt) {
+		game.setIsPlayerRunning(true);
+		game.setPlayerLastRunTime(game.getGameTime());
 		float speed = game.getEngine().getElapsedTimeMillis() * 0.003f;
 		avatarNode.moveForward(speed * 3.0f);
 		protocolClient.sendMoveMessage(avatarNode.getLocalPosition());
 		game.synchronizeAvatarPhysics(avatarNode);
+		//game.playPlayerRunningAnimation();
+		
 	}
 }
