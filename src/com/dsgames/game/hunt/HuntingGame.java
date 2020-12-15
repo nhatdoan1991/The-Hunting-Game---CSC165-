@@ -523,7 +523,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		x.playAnimation("Fly_Night_Fury", 15f, LOOP, 0);
 	}
 	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("bossess" + Integer.toString(index), "boss.rkm", "boss.rks");
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("bossess" + Integer.toString(index), "boss1.rkm", "boss1.rks");
 	
 		// load animations
 		NpcEntity.loadAnimation("boss_fly", "boss_fly.rka");
