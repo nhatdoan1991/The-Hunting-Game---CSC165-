@@ -285,13 +285,15 @@ public class HuntingGame extends VariableFrameRateGame {
 	private void setupPlayer(Engine engine, SceneManager sceneManager) throws IOException {
 		// Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne",
 		// "playerModel.obj");
-		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("dolphinEntityOne", "test.rkm", "test.rks");
+		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("dolphinEntityOne", "test1.rkm", "test1.rks");
 		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
 
 		// load animations
-		dolphinEntityOne.loadAnimation("wave", "wave.rka");
-		dolphinEntityOne.loadAnimation("walk", "walk.rka");
-
+		dolphinEntityOne.loadAnimation("player_running", "player_running.rka");
+		dolphinEntityOne.loadAnimation("player_shooting", "player_shooting.rka");
+		dolphinEntityOne.loadAnimation("player_jump", "player_jump.rka");
+		dolphinEntityOne.loadAnimation("stepLeft", "stepLeft.rka");
+		dolphinEntityOne.loadAnimation("stepRight", "stepRight.rka");
 		dolphinNodeOne = sceneManager.getRootSceneNode().createChildSceneNode(dolphinEntityOne.getName() + "Node");
 		dolphinNodeOne.attachObject(dolphinEntityOne);
 
@@ -521,7 +523,11 @@ public class HuntingGame extends VariableFrameRateGame {
 		x.playAnimation("Fly_Night_Fury", 15f, LOOP, 0);
 	}
 	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		Entity NpcEntity = sceneManager.createEntity("bossess" + Integer.toString(index), "boss.obj");
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("bossess" + Integer.toString(index), "boss.rkm", "boss.rks");
+	
+		// load animations
+		NpcEntity.loadAnimation("boss_fly", "boss_fly.rka");
+		//Entity NpcEntity = sceneManager.createEntity("bossess" + Integer.toString(index), "boss.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
 		Texture textureOne = textureManager.getAssetByPath("Dragon_ground_color.jpg");
@@ -535,6 +541,11 @@ public class HuntingGame extends VariableFrameRateGame {
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
 		healths.put(NpcNode,2000);
+		playBossFly(NpcEntity);
+	}
+	public void playBossFly(SkeletalEntity x) {
+		x.stopAnimation();
+		x.playAnimation("boss_fly", 5f, LOOP, 0);
 	}
 	//reSpawnNPC
 	
@@ -852,8 +863,10 @@ public class HuntingGame extends VariableFrameRateGame {
 			SkeletalEntity monsterSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("monster" + Integer.toString(i));
 			monsterSkeletal.update();
 		}
-		SkeletalEntity monsterSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("snitchs" + Integer.toString(40));
-		monsterSkeletal.update();
+		SkeletalEntity snitchSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("snitchs" + Integer.toString(40));
+		snitchSkeletal.update();
+		SkeletalEntity bossSkeletal = (SkeletalEntity) getEngine().getSceneManager().getEntity("bossess" + Integer.toString(41));
+		bossSkeletal.update();
 		orbitCameraOne.updateCameraPosition();
 
 		targetNode.lookAt(dolphinNodeOne);
@@ -1522,14 +1535,18 @@ public class HuntingGame extends VariableFrameRateGame {
 		case KeyEvent.VK_V:
 			SkeletalEntity x = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 			x.stopAnimation();
-			x.playAnimation("wave", 0.5f, LOOP, 0);
+			x.playAnimation("player_running", 5f, LOOP, 0);
 			break;
 		case KeyEvent.VK_B:
 			SkeletalEntity z = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 			z.stopAnimation();
-			z.playAnimation("walk", 2f, LOOP, 0);
+			z.playAnimation("stepRight", 4f, LOOP, 0);
 			break;
-
+		case KeyEvent.VK_H:
+			SkeletalEntity q = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
+			q.stopAnimation();
+			q.playAnimation("stepLeft", 4f, LOOP, 0);
+			break;
 		case KeyEvent.VK_C:
 			SkeletalEntity y = (SkeletalEntity) getEngine().getSceneManager().getEntity("dolphinEntityOne");
 			y.stopAnimation();
