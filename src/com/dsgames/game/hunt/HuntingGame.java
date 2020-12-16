@@ -779,8 +779,8 @@ public class HuntingGame extends VariableFrameRateGame {
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.SPACE,
 						avatarJumpAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
-				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.LSHIFT,
-						avatarChargeAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
+		//		inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.LSHIFT,
+		//				avatarChargeAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
 
 				inputManager.associateAction(keyboards, net.java.games.input.Component.Identifier.Key.K,
 						closeConnectionAction, InputManager.INPUT_ACTION_TYPE.ON_PRESS_ONLY);
@@ -909,6 +909,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		displayString += " | Position: (" + formatFloat.format(dolphinNodeOne.getWorldPosition().x()) + ", "
 				+ formatFloat.format(dolphinNodeOne.getWorldPosition().y()) + ", "
 				+ formatFloat.format(dolphinNodeOne.getWorldPosition().z()) + ")";
+		/*
 		if (cooldownP1 - elapsedTimeSeconds < 0) {
 			displayString += " | Charge Ready!";
 			playerStretchController.removeNode(dolphinNodeOne);
@@ -917,6 +918,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		} else {
 			displayString += " | Charge cooldown: " + (cooldownP1 - elapsedTimeSeconds);
 		}
+		*/
 		displayString += " | Current song: ";
 		switch (currentSong % 3) {
 		case 0:
