@@ -7,42 +7,15 @@ import ray.rage.scene.Node;
 import ray.rage.scene.SceneNode;
 import ray.rml.*;
 
-public class GhostAvatar {
+public class GhostAvatar extends AbstractGhostEntity {
 
-	private UUID id;
-	private SceneNode node;
-	private Vector3 position;
-	private Entity entity;
 	
 	public GhostAvatar(UUID id, Vector3 position) {
-		this.id = id;
-		this.position = position;
+		super(id, position);
 	}
 	
-	public void setNode(SceneNode ghostNode) {
-		this.node = ghostNode;
-		
-	}
-
-	public void setEntity(Entity ghostEntity) {
-		this.entity = ghostEntity;
-		
-	}
-	
-	public Vector3 getPosition() {
-		return this.position;
-	}
-	
-	public void setPosition(Vector3 position) {
-		this.position = position;
-	}
-	
-	public UUID getId() {
-		return this.id;
-	}
-
-	public Node getNode() {
-		return node;
+	public SceneNode getSceneNode() {
+		return (SceneNode) this.getNode();
 	}
 	
 }
