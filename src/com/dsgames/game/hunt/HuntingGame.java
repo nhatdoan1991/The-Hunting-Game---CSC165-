@@ -1079,6 +1079,27 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		}
 	}
+	
+	public void updateVerticalPosition(SceneNode node) {
+		Vector3 worldPos = node.getWorldPosition();
+		Vector3 localPos = node.getLocalPosition();
+		Vector3 terrainPos = (Vector3) Vector3f.createFrom(localPos.x(),
+				tessellationEntity.getWorldHeight(worldPos.x(), worldPos.z()),
+				localPos.z());
+		Vector3 nodeGroundPlanePosition = (Vector3) Vector3f.createFrom(localPos.x(),
+				groundTessellation.getWorldHeight(worldPos.x(), worldPos.z()),
+				localPos.z());
+
+		if (localPos.y() <= terrainPos.y()
+				|| localPos.y() <= nodeGroundPlanePosition.y()) {
+			Vector3 position = terrainPos;
+			if (localPos.y() < nodeGroundPlanePosition.y()) {
+				position = nodeGroundPlanePosition;
+			}
+			node.setLocalPosition(position);
+			synchronizeAvatarPhysics(node);
+		}
+	}
 
 	/**
 	 * Invoked by SkipAudioAction. Stops the current soundtrack and plays the next
@@ -1257,7 +1278,7 @@ public class HuntingGame extends VariableFrameRateGame {
 					bullet.getLocalForwardAxis().z() * 12.0f };
 			bullet.getPhysicsObject().setLinearVelocity(playerDirection);
 			Vector3 slope = bullet.getLocalPosition().sub(position[1]);
-			bullet.setLocalPosition(bullet.getLocalPosition().add(slope));
+			bullet.setLocalPosition(bullet.getLocalPosition().add(slope.mult(1.5f)));
 			// System.out.println("New local position: " + bullet.getLocalPosition());
 			// System.out.println("New world position: " + bullet.getWorldPosition());
 			// synchronizeAvatarPhysics(bullet);
@@ -1269,6 +1290,8 @@ public class HuntingGame extends VariableFrameRateGame {
 				this.getEngine().getSceneManager().destroySceneNode(bullet);
 				bullets.remove(bullet);
 				
+			} else {
+			//	updateVerticalPosition(bullet);
 			}
 		});
 	}
