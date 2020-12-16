@@ -1638,7 +1638,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			try {
 				System.out.print("Please enter the server's IP address: ");
 				String ip = reader.readLine();
-				System.out.println("Please enter the port to connect to: ");
+				System.out.print("Please enter the port to connect to: ");
 				String port = reader.readLine();
 				game = new HuntingGame(ip, Integer.parseInt(port));
 			} catch (IOException e) {
