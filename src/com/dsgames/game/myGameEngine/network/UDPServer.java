@@ -158,7 +158,8 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	public void sendCreateMessage(UUID clientId, String[] position, String team) {
 		try {
 			String p = processPosition(position);
-			forwardPacketToAll("server-create," + clientId.toString() + p+","+team, clientId);
+			String message = "server-create," + clientId.toString() + p+","+team;
+			forwardPacketToAll(message,clientId);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

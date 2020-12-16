@@ -67,6 +67,7 @@ public class ProtocolClient extends GameConnectionClient {
 						Float.parseFloat(messageTokens[4])
 						);
 				try {
+					System.out.println(ghostId +" in team "+messageTokens[5]);
 					createGhostAvatar(ghostId, position);
 				} catch (IOException e) {
 					System.out.println("Ghost avatar for player " + messageTokens[1] + "already exists");

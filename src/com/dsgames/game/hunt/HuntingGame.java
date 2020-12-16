@@ -559,7 +559,6 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
 		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("bossess" + Integer.toString(index), "boss1.rkm", "boss1.rks");
-	
 		// load animations
 		NpcEntity.loadAnimation("boss_fly", "boss_fly.rka");
 		//Entity NpcEntity = sceneManager.createEntity("bossess" + Integer.toString(index), "boss.obj");
@@ -1057,7 +1056,6 @@ public class HuntingGame extends VariableFrameRateGame {
 		} //else if (avatarLocaPositionP1.y() > terrainPositionP1.y() + 1.0f) {
 			//jumpP1 = true;
 		//}
-			
 		for (int i = 0; i < npcEntity.length; i++) {
 			Vector3 npcWorldPosition = npcEntity[i].getNode().getWorldPosition();
 			Vector3 npcLocalPosition = npcEntity[i].getNode().getLocalPosition();
@@ -1480,7 +1478,10 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	//assign Ghost Team
 	public void assignTeam(UUID id, String team) {
-		teamOfGhost.put(id,team);
+		if(!teamOfGhost.containsKey(id))
+		{
+			teamOfGhost.put(id,team);
+		}	
 	}
 	//set Team for player 
 	public void setTeam(String team)
