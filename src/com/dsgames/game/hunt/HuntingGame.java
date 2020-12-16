@@ -977,7 +977,6 @@ public class HuntingGame extends VariableFrameRateGame {
 			if (dolphinNodeOne.getWorldPosition().y() <= 1f + tessellationEntity
 					.getWorldHeight(playerNode.getWorldPosition().x(), playerNode.getWorldPosition().z())
 					&& lastJumpTime + 3000 < gameTime) {
-				System.out.println("test");
 				velocityP1 = 0.0f;
 				jumpP1 = false;
 				playPlayerRunningAnimation();
@@ -1051,7 +1050,6 @@ public class HuntingGame extends VariableFrameRateGame {
 
 	public void moveGhostAvatar(UUID id, Vector3 position) {
 		if (ghostAvatars.get(id) != null) {
-			System.out.println(ghostAvatars.get(id).getPosition());
 			ghostAvatars.get(id).getNode().setLocalPosition(position);
 			synchronizeAvatarPhysics(ghostAvatars.get(id).getNode());
 
@@ -1333,10 +1331,10 @@ public class HuntingGame extends VariableFrameRateGame {
 				for (int i = 0; i < npcs.length; i++) {
 
 					if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(npcs[i])) < 2.0f) {
-						System.out.println(bullet.getName().substring(0, 6) + " bullet distance: "
-								+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(npcs[i])));
+						//System.out.println(bullet.getName().substring(0, 6) + " bullet distance: "
+								//+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(npcs[i])));
 						if (bullet.getName().substring(0, 6).equalsIgnoreCase("player")) {
-							System.out.println("Player bullet hit " + npcs[i].getName().substring(0, 6));
+							//System.out.println("Player bullet hit " + npcs[i].getName().substring(0, 6));
 							healths.put(npcs[i], healths.get(npcs[i]) - 25);
 							if (healths.get(npcs[i]) <= 0) {
 								// NPC dies and respawn , boss does not apply
@@ -1364,15 +1362,15 @@ public class HuntingGame extends VariableFrameRateGame {
 				}
 				ghostAvatars.forEach((key, val) -> {
 					if (distanceFrom(ghostAvatars.get(key).getPosition(), getPhysicsPosition(bullet)) < 2.0f) {
-						System.out.println("Player bullet hit Ghost" + ghostAvatars.get(key));
+						//System.out.println("Player bullet hit Ghost" + ghostAvatars.get(key));
 						protocolClient.sendHitAPlayer(key);
 					}
 				});
 			} else if (bullet.getName().substring(0, 7).equalsIgnoreCase("monster")) {
 				if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)) < 1.0f) {
-					System.out.println(bullet.getName().substring(0, 7) + " bullet distance: "
-							+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
-					System.out.println("Monster bullet hit player");
+					//System.out.println(bullet.getName().substring(0, 7) + " bullet distance: "
+					//		+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
+					//System.out.println("Monster bullet hit player");
 					healths.put(dolphinNodeOne, healths.get(dolphinNodeOne) - 20);
 					if (healths.get(dolphinNodeOne) <= 100) {
 						// player dies, need to respawn and deduct point
@@ -1385,13 +1383,13 @@ public class HuntingGame extends VariableFrameRateGame {
 				}
 			} else if (bullet.getName().substring(0, 4).equalsIgnoreCase("boss")) {
 				if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)) < 1.0f) {
-					System.out.println(bullet.getName().substring(0, 7) + " bullet distance: "
-							+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
-					System.out.println("Boss bullet hit player");
+					//System.out.println(bullet.getName().substring(0, 7) + " bullet distance: "
+					//		+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
+					//System.out.println("Boss bullet hit player");
 					healths.put(dolphinNodeOne, healths.get(dolphinNodeOne) - 40);
 					if (healths.get(dolphinNodeOne) <= 100) {
 						// player dies, no respawn
-						System.out.println("You are dead. Please wait until the game ends");
+					//	System.out.println("You are dead. Please wait until the game ends");
 					}
 					bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
 					synchronizeAvatarPhysics(bullet);
@@ -1409,8 +1407,8 @@ public class HuntingGame extends VariableFrameRateGame {
 
 		for (int i = 0; i < npcs.length; i++) {
 			if (distanceFrom(getPhysicsPosition(npcs[i]), getPhysicsPosition(dolphinNodeOne)) <= 1.0f) {
-				System.out.println("Physical collision between player and " + npcs[i].getName() + " | distance: "
-						+ distanceFrom(getPhysicsPosition(npcs[i]), getPhysicsPosition(dolphinNodeOne)));
+				//System.out.println("Physical collision between player and " + npcs[i].getName() + " | distance: "
+				//		+ distanceFrom(getPhysicsPosition(npcs[i]), getPhysicsPosition(dolphinNodeOne)));
 				String nameOfMonster = npcs[i].getName().substring(0, 7);
 				Vector3 randomLocation;
 				switch (nameOfMonster) {
@@ -1422,7 +1420,7 @@ public class HuntingGame extends VariableFrameRateGame {
 					break;
 				case "snitchs":
 					// player capture the snitch
-					System.out.println("Player captured the snitch");
+				//	System.out.println("Player captured the snitch");
 					playerPoint += 1000;
 					healths.put(npcs[i], 75);
 					randomLocation = randomLocationMonster();
@@ -1432,7 +1430,7 @@ public class HuntingGame extends VariableFrameRateGame {
 				case "bossess":
 					// game ends
 					healths.put(dolphinNodeOne, healths.get(dolphinNodeOne) - 100);
-					System.out.println("Player died, wait until the game over");
+				//	System.out.println("Player died, wait until the game over");
 					break;
 				}
 				if (healths.get(dolphinNodeOne) <= 100) {
