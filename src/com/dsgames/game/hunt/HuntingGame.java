@@ -290,7 +290,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private void setupPlayer(Engine engine, SceneManager sceneManager) throws IOException {
 		// Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne",
 		// "playerModel.obj");
-		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("player", "dolphin.rkm", "dolphin.rks");
+		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("player", "player.rkm", "player.rks");
 		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
 
 		// load animations
