@@ -813,6 +813,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	protected void processNetworking(float elapsedTime) {
 		if (protocolClient != null) {
 			protocolClient.processPackets();
+			
 		}
 
 		// remove ghost avatars of players who have left the game
@@ -821,6 +822,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			this.getEngine().getSceneManager().destroySceneNode(i.next().toString());
 		}
 		objectsToRemove.clear();
+		protocolClient.sendMoveMessage(dolphinNodeOne.getLocalPosition()); // forward my position to everyone
 	}
 
 	@Override
@@ -919,6 +921,14 @@ public class HuntingGame extends VariableFrameRateGame {
 			displayString += " | Charge cooldown: " + (cooldownP1 - elapsedTimeSeconds);
 		}
 		*/
+		ghostAvatars.forEach((Key, Val)-> {
+			System.out.println("[");
+			double[] transform = ghostAvatars.get(Key).getNode().getPhysicsObject().getTransform();
+			for(double d : transform) {
+				System.out.println(d + ", ");
+			}
+			System.out.println("]");
+		});
 		displayString += " | Current song: ";
 		switch (currentSong % 3) {
 		case 0:
@@ -1027,6 +1037,7 @@ public class HuntingGame extends VariableFrameRateGame {
 
 	public void moveGhostAvatar(UUID id, Vector3 position) {
 		if (ghostAvatars.get(id) != null) {
+			System.out.println(ghostAvatars.get(id).getPosition());
 			ghostAvatars.get(id).getNode().setLocalPosition(position);
 			synchronizeAvatarPhysics(ghostAvatars.get(id).getNode());
 		}
