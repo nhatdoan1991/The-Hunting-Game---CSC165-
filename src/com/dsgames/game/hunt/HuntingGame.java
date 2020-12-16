@@ -290,7 +290,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private void setupPlayer(Engine engine, SceneManager sceneManager) throws IOException {
 		// Entity dolphinEntityOne = sceneManager.createEntity("dolphinEntityOne",
 		// "playerModel.obj");
-		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("player", "test1.rkm", "test1.rks");
+		SkeletalEntity dolphinEntityOne = sceneManager.createSkeletalEntity("player", "dolphin.rkm", "dolphin.rks");
 		dolphinEntityOne.setPrimitive(Primitive.TRIANGLES);
 
 		// load animations
@@ -494,12 +494,12 @@ public class HuntingGame extends VariableFrameRateGame {
 
 	private void spawningMonster(Engine engine, SceneManager sceneManager, int index) throws IOException {
 		
-		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("monster" + Integer.toString(index), "monster.rkm", "monster.rks");
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("monster" + Integer.toString(index), "zombie.rkm", "zombie.rks");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 
 		// load animations
-		NpcEntity.loadAnimation("monster_walking", "monster_walking.rka");
-		NpcEntity.loadAnimation("monster_shooting", "monster_shooting.rka");
+		NpcEntity.loadAnimation("zombie_walking", "zombie_walking.rka");
+		NpcEntity.loadAnimation("zombie_shooting", "zombie_shooting.rka");
 		
 		//Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "monster.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
@@ -523,19 +523,19 @@ public class HuntingGame extends VariableFrameRateGame {
 
 	public void playMonsterWalking(SkeletalEntity x) {
 		x.stopAnimation();
-		x.playAnimation("monster_walking", 3f, LOOP, 0);
+		x.playAnimation("zombie_walking", 3f, LOOP, 0);
 	}
 	public void playMonsterShooting(SkeletalEntity x) {
 		x.stopAnimation();
-		x.playAnimation("monster_shooting", 1.5f, LOOP, 0);
+		x.playAnimation("zombie_shooting", 1.5f, LOOP, 0);
 	}
 	private void spawningSnitch(Engine engine, SceneManager sceneManager, int index) throws IOException {
 
-		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("snitchs" + Integer.toString(index), "Night_Fury.rkm", "Night_Fury.rks");
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("snitchs" + Integer.toString(index), "snitch.rkm", "snitch.rks");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 
 		// load animations
-		NpcEntity.loadAnimation("Fly_Night_Fury", "Fly_Night_Fury.rka");
+		NpcEntity.loadAnimation("snitch_fly", "snitch_fly.rka");
 		playFlyingSnitch(NpcEntity);
 		
 		//Entity NpcEntity = sceneManager.createEntity("npcEntityOne" + Integer.toString(index), "dolphinLowPoly.obj");
@@ -556,12 +556,12 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	public void playFlyingSnitch(SkeletalEntity x) {
 		x.stopAnimation();
-		x.playAnimation("Fly_Night_Fury", 15f, LOOP, 0);
+		x.playAnimation("snitch_fly", 15f, LOOP, 0);
 	}
 	private void spawningBoss(Engine engine, SceneManager sceneManager, int index) throws IOException {
-		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("bossess" + Integer.toString(index), "boss1.rkm", "boss1.rks");
+		SkeletalEntity NpcEntity = sceneManager.createSkeletalEntity("bossess" + Integer.toString(index), "dragon.rkm", "dragon.rks");
 		// load animations
-		NpcEntity.loadAnimation("boss_fly", "boss_fly.rka");
+		NpcEntity.loadAnimation("dragon_fly", "dragon_fly.rka");
 		//Entity NpcEntity = sceneManager.createEntity("bossess" + Integer.toString(index), "boss.obj");
 		NpcEntity.setPrimitive(Primitive.TRIANGLES);
 		SceneNode NpcNode = sceneManager.getRootSceneNode().createChildSceneNode(NpcEntity.getName() + "Node");
@@ -580,7 +580,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	public void playBossFly(SkeletalEntity x) {
 		x.stopAnimation();
-		x.playAnimation("boss_fly", 5f, LOOP, 0);
+		x.playAnimation("dragon_fly", 5f, LOOP, 0);
 	}
 	//reSpawnNPC
 	public void respawn(SceneNode sn) {
