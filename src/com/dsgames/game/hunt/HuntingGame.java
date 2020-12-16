@@ -150,7 +150,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private static final int INVULNERABLE_SECONDS = 3;
 	private static final int TERMINAL_VELOCITY = 1000;
 	private static final Random RAND = new Random();
-	private static final String BUILD_STATE = "test"; // "test" for debugging, "release" for submission
+	private static final String BUILD_STATE = "release"; // "test" for debugging, "release" for submission
 	private final static String GROUND_NODE = "GroundNode";
 	private static final String SKYBOX = "OceanSkybox";
 	private static final String SEPARATOR = "----------------------------------------------------";
@@ -171,12 +171,13 @@ public class HuntingGame extends VariableFrameRateGame {
 		if (BUILD_STATE.equalsIgnoreCase("test"))
 			System.out.println("Server address set to " + serverAddress + ":" + serverPort + "!");
 		System.out.println(SEPARATOR);
-		System.out.println("Press 'W/A/S/D' or control the left stick to MOVE");
-		System.out.println("Press 'Up/Down/Left/Right' or control the right stick to ROTATE CAMERA");
-		System.out.println("Press 'Q/E' or the left and right bumpers to YAW DOLPHIN");
+		System.out.println("Press 'W/A/S/D' to MOVE");
+		System.out.println("Use the mouse to ROTATE CAMERA");
+		System.out.println("Press 'Q/E' to ROTATE LEFT/RIGHT");
+		System.out.println("Left Click to FIRE a bullet");
 		System.out.println("Press 'P' or 'Y' to PLAY NEXT SONG");
-		System.out.println("Press 'Space' or 'A' to JUMP");
-		System.out.println("Press 'ESC' or 'Menu' to EXIT");
+		System.out.println("Press 'Space' JUMP");
+		System.out.println("Press 'ESC' to EXIT");
 		System.out.println(SEPARATOR);
 		formatFloat.setRoundingMode(RoundingMode.DOWN);
 	}
@@ -206,10 +207,10 @@ public class HuntingGame extends VariableFrameRateGame {
 			DisplaySettingsDialog displaySettingsDialogue = new DisplaySettingsDialog(
 					graphicsEnvironment.getDefaultScreenDevice());
 			displaySettingsDialogue.showIt();
-			renderSystem
+			renderWindow = renderSystem
 					.createRenderWindow(displaySettingsDialogue.getSelectedDisplayMode(),
-							displaySettingsDialogue.isFullScreenModeSelected())
-					.setTitle("Hunting Game | Saechao Lucas/Nhat Doan A3");
+							displaySettingsDialogue.isFullScreenModeSelected());
+			renderWindow.setTitle("The Most Dangerous Game | Saechao Lucas/Nhat Doan A3");
 		} else if (BUILD_STATE.equalsIgnoreCase("test")) {
 			int displayHeight = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
 					.getDisplayMode().getHeight();
