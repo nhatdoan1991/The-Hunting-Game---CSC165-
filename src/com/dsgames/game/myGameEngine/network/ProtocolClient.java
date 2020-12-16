@@ -121,6 +121,15 @@ public class ProtocolClient extends GameConnectionClient {
 						);
 				game.moveNpc(npcId, npcTransform, vectorPosition);
 				break;
+			case "client-find-shooted-player":
+				if(this.id==UUID.fromString(messageTokens[1]))
+				{
+					game.youWasShooted();
+				}else {
+					game.findShootedPlayer(UUID.fromString(messageTokens[1]));
+				}
+				
+				break;
 				
 			default:
 				System.out.println("Invalid packet processed. Packet: " + stringMessage);
@@ -254,6 +263,15 @@ public class ProtocolClient extends GameConnectionClient {
 			e.printStackTrace();
 		}
 		
+	}
+	public void sendHitAPlayer(UUID id)
+	{
+		try {
+			String message = "server-a-playyer-shooted," +id.toString();
+			sendPacket(message);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

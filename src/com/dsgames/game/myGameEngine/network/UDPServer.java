@@ -114,7 +114,10 @@ public class UDPServer extends GameConnectionServer<UUID> {
 				};
 				sendNpcPositionMessage(clientId, npcId, transform, vectorPosition);
 				break;
-
+			case "server-a-playyer-shooted":
+				clientId = UUID.fromString(messageTokens[1]);
+				sendYouAreShooted(clientId);
+				break;
 			default:
 				System.out.println("Invalid packet processed. Packet: " + message);
 			}
@@ -223,6 +226,15 @@ public class UDPServer extends GameConnectionServer<UUID> {
 		try {
 			String p = "," + npcId + processPosition(npcTransform) + processPosition(position);
 			forwardPacketToAll("server-npc-position-message," + clientId.toString() + p, clientId);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public void sendYouAreShooted(UUID clientId)
+	{
+		try {
+			String message = "client-find-shooted-player,"+clientId.toString();
+			sendPacketToAll(message);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
