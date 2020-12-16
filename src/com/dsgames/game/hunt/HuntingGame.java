@@ -311,9 +311,10 @@ public class HuntingGame extends VariableFrameRateGame {
 		sceneManager.addController(playerOrbitController);
 
 		// initialize position and scale
-		dolphinNodeOne.setLocalPosition(100.0f, -2.5f, 0.0f);
+		Vector3 randomLocation = randomLocationMonster();
+		dolphinNodeOne.setLocalPosition(randomLocation);
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
-
+		
 		targetNode = dolphinNodeOne.createChildSceneNode("targetNode");
 		targetNode.setLocalPosition(0.0f, 10.0f, 50.0f);
 
@@ -1537,12 +1538,18 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	//find the shooted player and reduce health
 	public void findShootedPlayer(UUID id) {
-		healths.put(getEngine().getSceneManager().getSceneNode(id.toString()),healths.get(getEngine().getSceneManager().getSceneNode(id.toString()))-20);
-		System.out.println("ghostEntity "+id.toString() +"was shooted");
-		if(healths.get(getEngine().getSceneManager().getSceneNode(id.toString()))<=0)
+		if(getEngine().getSceneManager().hasSceneNode(getEngine().getSceneManager().getSceneNode(id.toString()).getName()))
 		{
-			healths.put(getEngine().getSceneManager().getSceneNode(id.toString()),100);
-		}
+			if(healths.contains(getEngine().getSceneManager().getSceneNode(id.toString())))
+			{
+				healths.put(getEngine().getSceneManager().getSceneNode(id.toString()),healths.get(getEngine().getSceneManager().getSceneNode(id.toString()))-20);
+				System.out.println("ghostEntity "+id.toString() +"was shooted");
+				if(healths.get(getEngine().getSceneManager().getSceneNode(id.toString()))<=0)
+				{
+					healths.put(getEngine().getSceneManager().getSceneNode(id.toString()),100);
+				}
+			}
+		}	
 	}
 	
 	public void youWasShooted() {
