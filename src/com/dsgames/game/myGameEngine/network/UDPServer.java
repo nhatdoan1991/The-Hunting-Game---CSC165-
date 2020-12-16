@@ -114,7 +114,7 @@ public class UDPServer extends GameConnectionServer<UUID> {
 				};
 				sendNpcPositionMessage(clientId, npcId, transform, vectorPosition);
 				break;
-			case "server-a-playyer-shooted":
+			case "client-a-playyer-shooted":
 				clientId = UUID.fromString(messageTokens[1]);
 				sendYouAreShooted(clientId);
 				break;
@@ -233,7 +233,7 @@ public class UDPServer extends GameConnectionServer<UUID> {
 	public void sendYouAreShooted(UUID clientId)
 	{
 		try {
-			String message = "client-find-shooted-player,"+clientId.toString();
+			String message = "server-find-shooted-player,"+clientId.toString();
 			sendPacketToAll(message);
 		} catch (IOException e) {
 			e.printStackTrace();

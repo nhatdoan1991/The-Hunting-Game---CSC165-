@@ -114,7 +114,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	private ConcurrentHashMap<UUID, GhostAvatar> ghostAvatars = new ConcurrentHashMap<UUID, GhostAvatar>();
 	private ConcurrentHashMap<UUID, String> teamOfGhost = new ConcurrentHashMap<UUID, String>();
 	private ConcurrentHashMap<SceneNode, Vector3[]> bullets = new ConcurrentHashMap<SceneNode, Vector3[]>();
-	private ConcurrentHashMap<SceneNode, Integer> healths = new ConcurrentHashMap<SceneNode, Integer>();
+	private ConcurrentHashMap<String, Integer> healths = new ConcurrentHashMap<String, Integer>();
 	private AbstractNpcEntity[] npcEntity;
 	private double sensitivity = 0.5;
 	private float lastMouseX, lastMouseY, mouseX, mouseY;
@@ -313,6 +313,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		// initialize position and scale
 		Vector3 randomLocation = randomLocationMonster();
 		dolphinNodeOne.setLocalPosition(randomLocation);
+		dolphinNodeOne.setLocalPosition(100f,0f,0f);
 		dolphinNodeOne.scale(0.04f, 0.04f, 0.04f);
 		
 		targetNode = dolphinNodeOne.createChildSceneNode("targetNode");
@@ -323,7 +324,8 @@ public class HuntingGame extends VariableFrameRateGame {
 		TextureState dolphinOneTextureState = (TextureState) renderSystem.createRenderState(RenderState.Type.TEXTURE);
 		dolphinOneTextureState.setTexture(dolphinOneTexture);
 		dolphinEntityOne.setRenderState(dolphinOneTextureState);
-		healths.put(dolphinNodeOne, 100);
+		System.out.println(dolphinNodeOne.getName());
+		healths.put(dolphinNodeOne.getName(), 100);
 		playPlayerStandingAnimation();
 	}
 
@@ -497,7 +499,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcNode.setLocalPosition(randomLocation);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
-		healths.put(NpcNode, 125);
+		healths.put(NpcNode.getName(), 125);
 	}
 
 	private void spawningMonster(Engine engine, SceneManager sceneManager, int index) throws IOException {
@@ -526,7 +528,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcNode.setLocalPosition(randomLocation);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
-		healths.put(NpcNode, 175);
+		healths.put(NpcNode.getName(), 175);
 	}
 
 	public void playMonsterWalking(SkeletalEntity x) {
@@ -563,7 +565,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcNode.setLocalPosition(randomLocation);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
-		healths.put(NpcNode, 75);
+		healths.put(NpcNode.getName(), 75);
 	}
 
 	public void playFlyingSnitch(SkeletalEntity x) {
@@ -588,7 +590,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		NpcNode.setLocalPosition(0f, 0f, 0f);
 		npcEntity[index] = new AbstractNpcEntity(index, NpcNode, NpcEntity);
 		npcs[index] = (SceneNode) npcEntity[index].getNode();
-		healths.put(NpcNode, 2000);
+		healths.put(NpcNode.getName(), 2000);
 		playBossFly(NpcEntity);
 	}
 
@@ -603,24 +605,28 @@ public class HuntingGame extends VariableFrameRateGame {
 		Vector3 randomLocation;
 		switch (nameOfMonster) {
 		case "dolphi":
-			healths.put(sn, 125);
+			healths.put(sn.getName(), 125);
 			randomLocation = randomLocationDolphin();
 			sn.setLocalPosition(randomLocation);
+			synchronizeAvatarPhysics(sn);
 			break;
 		case "monste":
-			healths.put(sn, 175);
+			healths.put(sn.getName(), 175);
 			randomLocation = randomLocationMonster();
 			sn.setLocalPosition(randomLocation);
+			synchronizeAvatarPhysics(sn);
 			break;
 		case "snitch":
-			healths.put(sn, 75);
+			healths.put(sn.getName(), 75);
 			randomLocation = randomLocationMonster();
 			sn.setLocalPosition(randomLocation);
+			synchronizeAvatarPhysics(sn);
 			break;
 		case "player":
-			healths.put(sn, 100);
+			healths.put(sn.getName(), 100);
 			randomLocation = randomLocationMonster();
 			sn.setLocalPosition(randomLocation);
+			synchronizeAvatarPhysics(sn);
 			playerPoint -= 1000;
 			break;
 		}
@@ -644,6 +650,7 @@ public class HuntingGame extends VariableFrameRateGame {
 	 * Random Location for Monsters
 	 **/
 	private Vector3 randomLocationMonster() {
+		
 		Vector3 center = this.getEngine().getSceneManager().getRootSceneNode().getLocalPosition();
 		Vector3 randomPosition;
 		float[] randomFloat;
@@ -911,7 +918,7 @@ public class HuntingGame extends VariableFrameRateGame {
 		elapsedTimeSeconds = Math.round(elapsedTime / 1000.0f);
 		elapsedTimeString = Integer.toString(elapsedTimeSeconds);
 		playerOneLivesString = Integer.toString(playerOneLives);
-		playerOneScoreString = Integer.toString(playerOneScore);
+		playerOneScoreString = Integer.toString(playerPoint);
 
 		displayString = "Player One Time: " + elapsedTimeString;
 		displayString += " | Lives = " + playerOneLivesString;
@@ -929,14 +936,7 @@ public class HuntingGame extends VariableFrameRateGame {
 			displayString += " | Charge cooldown: " + (cooldownP1 - elapsedTimeSeconds);
 		}
 		*/
-		ghostAvatars.forEach((Key, Val)-> {
-			System.out.println("[");
-			double[] transform = ghostAvatars.get(Key).getNode().getPhysicsObject().getTransform();
-			for(double d : transform) {
-				System.out.println(d + ", ");
-			}
-			System.out.println("]");
-		});
+
 		displayString += " | Current song: ";
 		switch (currentSong % 3) {
 		case 0:
@@ -1037,7 +1037,8 @@ public class HuntingGame extends VariableFrameRateGame {
 			avatar.setNode(ghostNode);
 			avatar.setEntity(ghostEntity);
 			ghostAvatars.put(avatar.getId(), avatar);
-			healths.put(ghostNode, 100);
+			healths.put(ghostNode.getName(), 100);
+			System.out.println("Ghost "+ avatar.getId().toString() + "created with "+healths.get(ghostNode.getName()));
 		}
 	}
 
@@ -1335,8 +1336,8 @@ public class HuntingGame extends VariableFrameRateGame {
 								//+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(npcs[i])));
 						if (bullet.getName().substring(0, 6).equalsIgnoreCase("player")) {
 							//System.out.println("Player bullet hit " + npcs[i].getName().substring(0, 6));
-							healths.put(npcs[i], healths.get(npcs[i]) - 25);
-							if (healths.get(npcs[i]) <= 0) {
+							healths.put(npcs[i].getName(), healths.get(npcs[i].getName()) - 25);
+							if (healths.get(npcs[i].getName()) <= 0) {
 								// NPC dies and respawn , boss does not apply
 								respawn(npcs[i]);
 								String nameOfMonster = npcs[i].getName().substring(0, 7);
@@ -1361,18 +1362,23 @@ public class HuntingGame extends VariableFrameRateGame {
 					}
 				}
 				ghostAvatars.forEach((key, val) -> {
-					if (distanceFrom(ghostAvatars.get(key).getPosition(), getPhysicsPosition(bullet)) < 2.0f) {
-						//System.out.println("Player bullet hit Ghost" + ghostAvatars.get(key));
+					if (distanceFrom(getPhysicsPosition(ghostAvatars.get(key).getSceneNode()), getPhysicsPosition(bullet)) < 2.0f) {
+						System.out.println("Player bullet hit Ghost" + ghostAvatars.get(key));
 						protocolClient.sendHitAPlayer(key);
+						bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
+						synchronizeAvatarPhysics(bullet);
+						this.getEngine().getSceneManager().destroySceneNode(bullet);
+						bullets.remove(bullet);
 					}
+					
 				});
 			} else if (bullet.getName().substring(0, 7).equalsIgnoreCase("monster")) {
 				if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)) < 1.0f) {
 					//System.out.println(bullet.getName().substring(0, 7) + " bullet distance: "
 					//		+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
 					//System.out.println("Monster bullet hit player");
-					healths.put(dolphinNodeOne, healths.get(dolphinNodeOne) - 20);
-					if (healths.get(dolphinNodeOne) <= 100) {
+					healths.put(dolphinNodeOne.getName(), healths.get(dolphinNodeOne.getName()) - 20);
+					if (healths.get(dolphinNodeOne.getName()) <= 100) {
 						// player dies, need to respawn and deduct point
 						respawn(dolphinNodeOne);
 					}
@@ -1381,13 +1387,23 @@ public class HuntingGame extends VariableFrameRateGame {
 					this.getEngine().getSceneManager().destroySceneNode(bullet);
 					bullets.remove(bullet);
 				}
+				ghostAvatars.forEach((key, val) -> {
+					if (distanceFrom(getPhysicsPosition(ghostAvatars.get(key).getSceneNode()), getPhysicsPosition(bullet)) < 2.0f) {
+						protocolClient.sendHitAPlayer(key);
+						bullet.setLocalPosition(0.0f, -100.0f, 0.0f);
+						synchronizeAvatarPhysics(bullet);
+						this.getEngine().getSceneManager().destroySceneNode(bullet);
+						bullets.remove(bullet);
+					}
+					
+				});
 			} else if (bullet.getName().substring(0, 4).equalsIgnoreCase("boss")) {
 				if (distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)) < 1.0f) {
 					//System.out.println(bullet.getName().substring(0, 7) + " bullet distance: "
 					//		+ distanceFrom(getPhysicsPosition(bullet), getPhysicsPosition(dolphinNodeOne)));
 					//System.out.println("Boss bullet hit player");
-					healths.put(dolphinNodeOne, healths.get(dolphinNodeOne) - 40);
-					if (healths.get(dolphinNodeOne) <= 100) {
+					healths.put(dolphinNodeOne.getName(), healths.get(dolphinNodeOne.getName()) - 40);
+					if (healths.get(dolphinNodeOne.getName()) <= 100) {
 						// player dies, no respawn
 					//	System.out.println("You are dead. Please wait until the game ends");
 					}
@@ -1413,27 +1429,27 @@ public class HuntingGame extends VariableFrameRateGame {
 				Vector3 randomLocation;
 				switch (nameOfMonster) {
 				case "dolphin":
-					healths.put(dolphinNodeOne, healths.get(dolphinNodeOne) - 50);
+					healths.put(dolphinNodeOne.getName(), healths.get(dolphinNodeOne.getName()) - 50);
 					break;
 				case "monster":
-					healths.put(dolphinNodeOne, healths.get(dolphinNodeOne) - 40);
+					healths.put(dolphinNodeOne.getName(), healths.get(dolphinNodeOne.getName()) - 40);
 					break;
 				case "snitchs":
 					// player capture the snitch
 				//	System.out.println("Player captured the snitch");
 					playerPoint += 1000;
-					healths.put(npcs[i], 75);
+					healths.put(npcs[i].getName(), 75);
 					randomLocation = randomLocationMonster();
 					npcs[i].setLocalPosition(randomLocation);
 					break;
 
 				case "bossess":
 					// game ends
-					healths.put(dolphinNodeOne, healths.get(dolphinNodeOne) - 100);
+					healths.put(dolphinNodeOne.getName(), healths.get(dolphinNodeOne.getName()) - 100);
 				//	System.out.println("Player died, wait until the game over");
 					break;
 				}
-				if (healths.get(dolphinNodeOne) <= 100) {
+				if (healths.get(dolphinNodeOne.getName()) <= 100) {
 					// player dies, need to respawn and deduct point
 					dolphinNodeOne.setLocalPosition(0.0f, 0f, 0f);
 					playerPoint = playerPoint - 1000;
@@ -1536,23 +1552,23 @@ public class HuntingGame extends VariableFrameRateGame {
 	}
 	//find the shooted player and reduce health
 	public void findShootedPlayer(UUID id) {
-		if(getEngine().getSceneManager().hasSceneNode(getEngine().getSceneManager().getSceneNode(id.toString()).getName()))
-		{
-			if(healths.contains(getEngine().getSceneManager().getSceneNode(id.toString())))
+	
+		if(healths.contains(id.toString()))
 			{
-				healths.put(getEngine().getSceneManager().getSceneNode(id.toString()),healths.get(getEngine().getSceneManager().getSceneNode(id.toString()))-20);
+				healths.put(id.toString(),healths.get(id.toString())-20);
 				System.out.println("ghostEntity "+id.toString() +"was shooted");
-				if(healths.get(getEngine().getSceneManager().getSceneNode(id.toString()))<=0)
+				if(healths.get(id.toString())<=0)
 				{
-					healths.put(getEngine().getSceneManager().getSceneNode(id.toString()),100);
+					healths.put(id.toString(),100);
 				}
 			}
-		}	
+		
 	}
 	
 	public void youWasShooted() {
-		healths.put(dolphinNodeOne, healths.get(dolphinNodeOne)-20);
-		if(healths.get(dolphinNodeOne)<=0)
+		healths.put(dolphinNodeOne.getName(), healths.get(dolphinNodeOne.getName())-20);
+		System.out.println("you was shooted "+  healths.get(dolphinNodeOne.getName()));
+		if(healths.get(dolphinNodeOne.getName())<=0)
 		{
 			respawn(dolphinNodeOne);
 			System.out.println("you was shooted");
